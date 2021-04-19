@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "nativeshell_build",
+    "nativeshell",
+    "nativeshell_demo",
+]
