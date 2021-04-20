@@ -31,7 +31,7 @@ impl PlatformMenuManager {
         Self {}
     }
 
-    pub fn set_app_menu(&self, _menu: Rc<PlatformMenu>) -> PlatformResult<()> {
+    pub fn set_app_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotAvailable)
     }
 }

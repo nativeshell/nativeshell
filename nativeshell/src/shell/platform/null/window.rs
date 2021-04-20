@@ -108,7 +108,7 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
-    pub fn set_window_menu(&self, menu: Rc<PlatformMenu>) -> PlatformResult<()> {
+    pub fn set_window_menu(&self, menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }
 }

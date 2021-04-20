@@ -395,7 +395,7 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn set_window_menu(&self, _menu: Rc<PlatformMenu>) -> PlatformResult<()> {
+    pub fn set_window_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotAvailable)
     }
 
@@ -581,8 +581,8 @@ impl PlatformWindow {
                 mouse_state.last_button_down.replace(MSG {
                     hwnd: h_wnd,
                     message: u_msg,
-                    wParam:w_param,
-                    lParam:l_param,
+                    wParam: w_param,
+                    lParam: l_param,
                     ..Default::default()
                 });
             } else if u_msg == WM_LBUTTONUP as u32 || u_msg == WM_RBUTTONUP as u32 {

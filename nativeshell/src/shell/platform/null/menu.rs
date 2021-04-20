@@ -26,7 +26,7 @@ impl PlatformMenuManager {
         Self {}
     }
 
-    pub fn set_app_menu(&self, menu: Rc<PlatformMenu>) -> PlatformResult<()> {
+    pub fn set_app_menu(&self, menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }
 }
