@@ -9,17 +9,28 @@ use dunce::simplified;
 use path_slash::PathExt;
 
 use crate::{
-    artifacts_emitter::ArtifactEmitter, error::BuildError, BuildResult, FileOperation, IOResultExt,
+    artifacts_emitter::ArtifactEmitter, error::BuildError, util::get_artifacts_dir, BuildResult,
+    FileOperation, IOResultExt,
 };
 
 // User configurable options during flutter build
-#[derive(Default)]
-pub struct FlutterBuildOptions {
+#[derive(Debug)]
+pub struct FlutterOptions {
     // lib/main.dart by default
-    pub target_file: Option<PathBuf>,
+    pub target_file: PathBuf,
 
     pub local_engine: Option<String>,
     pub local_engine_src_path: Option<PathBuf>,
+}
+
+impl Default for FlutterOptions {
+    fn default() -> Self {
+        Self {
+            target_file: "lib/main.dart".into(),
+            local_engine: None,
+            local_engine_src_path: None,
+        }
+    }
 }
 
 pub enum TargetOS {
@@ -27,32 +38,33 @@ pub enum TargetOS {
     Windows,
 }
 
-pub struct FlutterBuild {
+pub struct Flutter {
     pub(super) root_dir: PathBuf,
     pub(super) out_dir: PathBuf,
-    pub(super) options: FlutterBuildOptions,
+    pub(super) options: FlutterOptions,
     pub(super) build_mode: String,
     pub(super) target_os: TargetOS,
     pub(super) target_platform: String,
 }
 
-impl FlutterBuild {
-    pub fn new(options: FlutterBuildOptions) -> FlutterBuild {
-        FlutterBuild {
+impl Flutter {
+    pub fn build(options: FlutterOptions) -> BuildResult<()> {
+        let build = Flutter::new(options);
+        build.do_build()
+    }
+
+    fn new(options: FlutterOptions) -> Flutter {
+        Flutter {
             root_dir: std::env::var("CARGO_MANIFEST_DIR").unwrap().into(),
             out_dir: std::env::var("OUT_DIR").unwrap().into(),
-            options: FlutterBuildOptions {
-                target_file: options.target_file.or_else(|| Some("lib/main.dart".into())),
-                local_engine: options.local_engine,
-                local_engine_src_path: options.local_engine_src_path,
-            },
-            build_mode: FlutterBuild::build_mode(),
-            target_os: FlutterBuild::target_os(),
-            target_platform: FlutterBuild::target_platform(),
+            options: options,
+            build_mode: Flutter::build_mode(),
+            target_os: Flutter::target_os(),
+            target_platform: Flutter::target_platform(),
         }
     }
 
-    pub fn build(&self) -> BuildResult<()> {
+    fn do_build(&self) -> BuildResult<()> {
         let flutter_out_root = self.out_dir.join("flutter");
         let flutter_out_dart_tool = flutter_out_root.join(".dart_tool");
         fs::create_dir_all(&flutter_out_dart_tool)
@@ -60,7 +72,6 @@ impl FlutterBuild {
 
         let package_config = self.root_dir.join(".dart_tool").join("package_config.json");
         let package_config_out = flutter_out_dart_tool.join("package_config.json");
-
 
         if !Path::exists(&package_config) {
             return Err(BuildError::OtherError(
@@ -114,7 +125,7 @@ impl FlutterBuild {
             Ok("aarch64") => "arm64",
             _ => panic!("Unsupported target architecture {:?}", env_arch),
         };
-        match FlutterBuild::target_os() {
+        match Flutter::target_os() {
             TargetOS::Mac => format!("darwin-{}", arch),
             TargetOS::Windows => format!("windows-{}", arch),
         }
@@ -223,10 +234,7 @@ impl FlutterBuild {
             .arg(format!("--define=TargetPlatform={}", self.target_platform))
             .arg(format!(
                 "--define=TargetFile={}",
-                rebased
-                    .join(self.options.target_file.as_ref().unwrap())
-                    .to_str()
-                    .unwrap()
+                rebased.join(&self.options.target_file).to_str().unwrap()
             ))
             .arg("-v")
             .arg("--suppress-analytics")
@@ -251,10 +259,7 @@ impl FlutterBuild {
         &self,
         working_dir: PathRef,
     ) -> BuildResult<()> {
-        let artifacts_dir = self.out_dir.join("../../../");
-        let artifacts_dir = artifacts_dir
-            .canonicalize()
-            .wrap_error(FileOperation::Canonicalize, artifacts_dir)?;
+        let artifacts_dir = get_artifacts_dir()?;
         let flutter_out_root = self.out_dir.join("flutter");
         let emitter = ArtifactEmitter::new(&self, flutter_out_root, artifacts_dir)?;
 

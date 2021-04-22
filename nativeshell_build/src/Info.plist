@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>${BUNDLE_IDENTIFIER}</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${BUNDLE_EXECUTABLE}</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>LSUIElement</key>
+	<false/>
+	<key>CFBundleIconFile</key>
+	<string>${ICON_FILE}</string>
+	<key>CFBundleName</key>
+	<string>${BUNDLE_NAME}</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>${MINIMUM_SYSTEM_VERSION}</string>
+	<key>CFBundleVersion</key>
+	<string>${BUNDLE_VERSION}</string>
+	<key>CFBundleShortVersionString</key>
+	<string>${BUNDLE_SHORT_VERSION_STRING}</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
+</dict>
+</plist>

@@ -3,10 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{BuildError, BuildResult, FileOperation, FlutterBuild, IOResultExt};
+use crate::{
+    util::{mkdir, symlink},
+    BuildError, BuildResult, FileOperation, Flutter, IOResultExt,
+};
 
 pub(super) struct ArtifactEmitter<'a> {
-    build: &'a FlutterBuild,
+    build: &'a Flutter,
     flutter_out_dir: PathBuf,
     flutter_build_dir: PathBuf,
     artifacts_out_dir: PathBuf,
@@ -14,7 +17,7 @@ pub(super) struct ArtifactEmitter<'a> {
 
 impl<'a> ArtifactEmitter<'a> {
     pub fn new<P: AsRef<Path>>(
-        build: &'a FlutterBuild,
+        build: &'a Flutter,
         flutter_out_dir: P,
         artifacts_out_dir: P,
     ) -> Result<Self, BuildError> {
@@ -32,7 +35,7 @@ impl<'a> ArtifactEmitter<'a> {
         if data_dir.exists() {
             std::fs::remove_dir_all(&data_dir).expect(&format!("Failed to remove {:?}", data_dir));
         }
-        let assets_dst_dir = Self::mkdir(&data_dir, Some("flutter_assets"))?;
+        let assets_dst_dir = mkdir(&data_dir, Some("flutter_assets"))?;
         let assets_src_dir = {
             let in_build = self.flutter_build_dir.join("flutter_assets");
             // kernel_snapshot/copy_assets - the flutter_assets folder is still inside build dir
@@ -202,43 +205,10 @@ impl<'a> ArtifactEmitter<'a> {
                 )?;
             }
         } else {
-            #[cfg(target_os = "windows")]
-            {
-                let res = if src_meta.is_dir() {
-                    std::os::windows::fs::symlink_dir(&src, &dst)
-                } else {
-                    std::os::windows::fs::symlink_file(&src, &dst)
-                };
-                res.wrap_error_with_src(
-                    FileOperation::SymLink,
-                    dst.as_ref().into(),
-                    src.as_ref().into(),
-                )?;
-            }
-            #[cfg(target_os = "macos")]
-            {
-                std::os::unix::fs::symlink(&src, &dst).wrap_error_with_src(
-                    FileOperation::SymLink,
-                    dst.as_ref().into(),
-                    src.as_ref().into(),
-                )?;
-            }
+            symlink(src, dst)?
         }
 
         Ok(())
-    }
-
-    fn mkdir<P, Q>(target_path: P, sub_path: Option<Q>) -> BuildResult<PathBuf>
-    where
-        P: AsRef<Path>,
-        Q: AsRef<Path>,
-    {
-        let target = match sub_path {
-            Some(sub_path) => target_path.as_ref().join(sub_path.as_ref()),
-            None => target_path.as_ref().into(),
-        };
-        fs::create_dir_all(&target).wrap_error(FileOperation::MkDir, target.clone())?;
-        Ok(target)
     }
 
     fn find_executable<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {

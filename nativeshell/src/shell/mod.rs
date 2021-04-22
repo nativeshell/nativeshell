@@ -1,4 +1,5 @@
 mod binary_messenger;
+mod bundle;
 mod constants;
 mod context;
 mod engine;
@@ -12,6 +13,7 @@ mod window_manager;
 mod window_method_channel;
 
 pub use binary_messenger::*;
+pub use bundle::*;
 pub use context::*;
 pub use engine::*;
 pub use engine_manager::*;

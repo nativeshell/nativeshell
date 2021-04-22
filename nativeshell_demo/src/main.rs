@@ -1,7 +1,7 @@
 use file_open_dialog::FileOpenDialogService;
 use nativeshell::{
     codec::Value,
-    shell::{Context, ContextOptions},
+    shell::{exec_bundle, Context, ContextOptions},
 };
 
 #[cfg(target_os = "macos")]
@@ -11,6 +11,8 @@ extern crate objc;
 mod file_open_dialog;
 
 fn main() {
+    exec_bundle();
+
     env_logger::builder().format_timestamp(None).init();
 
     let context = Context::new(ContextOptions {
