@@ -20,6 +20,7 @@ abstract class WindowBuilder {
   }
 
   bool get autoSizeWindow => false;
+
   Future<void> updateWindowSize(LocalWindow window, Size contentSize) async {
     await window.setGeometry(Geometry(contentSize: contentSize));
   }
@@ -252,8 +253,16 @@ class _RenderWindowLayout extends RenderProxyBox {
       final win = WindowManager.instance.currentWindow;
       SchedulerBinding.instance!.scheduleFrameCallback((timeStamp) {
         SchedulerBinding.instance!.addPostFrameCallback((timeStamp) async {
-          final w = child!.getMaxIntrinsicWidth(double.infinity);
-          final h = child!.getMaxIntrinsicHeight(double.infinity);
+          var w = child!.getMaxIntrinsicWidth(double.infinity);
+          var h = child!.getMaxIntrinsicHeight(double.infinity);
+
+          // sane default in case intrinsic size can't be determined
+          if (w == 0) {
+            w = 100;
+          }
+          if (h == 0) {
+            h = 100;
+          }
 
           await builtWindow.initializeWindow(
               win, _snapToPixelBoundary(Size(w, h)));
