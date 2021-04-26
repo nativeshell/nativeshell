@@ -25,7 +25,7 @@ use super::{
         create_dragimage_bitmap, CLSID_DragDropHelper, DROPEFFECT, DROPEFFECT_NONE,
     },
     error::PlatformResult,
-    util::ErrorCodeExt,
+    util::HRESULTExt,
     window::PlatformWindow,
 };
 

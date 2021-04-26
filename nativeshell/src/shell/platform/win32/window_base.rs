@@ -18,7 +18,7 @@ use super::{
     display::Displays,
     error::PlatformResult,
     flutter_api::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
-    util::{clamp, BoolResultExt, ErrorCodeExt, GET_X_LPARAM, GET_Y_LPARAM},
+    util::{clamp, BoolResultExt, HRESULTExt, GET_X_LPARAM, GET_Y_LPARAM},
 };
 
 pub struct WindowBaseState {

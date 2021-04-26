@@ -6,12 +6,12 @@ use std::{
     slice,
 };
 
-use windows::{create_instance, ErrorCode, IUnknown, Interface};
+use windows::{create_instance, IUnknown, Interface, HRESULT};
 
 use super::{
     all_bindings::*,
     drag_util::{CLSID_DragDropHelper, DataUtil, DROPEFFECT},
-    util::{com_object_from_ptr, get_raw_ptr, ErrorCodeExt},
+    util::{com_object_from_ptr, get_raw_ptr, HRESULTExt},
 };
 
 pub trait DropTargetDelegate {
@@ -61,7 +61,7 @@ impl DropTarget {
         &mut self,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ErrorCode {
+    ) -> HRESULT {
         if iid == &IDropTarget::IID || iid == &IUnknown::IID {
             unsafe {
                 *interface = self as *mut Self as *mut _;
@@ -97,7 +97,7 @@ impl DropTarget {
         _grf_key_state: u32,
         mut pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 *pdw_effect = delegate
@@ -122,7 +122,7 @@ impl DropTarget {
         _grf_key_state: u32,
         mut pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 *pdw_effect = delegate.drag_over(&pt, DROPEFFECT(*pdw_effect)).0;
@@ -135,7 +135,7 @@ impl DropTarget {
         S_OK
     }
 
-    fn drag_leave(&self) -> ::windows::ErrorCode {
+    fn drag_leave(&self) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 delegate.drag_leave();
@@ -152,7 +152,7 @@ impl DropTarget {
         _grf_key_state: u32,
         mut pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 *pdw_effect = delegate
@@ -175,7 +175,7 @@ impl DropTarget {
         this: ::windows::RawPtr,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> windows::ErrorCode {
+    ) -> windows::HRESULT {
         (*(this as *mut Self)).query_interface(iid, interface)
     }
 
@@ -193,7 +193,7 @@ impl DropTarget {
         grf_key_state: u32,
         pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).drag_enter(
             com_object_from_ptr(p_data_obj),
             grf_key_state,
@@ -207,11 +207,11 @@ impl DropTarget {
         grf_key_state: u32,
         pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).drag_over(grf_key_state, pt, pdw_effect)
     }
 
-    unsafe extern "system" fn _drag_leave(this: ::windows::RawPtr) -> ::windows::ErrorCode {
+    unsafe extern "system" fn _drag_leave(this: ::windows::RawPtr) -> ::windows::HRESULT {
         (*(this as *mut Self)).drag_leave()
     }
 
@@ -221,7 +221,7 @@ impl DropTarget {
         grf_key_state: u32,
         pt: POINTL,
         pdw_effect: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).drop(
             com_object_from_ptr(p_data_obj),
             grf_key_state,
@@ -274,7 +274,7 @@ impl EnumFORMATETC {
         &mut self,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ErrorCode {
+    ) -> HRESULT {
         if iid == &IEnumFORMATETC::IID || iid == &IUnknown::IID {
             unsafe {
                 *interface = self as *mut Self as *mut _;
@@ -313,7 +313,7 @@ impl EnumFORMATETC {
         mut celt: u32,
         rgelt: *mut FORMATETC,
         pcelt_fetched: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         let mut offset = 0;
         let dest: &mut [FORMATETC] = unsafe { slice::from_raw_parts_mut(rgelt, celt as usize) };
         while celt > 0 && self.remaining() > 0 {
@@ -335,7 +335,7 @@ impl EnumFORMATETC {
         }
     }
 
-    fn skip(&mut self, mut celt: u32) -> ::windows::ErrorCode {
+    fn skip(&mut self, mut celt: u32) -> ::windows::HRESULT {
         while celt > 0 && self.remaining() > 0 {
             celt -= 1;
             self.index += 1;
@@ -347,12 +347,12 @@ impl EnumFORMATETC {
         }
     }
 
-    fn reset(&mut self) -> ::windows::ErrorCode {
+    fn reset(&mut self) -> ::windows::HRESULT {
         self.index = 0;
         S_OK
     }
 
-    fn clone(&self, ppenum: *mut ::std::option::Option<IEnumFORMATETC>) -> ::windows::ErrorCode {
+    fn clone(&self, ppenum: *mut ::std::option::Option<IEnumFORMATETC>) -> ::windows::HRESULT {
         let clone = EnumFORMATETC::new_(self.formats.clone(), self.index);
         unsafe {
             *ppenum = Some(clone);
@@ -364,7 +364,7 @@ impl EnumFORMATETC {
         this: ::windows::RawPtr,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).query_interface(iid, interface)
     }
 
@@ -381,21 +381,21 @@ impl EnumFORMATETC {
         celt: u32,
         rgelt: *mut FORMATETC,
         pcelt_fetched: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).next(celt, rgelt, pcelt_fetched)
     }
 
-    unsafe extern "system" fn _skip(this: ::windows::RawPtr, celt: u32) -> ::windows::ErrorCode {
+    unsafe extern "system" fn _skip(this: ::windows::RawPtr, celt: u32) -> ::windows::HRESULT {
         (*(this as *mut Self)).skip(celt)
     }
 
-    unsafe extern "system" fn _reset(this: ::windows::RawPtr) -> ::windows::ErrorCode {
+    unsafe extern "system" fn _reset(this: ::windows::RawPtr) -> ::windows::HRESULT {
         (*(this as *mut Self)).reset()
     }
     unsafe extern "system" fn _clone(
         this: ::windows::RawPtr,
         ppenum: *mut ::windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).clone(std::mem::transmute(ppenum))
     }
 }
@@ -445,7 +445,7 @@ impl DataObject {
         &mut self,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ErrorCode {
+    ) -> HRESULT {
         if iid == &IDataObject::IID || iid == &IUnknown::IID {
             unsafe {
                 *interface = self as *mut Self as *mut _;
@@ -490,7 +490,7 @@ impl DataObject {
         &self,
         pformatetc_in: *mut FORMATETC,
         pmedium: *mut STGMEDIUM,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         let format = unsafe { &*pformatetc_in };
 
         // println!(
@@ -526,7 +526,7 @@ impl DataObject {
 
                         S_OK
                     } else {
-                        ErrorCode(DATA_E_FORMATETC as u32)
+                        HRESULT(DATA_E_FORMATETC as u32)
                     }
                 } else if format.tymed == TYMED::TYMED_ISTREAM.0 as u32 {
                     unsafe {
@@ -550,14 +550,14 @@ impl DataObject {
 
                             S_OK
                         } else {
-                            ErrorCode(DATA_E_FORMATETC as u32)
+                            HRESULT(DATA_E_FORMATETC as u32)
                         }
                     }
                 } else {
-                    ErrorCode(DATA_E_FORMATETC as u32)
+                    HRESULT(DATA_E_FORMATETC as u32)
                 }
             },
-            ErrorCode(DATA_E_FORMATETC as u32),
+            HRESULT(DATA_E_FORMATETC as u32),
         )
     }
 
@@ -565,11 +565,11 @@ impl DataObject {
         &self,
         _pformatetc: *mut FORMATETC,
         _pmedium: *mut STGMEDIUM,
-    ) -> ::windows::ErrorCode {
-        ErrorCode(DATA_E_FORMATETC as u32)
+    ) -> ::windows::HRESULT {
+        HRESULT(DATA_E_FORMATETC as u32)
     }
 
-    fn query_get_data(&self, pformatetc: *mut FORMATETC) -> ::windows::ErrorCode {
+    fn query_get_data(&self, pformatetc: *mut FORMATETC) -> ::windows::HRESULT {
         // println!("QUERY GET DATA");
 
         self.with_data_or(
@@ -592,7 +592,7 @@ impl DataObject {
         &self,
         _pformatect_in: *mut FORMATETC,
         _pformatetc_out: *mut FORMATETC,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         E_NOTIMPL
     }
 
@@ -601,7 +601,7 @@ impl DataObject {
         pformatetc: *mut FORMATETC,
         pmedium: *mut STGMEDIUM,
         f_release: BOOL,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         let format = unsafe { &*pformatetc };
 
         // println!(
@@ -668,10 +668,10 @@ impl DataObject {
 
                     S_OK
                 } else {
-                    ErrorCode(DATA_E_FORMATETC as u32)
+                    HRESULT(DATA_E_FORMATETC as u32)
                 }
             },
-            ErrorCode(DATA_E_FORMATETC as u32),
+            HRESULT(DATA_E_FORMATETC as u32),
         )
     }
 
@@ -679,7 +679,7 @@ impl DataObject {
         &self,
         dw_direction: u32,
         ppenum_format_etc: *mut ::std::option::Option<IEnumFORMATETC>,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         let mut formats = Vec::<FORMATETC>::new();
 
         self.with_data_or(
@@ -706,18 +706,18 @@ impl DataObject {
         _advf: u32,
         _p_adv_sink: ::std::option::Option<IAdviseSink>,
         _pdw_connection: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         E_NOTIMPL
     }
 
-    fn d_unadvise(&self, _dw_connection: u32) -> ::windows::ErrorCode {
+    fn d_unadvise(&self, _dw_connection: u32) -> ::windows::HRESULT {
         E_NOTIMPL
     }
 
     fn enum_d_advise(
         &self,
         _ppenum_advise: *mut ::std::option::Option<IEnumSTATDATA>,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         E_NOTIMPL
     }
 
@@ -725,7 +725,7 @@ impl DataObject {
         this: ::windows::RawPtr,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).query_interface(iid, interface)
     }
 
@@ -741,7 +741,7 @@ impl DataObject {
         this: ::windows::RawPtr,
         pformatetc_in: *mut FORMATETC,
         pmedium: *mut STGMEDIUM_abi,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         // make sure rust won't try to release garbage
         (&mut *pmedium).pUnkForRelease = std::ptr::null_mut();
         (*(this as *mut Self)).get_data(pformatetc_in, std::mem::transmute(pmedium))
@@ -751,14 +751,14 @@ impl DataObject {
         this: ::windows::RawPtr,
         pformatetc: *mut FORMATETC,
         pmedium: *mut STGMEDIUM_abi,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).get_data_here(pformatetc, std::mem::transmute(pmedium))
     }
 
     unsafe extern "system" fn _query_get_data(
         this: ::windows::RawPtr,
         pformatetc: *mut FORMATETC,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).query_get_data(pformatetc)
     }
 
@@ -766,7 +766,7 @@ impl DataObject {
         this: ::windows::RawPtr,
         pformatetc_in: *mut FORMATETC,
         pformatetc_out: *mut FORMATETC,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).get_canonical_format_etc(pformatetc_in, pformatetc_out)
     }
 
@@ -775,7 +775,7 @@ impl DataObject {
         pformatetc: *mut FORMATETC,
         pmedium: *mut STGMEDIUM_abi,
         f_release: BOOL,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).set_data(pformatetc, std::mem::transmute(pmedium), f_release)
     }
 
@@ -783,7 +783,7 @@ impl DataObject {
         this: ::windows::RawPtr,
         dw_direction: u32,
         ppenum_format_etc: *mut windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).enum_format_etc(dw_direction, std::mem::transmute(ppenum_format_etc))
     }
 
@@ -793,7 +793,7 @@ impl DataObject {
         advf: u32,
         p_adv_sink: ::windows::RawPtr,
         pdw_connection: *mut u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).d_advise(
             pformatetc,
             advf,
@@ -805,14 +805,14 @@ impl DataObject {
     pub unsafe extern "system" fn _d_unadvise(
         this: ::windows::RawPtr,
         dw_connection: u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).d_unadvise(dw_connection)
     }
 
     pub unsafe extern "system" fn _enum_d_advise(
         this: ::windows::RawPtr,
         ppenum_advise: *mut windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).enum_d_advise(std::mem::transmute(ppenum_advise))
     }
 }
@@ -850,7 +850,7 @@ impl DropSource {
         &mut self,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ErrorCode {
+    ) -> HRESULT {
         if iid == &IDropSource::IID || iid == &IUnknown::IID {
             unsafe {
                 *interface = self as *mut Self as *mut _;
@@ -884,7 +884,7 @@ impl DropSource {
         &self,
         f_escape_pressed: BOOL,
         grf_key_state: u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         if f_escape_pressed == TRUE {
             DRAGDROP_S_CANCEL
         } else if grf_key_state & MK_LBUTTON as u32 == 0 {
@@ -894,7 +894,7 @@ impl DropSource {
         }
     }
 
-    fn give_feedback(&self, _dw_effect: u32) -> ::windows::ErrorCode {
+    fn give_feedback(&self, _dw_effect: u32) -> ::windows::HRESULT {
         DRAGDROP_S_USEDEFAULTCURSORS
     }
 
@@ -902,7 +902,7 @@ impl DropSource {
         this: ::windows::RawPtr,
         iid: &::windows::Guid,
         interface: *mut ::windows::RawPtr,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).query_interface(iid, interface)
     }
 
@@ -918,14 +918,14 @@ impl DropSource {
         this: ::windows::RawPtr,
         f_escape_pressed: BOOL,
         grf_key_state: u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).query_continue_drag(f_escape_pressed, grf_key_state)
     }
 
     unsafe extern "system" fn _give_feedback(
         this: ::windows::RawPtr,
         dw_effect: u32,
-    ) -> ::windows::ErrorCode {
+    ) -> ::windows::HRESULT {
         (*(this as *mut Self)).give_feedback(dw_effect)
     }
 }

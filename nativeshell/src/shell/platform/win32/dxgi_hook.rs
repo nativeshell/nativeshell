@@ -7,9 +7,9 @@ use std::{
 };
 
 use detour::RawDetour;
-use windows::{ErrorCode, Guid, IUnknown, Interface, RawPtr};
+use windows::{Guid, IUnknown, Interface, RawPtr, HRESULT};
 
-use super::util::ErrorCodeExt;
+use super::util::HRESULTExt;
 
 use super::{all_bindings::*, bindings::Windows::Win32::Dxgi::*};
 
@@ -18,9 +18,9 @@ type CreateTargetForHwndT = unsafe extern "system" fn(
     hwnd: HWND,
     topmost: BOOL,
     target: *mut ::std::option::Option<IUnknown>,
-) -> ErrorCode;
+) -> HRESULT;
 
-type DCompositionCreateDeviceT = fn(usize, *const Guid, *mut *mut ::std::ffi::c_void) -> ErrorCode;
+type DCompositionCreateDeviceT = fn(usize, *const Guid, *mut *mut ::std::ffi::c_void) -> HRESULT;
 
 type D3D11CreateDeviceT = fn(
     usize,
@@ -33,7 +33,7 @@ type D3D11CreateDeviceT = fn(
     *mut ::std::option::Option<IUnknown>,
     *mut c_void,
     *mut ::std::option::Option<IUnknown>,
-) -> ErrorCode;
+) -> HRESULT;
 
 type CreateSwapChainForHwndT = unsafe extern "system" fn(
     RawPtr,
@@ -43,7 +43,7 @@ type CreateSwapChainForHwndT = unsafe extern "system" fn(
     *const DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
     RawPtr,
     *mut ::std::option::Option<IDXGISwapChain1>,
-) -> ErrorCode;
+) -> HRESULT;
 
 type CreateSwapChainForCompositionT = fn(
     RawPtr,
@@ -51,18 +51,18 @@ type CreateSwapChainForCompositionT = fn(
     *const DXGI_SWAP_CHAIN_DESC1,
     RawPtr,
     *mut Option<IDXGISwapChain1>,
-) -> ErrorCode;
+) -> HRESULT;
 
-type Present1T = fn(RawPtr, u32, u32, *const DXGI_PRESENT_PARAMETERS) -> ErrorCode;
+type Present1T = fn(RawPtr, u32, u32, *const DXGI_PRESENT_PARAMETERS) -> HRESULT;
 
-type ResizeBuffersT = fn(RawPtr, u32, u32, u32, DXGI_FORMAT, u32) -> ErrorCode;
+type ResizeBuffersT = fn(RawPtr, u32, u32, u32, DXGI_FORMAT, u32) -> HRESULT;
 
 unsafe extern "system" fn create_target_for_hwnd(
     this: RawPtr,
     mut hwnd: HWND,
     topmost: BOOL,
     target: *mut ::std::option::Option<IUnknown>,
-) -> ErrorCode {
+) -> HRESULT {
     // Use parent HWND as direct composition target; This significantly reduces transparency
     // artifacts along right and bottom edge during resizing
     let mut parent = take_override_parent_hwnd();
@@ -80,7 +80,7 @@ unsafe extern "system" fn dcomposition_create_device(
     dxgi_device: usize,
     iid: *const ::windows::Guid,
     dcomposition_device: *mut *mut ::std::ffi::c_void,
-) -> ErrorCode {
+) -> HRESULT {
     let mut global = GLOBAL.lock().unwrap();
     let res =
         global.dcomposition_create_device.as_ref().unwrap()(dxgi_device, iid, dcomposition_device);
@@ -127,7 +127,7 @@ unsafe fn resize_buffers(
     height: u32,
     new_format: DXGI_FORMAT,
     swap_chain_flags: u32,
-) -> ErrorCode {
+) -> HRESULT {
     let global = GLOBAL.lock().unwrap();
     // No need to do anything now, leaving this here in case things change in future
     global.resize_buffers.unwrap()(
@@ -145,7 +145,7 @@ unsafe fn present1(
     sync_interval: u32,
     present_flags: u32,
     p_present_parameters: *const DXGI_PRESENT_PARAMETERS,
-) -> ErrorCode {
+) -> HRESULT {
     let parameters = &*p_present_parameters;
     if parameters.DirtyRectsCount == 1 {
         let rects =
@@ -157,13 +157,13 @@ unsafe fn present1(
             IGNORE_NEXT_PRESENT.with(|v| {
                 v.replace(true);
             });
-            return ErrorCode(0);
+            return HRESULT(0);
         }
     }
 
     let ignore = IGNORE_NEXT_PRESENT.with(|v| v.replace(false));
     if ignore {
-        return ErrorCode(0);
+        return HRESULT(0);
     }
 
     // No dirty rect means first angle flip after resizing surface; However during normal surface
@@ -172,7 +172,7 @@ unsafe fn present1(
     // previous frame SwapBuffer call, where it noticed change in window dimentions; As such we
     // need to ignore it, otherwise it causes glitches
     if parameters.DirtyRectsCount == 0 {
-        return ErrorCode(0);
+        return HRESULT(0);
     }
 
     let global = GLOBAL.lock().unwrap();
@@ -211,7 +211,7 @@ unsafe extern "system" fn create_swap_chain_for_hwnd(
     p_fullscreen_desc: *const DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
     p_restrict_to_output: RawPtr,
     pp_swap_chain: *mut Option<IDXGISwapChain1>,
-) -> ErrorCode {
+) -> HRESULT {
     let res = {
         let global = GLOBAL.lock().unwrap();
         global.create_swap_chain_for_hwnd.unwrap()(
@@ -236,7 +236,7 @@ unsafe extern "system" fn create_swap_chain_for_composition(
     p_desc: *const DXGI_SWAP_CHAIN_DESC1,
     p_restrict_to_output: RawPtr,
     pp_swap_chain: *mut Option<IDXGISwapChain1>,
-) -> ErrorCode {
+) -> HRESULT {
     let res = {
         let global = GLOBAL.lock().unwrap();
         global.create_swap_chain_for_composition.unwrap()(
@@ -264,7 +264,7 @@ unsafe extern "system" fn d3d11_create_device(
     pp_device: *mut ::std::option::Option<IUnknown>,
     p_feature_level: *mut c_void,
     pp_immediate_context: *mut ::std::option::Option<IUnknown>,
-) -> ::windows::ErrorCode {
+) -> ::windows::HRESULT {
     let mut global = GLOBAL.lock().unwrap();
     let res = global.d3d11_create_device.as_ref().unwrap()(
         p_adapter,
@@ -372,7 +372,8 @@ pub(super) fn init_dxgi_hook() {
         }
     }
 
-    if false { // disable for now
+    if false {
+        // disable for now
         let address = get_module_symbol_address("d3d11.dll", "D3D11CreateDevice");
         if let Some(address) = address {
             unsafe {

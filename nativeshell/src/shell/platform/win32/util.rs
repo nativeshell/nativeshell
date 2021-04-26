@@ -1,4 +1,4 @@
-use std::{panic::Location};
+use std::panic::Location;
 
 use log::{Level, Record};
 use widestring::WideCString;
@@ -37,12 +37,12 @@ pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T>
     }
 }
 
-pub trait ErrorCodeExt {
+pub trait HRESULTExt {
     fn ok_log(&self) -> bool;
     fn as_platform_result(&self) -> PlatformResult<()>;
 }
 
-impl ErrorCodeExt for ErrorCode {
+impl HRESULTExt for HRESULT {
     #[track_caller]
     fn ok_log(&self) -> bool {
         if self.is_err() {

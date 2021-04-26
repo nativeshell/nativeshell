@@ -7,7 +7,7 @@ use super::{
     dpi::become_dpi_aware,
     dxgi_hook::init_dxgi_hook,
     error::PlatformResult,
-    util::{direct_composition_supported, ErrorCodeExt},
+    util::{direct_composition_supported, HRESULTExt},
 };
 
 pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
@@ -21,8 +21,7 @@ pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
             }
         }
 
-        CoInitializeEx(null_mut(), COINIT::COINIT_APARTMENTTHREADED.0 as u32)
-            .as_platform_result()?;
+        CoInitializeEx(null_mut(), COINIT::COINIT_APARTMENTTHREADED).as_platform_result()?;
 
         OleInitialize(null_mut()).as_platform_result()?;
 
