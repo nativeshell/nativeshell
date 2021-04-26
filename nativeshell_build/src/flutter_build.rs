@@ -290,6 +290,9 @@ impl Flutter {
         for path in roots {
             self.emit_checks_for_dir(path)?;
         }
+
+        cargo_emit::rerun_if_env_changed!("FLUTTER_PROFILE");
+
         Ok(())
     }
 
