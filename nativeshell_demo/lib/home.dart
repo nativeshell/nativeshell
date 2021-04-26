@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nativeshell/nativeshell.dart';
@@ -25,7 +27,9 @@ class HomeWindow extends WindowBuilder {
       LocalWindow window, Size intrinsicContentSize) async {
     await super.initializeWindow(window, intrinsicContentSize);
     await window.setStyle(WindowStyle(canResize: false));
-    await window.setWindowMenu(Menu(buildMenu));
+    if (Platform.isMacOS) {
+      await window.setWindowMenu(Menu(buildMenu));
+    }
   }
 
   static HomeWindow? fromInitData(dynamic initData) {
