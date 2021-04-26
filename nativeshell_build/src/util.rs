@@ -27,6 +27,8 @@ pub(super) fn get_absolute_path<P: AsRef<Path>>(path: P) -> PathBuf {
 pub(super) fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> BuildResult<()> {
     #[cfg(target_family = "windows")]
     {
+        let src_meta = fs::metadata(src.as_ref())
+            .wrap_error(crate::FileOperation::MetaData, src.as_ref().into())?;
         let res = if src_meta.is_dir() {
             std::os::windows::fs::symlink_dir(&src, &dst)
         } else {
