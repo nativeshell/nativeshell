@@ -90,7 +90,7 @@ class DragDropExample extends StatelessWidget {
   }
 }
 
-final customDragData = DragDataKey('custom-drag-data');
+final customDragData = DragDataKey<Map>('custom-drag-data');
 
 class DragSource extends StatelessWidget {
   final String title;
