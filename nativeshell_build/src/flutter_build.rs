@@ -45,6 +45,7 @@ pub struct Flutter {
     pub(super) build_mode: String,
     pub(super) target_os: TargetOS,
     pub(super) target_platform: String,
+    pub(super) darwin_arch: Option<String>,
 }
 
 impl Flutter {
@@ -61,6 +62,7 @@ impl Flutter {
             build_mode: Flutter::build_mode(),
             target_os: Flutter::target_os(),
             target_platform: Flutter::target_platform(),
+            darwin_arch: Flutter::darwin_arch(),
         }
     }
 
@@ -126,8 +128,20 @@ impl Flutter {
             _ => panic!("Unsupported target architecture {:?}", env_arch),
         };
         match Flutter::target_os() {
-            TargetOS::Mac => format!("darwin-{}", arch),
+            TargetOS::Mac => "darwin".into(),
             TargetOS::Windows => format!("windows-{}", arch),
+        }
+    }
+
+    fn darwin_arch() -> Option<String> {
+        let env_arch = std::env::var("CARGO_CFG_TARGET_ARCH");
+        match Flutter::target_os() {
+            TargetOS::Mac => match env_arch.as_deref() {
+                Ok("x86_64") => Some("x86_64".into()),
+                Ok("aarch64") => Some("arm64".into()),
+                _ => panic!("Unsupported target architecture {:?}", env_arch),
+            },
+            _ => None,
         }
     }
 
@@ -232,6 +246,10 @@ impl Flutter {
             .arg("--output=.")
             .arg(format!("--define=BuildMode={}", self.build_mode))
             .arg(format!("--define=TargetPlatform={}", self.target_platform))
+            .arg(format!(
+                "--define=DarwinArchs={}",
+                self.darwin_arch.as_ref().unwrap_or(&String::default())
+            ))
             .arg(format!(
                 "--define=TargetFile={}",
                 rebased.join(&self.options.target_file).to_str().unwrap()
