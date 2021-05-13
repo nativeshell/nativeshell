@@ -421,7 +421,7 @@ impl PlatformMenu {
         res
     }
 
-    fn accelrator_label_to_modifier_flags(
+    fn accelerator_label_to_modifier_flags(
         &self,
         accelerator: &Accelerator,
     ) -> NSEventModifierFlags {
@@ -468,7 +468,7 @@ impl PlatformMenu {
                 if str.len() > 0 {
                     let () = msg_send![item, setKeyEquivalent: to_nsstring(&str)];
                     let () = msg_send![item, setKeyEquivalentModifierMask:
-                        self.accelrator_label_to_modifier_flags(accelerator)];
+                        self.accelerator_label_to_modifier_flags(accelerator)];
                 }
             }
         }
