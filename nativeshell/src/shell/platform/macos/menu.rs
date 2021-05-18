@@ -201,7 +201,7 @@ impl PlatformMenu {
             Self::can_update(a, b)
         });
 
-        // First remove items for menu; This is necessary in case we're reordering a
+        // First remove items from menu; This is necessary in case we're reordering a
         // item with submenu - we have to remove it first otherwise we get exception
         // if adding same submenu while it already exists
         let diff: Vec<_> = diff
