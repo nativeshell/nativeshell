@@ -155,6 +155,16 @@ LogicalKeyboardKey _keyFromCharacters(String characters, RawKeyEvent event) {
       scanCode: data.scanCode,
     );
     return newEvent.logicalKey;
+  } else if (data is RawKeyEventDataLinux) {
+    final newEvent = RawKeyEventDataLinux(
+      keyHelper: data.keyHelper,
+      unicodeScalarValues: characters.codeUnitAt(0),
+      keyCode: characters.codeUnitAt(0),
+      scanCode: data.scanCode,
+      modifiers: data.modifiers,
+      isDown: data.isDown,
+    );
+    return newEvent.logicalKey;
   } else {
     return event.logicalKey;
   }

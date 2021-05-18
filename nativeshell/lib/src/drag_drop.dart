@@ -88,7 +88,13 @@ class DragData {
       : _properties =
             Map.fromEntries(properties.map((e) => MapEntry(e.key, e.value)));
 
-  T? get<T>(DragDataKey<T> key) {
+  bool contains(DragDataKey key) {
+    return _properties.containsKey(key);
+  }
+
+  Future<T?> get<T>(DragDataKey<T> key) async {
+    // access to values is async for future proofing;
+    /// Some platforms allow accessing data asynchronously
     final res = _properties[key._name];
     if (res != null) {
       return key._decode(res);

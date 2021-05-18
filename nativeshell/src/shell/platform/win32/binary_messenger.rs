@@ -49,7 +49,7 @@ impl PlatformBinaryMessenger {
                 .callbacks
                 .borrow_mut()
                 .get(channel.as_ref())
-                .map(|d| d.clone())
+                .cloned()
         };
 
         if let Some(callback) = callback {

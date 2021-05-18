@@ -18,9 +18,7 @@ Video:<br/>
 
 ## Status
 
-- This is project in a very experimental stage, MacOS and Windows backends have feature parity,
-  work on Linux backend has not started yet. `nativeshell/src/shell/platform/null` would be the place to start when
-  porting to new platform.
+- This is project in a very experimental stage
 
 ## Getting started
 

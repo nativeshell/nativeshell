@@ -198,7 +198,7 @@ impl WindowManager {
                     .borrow()
                     .engine_to_window
                     .get(&engine)
-                    .map(|w| w.clone());
+                    .cloned();
                 match window {
                     Some(window) => {
                         reply.send(Ok(context.window_manager.borrow().on_init(window)));
@@ -229,7 +229,7 @@ impl WindowManager {
                         .borrow()
                         .windows
                         .get(&call.target_window_handle)
-                        .map(|c| c.clone())
+                        .cloned()
                 };
                 if let Some(window) = window {
                     window.on_message(&call.method, call.arguments, reply);

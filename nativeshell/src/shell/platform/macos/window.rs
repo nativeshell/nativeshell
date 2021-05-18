@@ -333,7 +333,7 @@ impl PlatformWindow {
                     event_type == NSLeftMouseDown
                 })
                 .max_by_key(|x| x.eventNumber())
-                .map(|e| e.clone());
+                .cloned();
             if let Some(last_event) = last_event {
                 Ok(msg_send![*self.platform_window, performWindowDragWithEvent:*last_event])
             } else {
@@ -521,7 +521,7 @@ impl PlatformWindow {
                     || event_type == NSRightMouseUp
             })
             .max_by_key(|x| x.eventNumber())
-            .map(|e| e.clone());
+            .cloned();
 
         if let Some(event) = last_event {
             let opposite = match event.eventType() {
@@ -556,7 +556,7 @@ impl PlatformWindow {
                     event_type as i32 >= 1 && event_type as i32 <= 9
                 })
                 .max_by_key(|x| x.eventNumber())
-                .map(|e| e.clone());
+                .cloned();
 
             if let Some(last_event) = last_event {
                 let location = NSEvent::mouseLocation(nil);
@@ -598,7 +598,7 @@ impl PlatformWindow {
             .last_event
             .borrow()
             .get(&(NSLeftMouseDown as u64))
-            .map(|c| c.clone());
+            .cloned();
         if let Some(last_down_event) = last_down_event {
             autoreleasepool(|| unsafe {
                 self.drag_context.borrow().start_drag(

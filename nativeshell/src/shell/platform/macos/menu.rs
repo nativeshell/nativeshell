@@ -78,7 +78,7 @@ impl PlatformMenuManager {
                     .window_menus
                     .borrow()
                     .get(&StrongPtrWrapper(key))
-                    .map(|e| e.clone())
+                    .cloned()
                     .or(menu);
             }
             match menu {

@@ -4,14 +4,14 @@ use crate::codec::Value;
 
 use super::{MenuHandle, Point, Rect, Size};
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum GeometryPreference {
     PreferFrame,
     PreferContent,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowGeometry {
     pub frame_origin: Option<Point>,
@@ -25,7 +25,7 @@ pub struct WindowGeometry {
     pub max_content_size: Option<Size>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowGeometryRequest {
     pub geometry: WindowGeometry,
@@ -152,7 +152,7 @@ pub struct DragData {
     pub properties: HashMap<String, Value>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Copy, Clone, PartialEq)]
 pub enum DragEffect {
     None,
     Copy,

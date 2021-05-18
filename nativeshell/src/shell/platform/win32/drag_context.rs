@@ -154,7 +154,7 @@ impl DragContext {
             if res == DRAGDROP_S_DROP {
                 effect = convert_drop_effect_mask(DROPEFFECT(effects_out))
                     .first()
-                    .map(|d| d.clone())
+                    .cloned()
                     .unwrap_or(DragEffect::None);
             }
             delegate.drag_ended(effect);

@@ -264,6 +264,12 @@ class _RenderWindowLayout extends RenderProxyBox {
             h = 100;
           }
 
+          // Error messages can get huge
+          if (w > 10000) {
+            w = 800;
+            h = 400;
+          }
+
           await builtWindow.initializeWindow(
               win, _snapToPixelBoundary(Size(w, h)));
           await win.readyToShow();

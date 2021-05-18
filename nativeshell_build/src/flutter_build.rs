@@ -36,6 +36,7 @@ impl Default for FlutterOptions {
 pub enum TargetOS {
     Mac,
     Windows,
+    Linux,
 }
 
 pub struct Flutter {
@@ -130,6 +131,7 @@ impl Flutter {
         match Flutter::target_os() {
             TargetOS::Mac => "darwin".into(),
             TargetOS::Windows => format!("windows-{}", arch),
+            TargetOS::Linux => format!("linux-{}", arch),
         }
     }
 
@@ -150,6 +152,7 @@ impl Flutter {
         match target_os.as_deref() {
             Ok("macos") => TargetOS::Mac,
             Ok("windows") => TargetOS::Windows,
+            Ok("linux") => TargetOS::Linux,
             _ => panic!("Unsupported target operating system {:?}", target_os),
         }
     }
@@ -221,6 +224,15 @@ impl Flutter {
             // produces other artifacts (i.e. flutter dll), but we ignore those and handle
             // artifacts on our own
             (TargetOS::Windows, _) => vec![format!("{}_bundle_windows_assets", self.build_mode)],
+
+            // quicker, no need to copy flutter artifacts, we'll do it ourselves
+            (TargetOS::Linux, "debug") => vec!["kernel_snapshot".into(), "copy_assets".into()],
+
+            // Similar to Windows above
+            (TargetOS::Linux, _) => vec![format!(
+                "{}_bundle_{}_assets",
+                self.build_mode, self.target_platform
+            )],
         };
 
         let mut command: Command = if cfg!(target_os = "windows") {
@@ -291,6 +303,11 @@ impl Flutter {
                 emitter.emit_linker_flags()?;
             }
             TargetOS::Windows => {
+                emitter.emit_flutter_data()?;
+                emitter.emit_external_libraries()?;
+                emitter.emit_linker_flags()?;
+            }
+            TargetOS::Linux => {
                 emitter.emit_flutter_data()?;
                 emitter.emit_external_libraries()?;
                 emitter.emit_linker_flags()?;

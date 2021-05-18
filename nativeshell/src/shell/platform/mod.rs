@@ -11,4 +11,8 @@ mod platform_impl;
 #[path = "win32/mod.rs"]
 mod platform_impl;
 
+#[cfg(target_os = "linux")]
+#[path = "linux/mod.rs"]
+mod platform_impl;
+
 mod key_interceptor;

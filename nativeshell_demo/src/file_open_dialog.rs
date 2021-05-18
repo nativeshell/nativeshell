@@ -7,10 +7,19 @@ use std::{
     time::Duration,
 };
 
-use nativeshell::{
-    codec::{value::from_value, MethodCall, MethodCallReply, Value},
-    shell::{Context, WindowHandle},
-};
+#[cfg(target_os = "linux")]
+mod linux_imports {
+    pub use gtk::{prelude::DialogExtManual, DialogExt, FileChooserDialogBuilder};
+    pub use gtk::{FileChooserExt, GtkWindowExt};
+
+    pub use nativeshell::{
+        codec::{value::from_value, MethodCall, MethodCallReply, Value},
+        shell::{Context, WindowHandle},
+    };
+}
+
+#[cfg(target_os = "linux")]
+use linux_imports::*;
 
 #[cfg(target_os = "macos")]
 mod mac_imports {
@@ -199,6 +208,48 @@ impl FileOpenDialogService {
                 .detach();
         } else {
             reply.send_error("no_window", Some("Platform window not found"), Value::Null);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn open_file_dialog(&self, request: FileOpenRequest, reply: MethodCallReply<Value>) {
+        let win = self
+            .context
+            .window_manager
+            .borrow()
+            .get_platform_window(request.parent_window);
+
+        if let Some(win) = win {
+            let dialog = FileChooserDialogBuilder::new()
+                .transient_for(&win)
+                .modal(true)
+                .action(gtk::FileChooserAction::Open)
+                .build();
+
+            dialog.add_buttons(&[
+                ("Open", gtk::ResponseType::Ok),
+                ("Cancel", gtk::ResponseType::Cancel),
+            ]);
+
+            // Platform messages will be processed while dialog is running so
+            // make sure it is cheduled on next run loop turn
+            self.context
+                .run_loop
+                .borrow()
+                .schedule_next(move || {
+                    let res = dialog.run();
+                    let res = match res {
+                        gtk::ResponseType::Ok => {
+                            let path = dialog.get_filename();
+                            path.map(|path| Value::String(path.to_string_lossy().into()))
+                                .unwrap_or_default()
+                        }
+                        _ => Value::Null,
+                    };
+                    dialog.close();
+                    reply.send(Ok(res));
+                })
+                .detach();
         }
     }
 }

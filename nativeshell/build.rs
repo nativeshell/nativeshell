@@ -95,4 +95,11 @@ fn main() -> () {
         // "flutter_windows.dll",
         // }
     }
+
+    #[cfg(target_os = "linux")]
+    {
+        cargo_emit::rustc_link_lib! {
+            "flutter_linux_gtk",
+        };
+    }
 }

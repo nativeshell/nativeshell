@@ -19,10 +19,13 @@ class DragDropWindow extends WindowBuilder {
     if (parent != null) {
       // open this file right next to parent
       final parentGeometry = await parent.getGeometry();
-      await window.setGeometry(Geometry(
-        frameOrigin: parentGeometry.frameOrigin!
-            .translate(parentGeometry.frameSize!.width + 20, 0),
-      ));
+      if (parentGeometry.frameSize != null &&
+          parentGeometry.frameOrigin != null) {
+        await window.setGeometry(Geometry(
+          frameOrigin: parentGeometry.frameOrigin!
+              .translate(parentGeometry.frameSize!.width + 20, 0),
+        ));
+      }
     }
   }
 
@@ -150,16 +153,24 @@ class _DropTargetState extends State<DropTarget> {
   @override
   Widget build(BuildContext context) {
     return DropRegion(
-      onDropOver: (event) {
-        _dragData = event.info.data;
+      onDropOver: (event) async {
+        final data = event.info.data;
+        _files = await data.get(DragData.files);
+        _uris = await data.get(DragData.uris);
+        _customData = await data.get(customDragData);
         if (event.info.allowedEffects.contains(DragEffect.Link)) {
           return DragEffect.Link;
+        } else if (event.info.allowedEffects.contains(DragEffect.Copy)) {
+          return DragEffect.Copy;
+        } else {
+          return event.info.allowedEffects.first;
         }
-        return DragEffect.Copy;
       },
       onDropExit: () {
         setState(() {
-          _dragData = null;
+          _files = null;
+          _uris = null;
+          _customData = null;
           dropping = false;
         });
       },
@@ -168,7 +179,9 @@ class _DropTargetState extends State<DropTarget> {
           dropping = true;
         });
       },
-      onPerformDrop: (e) {},
+      onPerformDrop: (e) {
+        print('Performed drop!');
+      },
       child: AnimatedContainer(
         decoration: BoxDecoration(
           color: dropping
@@ -187,7 +200,7 @@ class _DropTargetState extends State<DropTarget> {
             child: Wrap(
               children: [
                 Text('Drop Area'),
-                if (_dragData != null) ...[
+                if (_uris != null || _files != null || _customData != null) ...[
                   Container(
                     height: 20,
                   ),
@@ -203,16 +216,14 @@ class _DropTargetState extends State<DropTarget> {
 
   String _describeDragData() {
     final res = StringBuffer();
-    final data = _dragData!;
-    final files = data.get(DragData.files);
-    for (final f in files ?? []) {
+
+    for (final f in _files ?? []) {
       res.writeln('$f');
     }
-    final uris = data.get(DragData.uris);
-    for (final uri in uris ?? []) {
+    for (final uri in _uris ?? []) {
       res.writeln('$uri');
     }
-    final custom = data.get(customDragData);
+    final custom = _customData;
     if (custom != null) {
       if (res.isNotEmpty) {
         res.writeln();
@@ -223,7 +234,9 @@ class _DropTargetState extends State<DropTarget> {
     return res.toString();
   }
 
-  DragData? _dragData;
+  List<Uri>? _uris;
+  List<String>? _files;
+  Map? _customData;
 
   bool dropping = false;
 }

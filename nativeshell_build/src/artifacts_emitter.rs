@@ -70,6 +70,21 @@ impl<'a> ArtifactEmitter<'a> {
             }
         }
 
+        // linux AOT
+        if cfg!(target_os = "linux") {
+            // on linux the lib path is hardcoded :-/
+            let app_so = self.flutter_out_dir.join("lib").join("libapp.so");
+            if app_so.exists() {
+                let lib_dir = self.artifacts_out_dir.join("lib");
+                if lib_dir.exists() {
+                    std::fs::remove_dir_all(&lib_dir)
+                        .expect(&format!("Failed to remove {:?}", lib_dir));
+                }
+                mkdir(&lib_dir, None::<PathBuf>)?;
+                Self::copy_to(&app_so, &lib_dir, false)?;
+            }
+        }
+
         Ok(())
     }
 
@@ -93,6 +108,8 @@ impl<'a> ArtifactEmitter<'a> {
                     "flutter_windows.dll.lib",
                     "flutter_windows.dll.pdb",
                 ]
+            } else if cfg!(target_os = "linux") {
+                vec!["libflutter_linux_gtk.so"]
             } else {
                 panic!("Invalid target OS")
             }
@@ -132,6 +149,13 @@ impl<'a> ArtifactEmitter<'a> {
         } else if cfg!(target_os = "windows") {
             cargo_emit::rustc_link_lib! {
                 "flutter_windows.dll",
+            };
+            cargo_emit::rustc_link_search! {
+                self.artifacts_out_dir.to_string_lossy(),
+            };
+        } else if cfg!(target_os = "linux") {
+            cargo_emit::rustc_link_lib! {
+                "flutter_linux_gtk",
             };
             cargo_emit::rustc_link_search! {
                 self.artifacts_out_dir.to_string_lossy(),

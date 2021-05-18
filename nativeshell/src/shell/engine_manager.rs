@@ -62,7 +62,7 @@ impl EngineManager {
     }
 
     pub fn get_all_engines(&self) -> Vec<EngineHandle> {
-        self.engines.keys().map(|e| e.clone()).collect()
+        self.engines.keys().cloned().collect()
     }
 
     // Posts message on all engines

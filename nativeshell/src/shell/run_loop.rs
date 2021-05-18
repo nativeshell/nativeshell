@@ -51,6 +51,15 @@ impl RunLoop {
         }
     }
 
+    // Convenience method to schedule callback on next run loop turn
+    #[must_use]
+    pub fn schedule_next<F>(&self, callback: F) -> ScheduledCallback
+    where
+        F: FnOnce() -> () + 'static,
+    {
+        self.schedule(callback, Duration::from_secs(0))
+    }
+
     pub fn run(&self) {
         self.platform_run_loop.run()
     }
