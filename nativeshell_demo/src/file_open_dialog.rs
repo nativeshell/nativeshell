@@ -7,15 +7,15 @@ use std::{
     time::Duration,
 };
 
+pub use nativeshell::{
+    codec::{value::from_value, MethodCall, MethodCallReply, Value},
+    shell::{Context, WindowHandle},
+};
+
 #[cfg(target_os = "linux")]
 mod linux_imports {
     pub use gtk::{prelude::DialogExtManual, DialogExt, FileChooserDialogBuilder};
     pub use gtk::{FileChooserExt, GtkWindowExt};
-
-    pub use nativeshell::{
-        codec::{value::from_value, MethodCall, MethodCallReply, Value},
-        shell::{Context, WindowHandle},
-    };
 }
 
 #[cfg(target_os = "linux")]

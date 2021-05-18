@@ -9,6 +9,8 @@ use std::{
 use detour::RawDetour;
 use windows::{Guid, IUnknown, Interface, RawPtr, HRESULT};
 
+use crate::util::OkLog;
+
 use super::util::HRESULTExt;
 
 use super::{all_bindings::*, bindings::Windows::Win32::Dxgi::*};
@@ -284,15 +286,10 @@ unsafe extern "system" fn d3d11_create_device(
         let mut adapter: Option<IDXGIAdapter> = None;
         device.GetAdapter(&mut adapter as *mut _).ok_log();
         if let Some(adapter) = adapter {
-            let mut factory: Option<IDXGIFactory> = None;
-            adapter
-                .GetParent(
-                    &IDXGIFactory::IID as *const _,
-                    &mut factory as *mut _ as *mut *mut ::std::ffi::c_void,
-                )
-                .ok_log();
-
-            let factory = factory.and_then(|f| f.cast::<IDXGIFactory2>().ok());
+            let factory = adapter
+                .GetParent::<IDXGIFactory>()
+                .ok_log()
+                .and_then(|f| f.cast::<IDXGIFactory2>().ok());
 
             if let Some(factory) = factory {
                 let vtable = ::windows::Interface::vtable(&factory);

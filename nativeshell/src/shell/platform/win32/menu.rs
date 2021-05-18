@@ -43,8 +43,8 @@ impl PlatformMenu {
 
             let mut info = MENUINFO {
                 cbSize: std::mem::size_of::<MENUINFO>() as u32,
-                fMask: (MENUINFO_fMaskFlags::MIM_MENUDATA | MENUINFO_fMaskFlags::MIM_STYLE),
-                dwStyle: MENUINFO_dwStyleFlags(0),
+                fMask: (MENUINFO_MASK::MIM_MENUDATA | MENUINFO_MASK::MIM_STYLE),
+                dwStyle: MENUINFO_STYLE(0),
                 cyMax: 0,
                 hbrBack: HBRUSH(0),
                 dwContextHelpID: 0,

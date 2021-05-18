@@ -95,7 +95,7 @@ fn HRESULT_FROM_WIN32(x: u32) -> u32 {
     if x as i32 <= 0 {
         x as u32
     } else {
-        ((x & 0x0000FFFF) | ((FACILITY_WIN32 as u32) << 16) | 0x80000000) as u32
+        ((x & 0x0000FFFF) | (FACILITY_CODE::FACILITY_WIN32.0 << 16) | 0x80000000) as u32
     }
 }
 
@@ -106,7 +106,7 @@ impl BoolResultExt for BOOL {
             Ok(())
         } else {
             let err = unsafe { GetLastError() };
-            let err = HRESULT_FROM_WIN32(err);
+            let err = HRESULT_FROM_WIN32(err.0);
             Err(PlatformError::HResult(err))
         }
     }

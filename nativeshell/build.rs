@@ -11,7 +11,7 @@ fn main() -> () {
                 // Constants
                 S_OK, S_FALSE, E_NOINTERFACE, E_NOTIMPL,
                 TRUE, FALSE,
-                BOOL, FACILITY_WIN32,
+                BOOL,
                 DRAGDROP_S_CANCEL, DRAGDROP_S_DROP, DRAGDROP_S_USEDEFAULTCURSORS,
                 CLIPBOARD_FORMATS,
             },
@@ -25,7 +25,7 @@ fn main() -> () {
                 GetCapture, GetAsyncKeyState, GetKeyboardState, GetKeyState, TrackMouseEvent, ToUnicode,
             },
             Windows::Win32::Debug::{
-                IsDebuggerPresent, FlashWindowEx, GetLastError, FormatMessageW,
+                IsDebuggerPresent, FlashWindowEx, GetLastError, FormatMessageW, FACILITY_CODE,
             },
             Windows::Win32::Dwm:: {
                 DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DwmFlush,
@@ -90,7 +90,6 @@ fn main() -> () {
             },
             Windows::Win32::HiDpi::EnableNonClientDpiScaling
         );
-
         // cargo_emit::rustc_link_lib! {
         // "flutter_windows.dll",
         // }

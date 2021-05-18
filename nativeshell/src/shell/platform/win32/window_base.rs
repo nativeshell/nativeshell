@@ -161,12 +161,12 @@ impl WindowBaseState {
                 .into(),
         );
 
-        let mut flags = SetWindowPos_uFlags::SWP_NOZORDER | SetWindowPos_uFlags::SWP_NOACTIVATE;
+        let mut flags = SET_WINDOW_POS_FLAGS::SWP_NOZORDER | SET_WINDOW_POS_FLAGS::SWP_NOACTIVATE;
         if origin.is_none() {
-            flags |= SetWindowPos_uFlags::SWP_NOMOVE;
+            flags |= SET_WINDOW_POS_FLAGS::SWP_NOMOVE;
         }
         if size.is_none() {
-            flags |= SetWindowPos_uFlags::SWP_NOSIZE;
+            flags |= SET_WINDOW_POS_FLAGS::SWP_NOSIZE;
         }
         unsafe {
             SetWindowPos(
@@ -436,11 +436,11 @@ impl WindowBaseState {
                 0,
                 0,
                 0,
-                SetWindowPos_uFlags::SWP_FRAMECHANGED
-                    | SetWindowPos_uFlags::SWP_NOACTIVATE
-                    | SetWindowPos_uFlags::SWP_NOMOVE
-                    | SetWindowPos_uFlags::SWP_NOSIZE
-                    | SetWindowPos_uFlags::SWP_NOZORDER,
+                SET_WINDOW_POS_FLAGS::SWP_FRAMECHANGED
+                    | SET_WINDOW_POS_FLAGS::SWP_NOACTIVATE
+                    | SET_WINDOW_POS_FLAGS::SWP_NOMOVE
+                    | SET_WINDOW_POS_FLAGS::SWP_NOSIZE
+                    | SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
             )
             .as_platform_result()?;
 

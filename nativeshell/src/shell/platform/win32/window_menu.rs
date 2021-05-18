@@ -99,7 +99,7 @@ impl WindowMenu {
         // because popup menu eats the mouse up message
         let hook = unsafe {
             SetWindowsHookExW(
-                SetWindowsHookEx_idHook::WH_MSGFILTER,
+                WINDOWS_HOOK_ID::WH_MSGFILTER,
                 Some(Self::hook_proc),
                 HINSTANCE(0),
                 GetCurrentThreadId(),
@@ -397,7 +397,7 @@ impl WindowMenu {
                 move || {
                     let mut event = TRACKMOUSEEVENT {
                         cbSize: size_of::<TRACKMOUSEEVENT>() as u32,
-                        dwFlags: TRACKMOUSEEVENT_dwFlags::TME_LEAVE,
+                        dwFlags: TRACKMOUSEEVENT_FLAGS::TME_LEAVE,
                         hwndTrack: hwnd,
                         dwHoverTime: 0,
                     };
