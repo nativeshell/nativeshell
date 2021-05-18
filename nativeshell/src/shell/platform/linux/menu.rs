@@ -59,7 +59,7 @@ impl PlatformMenu {
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
         self.weak_self.set(weak.clone());
         unsafe {
-            self.menu.set_data("nanoshell_platform_menu", weak.clone());
+            self.menu.set_data("nativeshell_platform_menu", weak.clone());
         }
 
         // find top level menu and fire callback
@@ -95,7 +95,7 @@ impl PlatformMenu {
 
     fn platform_menu_from_gtk_menu(menu: &gtk::Menu) -> Option<Rc<PlatformMenu>> {
         let platform_menu: Option<&Weak<PlatformMenu>> =
-            unsafe { menu.get_data("nanoshell_platform_menu") };
+            unsafe { menu.get_data("nativeshell_platform_menu") };
         platform_menu.and_then(|m| m.upgrade())
     }
 

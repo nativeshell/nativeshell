@@ -124,7 +124,7 @@ impl PlatformWindow {
             self.window
                 .get_window()
                 .unwrap()
-                .set_data("nanoshell_platform_window", weak.clone());
+                .set_data("nativeshell_platform_window", weak.clone());
         }
 
         // by default make window resizable, non resizable window need size

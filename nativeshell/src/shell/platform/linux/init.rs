@@ -38,7 +38,7 @@ pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
 
         if let Some(win) = win {
             let platform_window: Option<&Weak<PlatformWindow>> =
-                unsafe { win.get_data("nanoshell_platform_window") };
+                unsafe { win.get_data("nativeshell_platform_window") };
             if let Some(platform_window) = platform_window.and_then(|w| w.upgrade()) {
                 platform_window.on_event(e);
             }
@@ -77,7 +77,7 @@ unsafe extern "C" fn move_resize(
     {
         let win = Window::from_glib_none(win);
         let platform_window: Option<&Weak<PlatformWindow>> =
-            win.get_data("nanoshell_platform_window");
+            win.get_data("nativeshell_platform_window");
         if let Some(platform_window) = platform_window.and_then(|w| w.upgrade()) {
             platform_window.on_move_resize(IRect::xywh(x, y, w, h));
         }

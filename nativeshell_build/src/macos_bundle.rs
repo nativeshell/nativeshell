@@ -28,7 +28,7 @@ pub struct AppBundleResult {}
 impl Default for AppBundleOptions {
     fn default() -> Self {
         Self {
-            bundle_identifier: "dev.nanoshell.example".into(),
+            bundle_identifier: "dev.nativeshell.example".into(),
             bundle_name: format!("{}.app", std::env::var("CARGO_PKG_NAME").unwrap()),
             bundle_display_name: std::env::var("CARGO_PKG_NAME").unwrap().into(),
             bundle_version: std::env::var("CARGO_PKG_VERSION").unwrap().into(),
