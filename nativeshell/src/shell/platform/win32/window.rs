@@ -312,7 +312,7 @@ impl PlatformWindow {
                     EnableWindow(parent.hwnd(), false);
                     SetWindowLongPtrW(
                         self.hwnd(),
-                        WINDOW_LONG_PTR_INDEX::GWL_HWNDPARENT.0,
+                        GWL_HWNDPARENT.0,
                         parent.hwnd().0,
                     );
                 }
@@ -376,7 +376,7 @@ impl PlatformWindow {
                 move || unsafe {
                     let cmd = TrackPopupMenuEx(
                         menu,
-                        TRACK_POPUP_MENU_FLAGS::TPM_RETURNCMD.0,
+                        TPM_RETURNCMD.0,
                         position.x,
                         position.y,
                         hwnd,

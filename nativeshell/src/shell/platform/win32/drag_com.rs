@@ -501,7 +501,7 @@ impl DataObject {
 
         self.with_data_or(
             |data| {
-                if format.tymed == TYMED::TYMED_HGLOBAL.0 as u32 {
+                if format.tymed == TYMED_HGLOBAL.0 as u32 {
                     let data = data.get(&(format.cfFormat as u32));
                     if let Some(data) = data {
                         let global = unsafe {
@@ -518,7 +518,7 @@ impl DataObject {
 
                         unsafe {
                             *pmedium = STGMEDIUM {
-                                tymed: TYMED::TYMED_HGLOBAL.0 as u32,
+                                tymed: TYMED_HGLOBAL.0 as u32,
                                 Anonymous: STGMEDIUM_0 { hGlobal: global },
                                 pUnkForRelease: None,
                             };
@@ -528,7 +528,7 @@ impl DataObject {
                     } else {
                         HRESULT(DATA_E_FORMATETC as u32)
                     }
-                } else if format.tymed == TYMED::TYMED_ISTREAM.0 as u32 {
+                } else if format.tymed == TYMED_ISTREAM.0 as u32 {
                     unsafe {
                         let data = data.get(&(format.cfFormat as u32));
 
@@ -537,10 +537,10 @@ impl DataObject {
                             stream
                                 .clone()
                                 .unwrap()
-                                .Seek(0, STREAM_SEEK::STREAM_SEEK_END, std::ptr::null_mut())
+                                .Seek(0, STREAM_SEEK_END, std::ptr::null_mut())
                                 .ok_log();
                             *pmedium = STGMEDIUM {
-                                tymed: TYMED::TYMED_ISTREAM.0 as u32,
+                                tymed: TYMED_ISTREAM.0 as u32,
                                 Anonymous: STGMEDIUM_0 {
                                     pstm: get_raw_ptr(&stream) as windows::RawPtr,
                                 },
@@ -575,8 +575,8 @@ impl DataObject {
         self.with_data_or(
             |data| {
                 let format = unsafe { &*pformatetc };
-                if (format.tymed == TYMED::TYMED_HGLOBAL.0 as u32
-                    || format.tymed == TYMED::TYMED_ISTREAM.0 as u32)
+                if (format.tymed == TYMED_HGLOBAL.0 as u32
+                    || format.tymed == TYMED_ISTREAM.0 as u32)
                     && data.contains_key(&(format.cfFormat as u32))
                 {
                     S_OK
@@ -612,7 +612,7 @@ impl DataObject {
 
         self.with_data_or(
             |mut data| {
-                if format.tymed == TYMED::TYMED_HGLOBAL.0 as u32 {
+                if format.tymed == TYMED_HGLOBAL.0 as u32 {
                     unsafe {
                         let medium = &*pmedium;
                         let size = GlobalSize(medium.Anonymous.hGlobal);
@@ -630,7 +630,7 @@ impl DataObject {
                     }
 
                     S_OK
-                } else if format.tymed == TYMED::TYMED_ISTREAM.0 as u32 {
+                } else if format.tymed == TYMED_ISTREAM.0 as u32 {
                     unsafe {
                         let medium = &*pmedium;
 
@@ -684,10 +684,10 @@ impl DataObject {
 
         self.with_data_or(
             |data| {
-                if dw_direction == DATADIR::DATADIR_GET.0 as u32 {
+                if dw_direction == DATADIR_GET.0 as u32 {
                     for f in data.keys() {
-                        formats.push(DataUtil::get_format_with_tymed(*f, TYMED::TYMED_HGLOBAL));
-                        formats.push(DataUtil::get_format_with_tymed(*f, TYMED::TYMED_ISTREAM));
+                        formats.push(DataUtil::get_format_with_tymed(*f, TYMED_HGLOBAL));
+                        formats.push(DataUtil::get_format_with_tymed(*f, TYMED_ISTREAM));
                     }
                 }
                 let enum_format = EnumFORMATETC::new(formats);

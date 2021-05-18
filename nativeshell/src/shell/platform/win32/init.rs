@@ -15,13 +15,13 @@ pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
         // Angle will try opening these with GetModuleHandleEx, which means they need to be
         // loaded first; Otherwise it falls back to d3dcompiler_47, which is not present on
         // some Windows 7 installations.
-        if LoadLibraryW("d3dcompiler_47.dll") == 0 {
-            if LoadLibraryW("d3dcompiler_46.dll") == 0 {
+        if LoadLibraryW("d3dcompiler_47.dll").0 == 0 {
+            if LoadLibraryW("d3dcompiler_46.dll").0 == 0 {
                 LoadLibraryW("d3dcompiler_43.dll");
             }
         }
 
-        CoInitializeEx(null_mut(), COINIT::COINIT_APARTMENTTHREADED).as_platform_result()?;
+        CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED).as_platform_result()?;
 
         OleInitialize(null_mut()).as_platform_result()?;
 

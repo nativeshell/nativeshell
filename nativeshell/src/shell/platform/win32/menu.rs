@@ -43,7 +43,7 @@ impl PlatformMenu {
 
             let mut info = MENUINFO {
                 cbSize: std::mem::size_of::<MENUINFO>() as u32,
-                fMask: (MENUINFO_MASK::MIM_MENUDATA | MENUINFO_MASK::MIM_STYLE),
+                fMask: (MIM_MENUDATA | MIM_STYLE),
                 dwStyle: MENUINFO_STYLE(0),
                 cyMax: 0,
                 hbrBack: HBRUSH(0),
@@ -79,26 +79,22 @@ impl PlatformMenu {
 
         let item_type = {
             match item.separator {
-                true => MENU_ITEM_TYPE::MFT_SEPARATOR,
-                false => MENU_ITEM_TYPE::MFT_STRING,
+                true => MFT_SEPARATOR,
+                false => MFT_STRING,
             }
         };
 
-        let mut state = MENU_ITEM_STATE::MFS_ENABLED;
+        let mut state = MFS_ENABLED;
         if !item.enabled {
-            state |= MENU_ITEM_STATE::MFS_DISABLED;
+            state |= MFS_DISABLED;
         }
         if item.checked {
-            state |= MENU_ITEM_STATE::MFS_CHECKED;
+            state |= MFS_CHECKED;
         }
 
         MENUITEMINFOW {
             cbSize: std::mem::size_of::<MENUITEMINFOW>() as u32,
-            fMask: MENU_ITEM_MASK::MIIM_FTYPE
-                | MENU_ITEM_MASK::MIIM_ID
-                | MENU_ITEM_MASK::MIIM_STATE
-                | MENU_ITEM_MASK::MIIM_STRING
-                | MENU_ITEM_MASK::MIIM_SUBMENU,
+            fMask: MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING | MIIM_SUBMENU,
             fType: item_type,
             fState: state,
             wID: item.id as u32,
@@ -125,7 +121,7 @@ impl PlatformMenu {
             .filter_map(|res| match res {
                 DiffResult::Remove(res) => {
                     unsafe {
-                        RemoveMenu(self.menu, res.id as u32, MENU_ITEM_FLAGS::MF_BYCOMMAND);
+                        RemoveMenu(self.menu, res.id as u32, MF_BYCOMMAND);
                     }
                     None
                 }

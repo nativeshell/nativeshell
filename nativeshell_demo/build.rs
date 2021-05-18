@@ -36,10 +36,10 @@ fn main() {
     #[cfg(target_os = "windows")]
     {
         windows::build!(
-            Windows::Win32::SystemServices::{
+            Windows::Win32::System::SystemServices::{
                 TRUE
             },
-            Windows::Win32::WindowsAndMessaging::{
+            Windows::Win32::UI::WindowsAndMessaging::{
                 GetOpenFileNameW,
             }
         )

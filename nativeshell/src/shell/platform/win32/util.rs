@@ -95,7 +95,7 @@ fn HRESULT_FROM_WIN32(x: u32) -> u32 {
     if x as i32 <= 0 {
         x as u32
     } else {
-        ((x & 0x0000FFFF) | (FACILITY_CODE::FACILITY_WIN32.0 << 16) | 0x80000000) as u32
+        ((x & 0x0000FFFF) | (FACILITY_WIN32.0 << 16) | 0x80000000) as u32
     }
 }
 
@@ -117,9 +117,9 @@ pub(super) fn hresult_description(hr: u32) -> Option<String> {
     unsafe {
         let message_buffer: *mut u16 = std::ptr::null_mut();
         let format_result = FormatMessageW(
-            FORMAT_MESSAGE_OPTIONS::FORMAT_MESSAGE_FROM_SYSTEM
-                | FORMAT_MESSAGE_OPTIONS::FORMAT_MESSAGE_ALLOCATE_BUFFER
-                | FORMAT_MESSAGE_OPTIONS::FORMAT_MESSAGE_IGNORE_INSERTS
+            FORMAT_MESSAGE_FROM_SYSTEM
+                | FORMAT_MESSAGE_ALLOCATE_BUFFER
+                | FORMAT_MESSAGE_IGNORE_INSERTS
                 | FORMAT_MESSAGE_OPTIONS(FORMAT_MESSAGE_MAX_WIDTH_MASK),
             std::ptr::null_mut(),
             hr,

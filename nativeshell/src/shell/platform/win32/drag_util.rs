@@ -90,7 +90,7 @@ pub fn create_dragimage_bitmap(image: &ImageData) -> HBITMAP {
         let bitmap = CreateDIBSection(
             dc,
             &bitmap as *const _,
-            DIB_USAGE::DIB_RGB_COLORS,
+            DIB_RGB_COLORS,
             &mut ptr as *mut *mut _ as *mut *mut c_void,
             HANDLE(0),
             0,
@@ -238,14 +238,14 @@ impl DataUtil {
     }
 
     pub fn get_format(format: u32) -> FORMATETC {
-        Self::get_format_with_tymed(format, TYMED::TYMED_HGLOBAL)
+        Self::get_format_with_tymed(format, TYMED_HGLOBAL)
     }
 
     pub fn get_format_with_tymed(format: u32, tymed: TYMED) -> FORMATETC {
         FORMATETC {
             cfFormat: format as u16,
             ptd: null_mut(),
-            dwAspect: DVASPECT::DVASPECT_CONTENT.0 as u32,
+            dwAspect: DVASPECT_CONTENT.0 as u32,
             lindex: -1,
             tymed: tymed.0 as u32,
         }

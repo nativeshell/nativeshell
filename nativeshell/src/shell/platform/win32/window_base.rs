@@ -47,7 +47,7 @@ impl WindowBaseState {
     }
 
     pub fn hide(&self) -> PlatformResult<()> {
-        unsafe { ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_HIDE).as_platform_result() }
+        unsafe { ShowWindow(self.hwnd, SW_HIDE).as_platform_result() }
     }
 
     pub fn show<F>(&self, callback: F) -> PlatformResult<()>
@@ -55,7 +55,7 @@ impl WindowBaseState {
         F: FnOnce() -> () + 'static,
     {
         unsafe {
-            ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW); // false is not an error
+            ShowWindow(self.hwnd, SW_SHOW); // false is not an error
         }
         callback();
         Ok(())
@@ -161,12 +161,12 @@ impl WindowBaseState {
                 .into(),
         );
 
-        let mut flags = SET_WINDOW_POS_FLAGS::SWP_NOZORDER | SET_WINDOW_POS_FLAGS::SWP_NOACTIVATE;
+        let mut flags = SWP_NOZORDER | SWP_NOACTIVATE;
         if origin.is_none() {
-            flags |= SET_WINDOW_POS_FLAGS::SWP_NOMOVE;
+            flags |= SWP_NOMOVE;
         }
         if size.is_none() {
-            flags |= SET_WINDOW_POS_FLAGS::SWP_NOSIZE;
+            flags |= SWP_NOSIZE;
         }
         unsafe {
             SetWindowPos(
@@ -333,11 +333,8 @@ impl WindowBaseState {
     }
 
     pub fn is_rtl(&self) -> bool {
-        let style =
-            WINDOW_EX_STYLE(
-                unsafe { GetWindowLongW(self.hwnd, WINDOW_LONG_PTR_INDEX::GWL_EXSTYLE) } as u32,
-            );
-        return style & WINDOW_EX_STYLE::WS_EX_LAYOUTRTL == WINDOW_EX_STYLE::WS_EX_LAYOUTRTL;
+        let style = WINDOW_EX_STYLE(unsafe { GetWindowLongW(self.hwnd, GWL_EXSTYLE) } as u32);
+        return style & WS_EX_LAYOUTRTL == WS_EX_LAYOUTRTL;
     }
 
     pub fn get_scaling_factor(&self) -> f64 {
@@ -356,18 +353,12 @@ impl WindowBaseState {
     unsafe fn set_close_enabled(&self, enabled: bool) {
         let menu = GetSystemMenu(self.hwnd, false);
         if enabled {
-            EnableMenuItem(
-                menu,
-                SC_CLOSE,
-                MENU_ITEM_FLAGS::MF_BYCOMMAND | MENU_ITEM_FLAGS::MF_ENABLED,
-            );
+            EnableMenuItem(menu, SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
         } else {
             EnableMenuItem(
                 menu,
                 SC_CLOSE as u32,
-                MENU_ITEM_FLAGS::MF_BYCOMMAND
-                    | MENU_ITEM_FLAGS::MF_DISABLED
-                    | MENU_ITEM_FLAGS::MF_GRAYED,
+                MF_BYCOMMAND | MF_DISABLED | MF_GRAYED,
             );
         }
     }
@@ -393,42 +384,39 @@ impl WindowBaseState {
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         *self.style.borrow_mut() = style.clone();
         unsafe {
-            let mut s =
-                WINDOW_STYLE(GetWindowLongW(self.hwnd, WINDOW_LONG_PTR_INDEX::GWL_STYLE) as u32);
-            s = s & WINDOW_STYLE(
-                !(WINDOW_STYLE::WS_OVERLAPPEDWINDOW | WINDOW_STYLE::WS_DLGFRAME).0,
-            );
+            let mut s = WINDOW_STYLE(GetWindowLongW(self.hwnd, GWL_STYLE) as u32);
+            s = s & WINDOW_STYLE(!(WS_OVERLAPPEDWINDOW | WS_DLGFRAME).0);
 
             if style.frame == WindowFrame::Regular {
-                s |= WINDOW_STYLE::WS_CAPTION;
+                s |= WS_CAPTION;
                 if style.can_resize {
-                    s |= WINDOW_STYLE::WS_THICKFRAME;
+                    s |= WS_THICKFRAME;
                 }
             }
 
             if style.frame == WindowFrame::NoTitle {
-                s |= WINDOW_STYLE::WS_CAPTION;
+                s |= WS_CAPTION;
                 if style.can_resize {
-                    s |= WINDOW_STYLE::WS_THICKFRAME;
+                    s |= WS_THICKFRAME;
                 } else {
-                    s |= WINDOW_STYLE::WS_BORDER;
+                    s |= WS_BORDER;
                 }
             }
 
             if style.frame == WindowFrame::NoFrame {
-                s |= WINDOW_STYLE::WS_POPUP
+                s |= WS_POPUP
             }
 
-            s |= WINDOW_STYLE::WS_SYSMENU;
+            s |= WS_SYSMENU;
             self.set_close_enabled(style.can_close);
             if style.can_maximize {
-                s |= WINDOW_STYLE::WS_MAXIMIZEBOX;
+                s |= WS_MAXIMIZEBOX;
             }
             if style.can_minimize {
-                s |= WINDOW_STYLE::WS_MINIMIZEBOX;
+                s |= WS_MINIMIZEBOX;
             }
 
-            SetWindowLongW(self.hwnd, WINDOW_LONG_PTR_INDEX::GWL_STYLE, s.0 as i32);
+            SetWindowLongW(self.hwnd, GWL_STYLE, s.0 as i32);
             SetWindowPos(
                 self.hwnd,
                 HWND(0),
@@ -436,11 +424,7 @@ impl WindowBaseState {
                 0,
                 0,
                 0,
-                SET_WINDOW_POS_FLAGS::SWP_FRAMECHANGED
-                    | SET_WINDOW_POS_FLAGS::SWP_NOACTIVATE
-                    | SET_WINDOW_POS_FLAGS::SWP_NOMOVE
-                    | SET_WINDOW_POS_FLAGS::SWP_NOSIZE
-                    | SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
+                SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER,
             )
             .as_platform_result()?;
 
@@ -464,11 +448,8 @@ impl WindowBaseState {
     }
 
     pub fn has_redirection_surface(&self) -> bool {
-        let style =
-            WINDOW_EX_STYLE(
-                unsafe { GetWindowLongW(self.hwnd, WINDOW_LONG_PTR_INDEX::GWL_EXSTYLE) } as u32,
-            );
-        return (style & WINDOW_EX_STYLE::WS_EX_NOREDIRECTIONBITMAP).0 == 0;
+        let style = WINDOW_EX_STYLE(unsafe { GetWindowLongW(self.hwnd, GWL_EXSTYLE) } as u32);
+        return (style & WS_EX_NOREDIRECTIONBITMAP).0 == 0;
     }
 
     pub fn remove_border(&self) -> bool {

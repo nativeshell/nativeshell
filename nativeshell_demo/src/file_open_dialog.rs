@@ -43,7 +43,7 @@ mod win_imports {
         ::windows::include_bindings!();
     }
 
-    pub use bindings::Windows::Win32::{SystemServices::*, WindowsAndMessaging::*};
+    pub use bindings::Windows::Win32::{System::SystemServices::*, UI::WindowsAndMessaging::*};
     pub use widestring::WideStr;
 }
 

@@ -40,7 +40,7 @@ impl FilesDragDataAdapter {
 
 impl DragDataAdapter for FilesDragDataAdapter {
     fn retrieve_drag_data(&self, data: IDataObject, data_out: &mut HashMap<String, Value>) {
-        let files = DataUtil::get_data(data.clone(), CLIPBOARD_FORMATS::CF_HDROP.0)
+        let files = DataUtil::get_data(data.clone(), CF_HDROP.0)
             .map(DataUtil::extract_files)
             .ok();
 
@@ -60,7 +60,7 @@ impl DragDataAdapter for FilesDragDataAdapter {
         let files = data_in.remove(drag_data::key::FILES);
         if let Some(files) = files {
             data_out.insert(
-                CLIPBOARD_FORMATS::CF_HDROP.0,
+                CF_HDROP.0,
                 DataUtil::bundle_files(&extract_string_list(files)),
             );
         }

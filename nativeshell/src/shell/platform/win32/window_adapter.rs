@@ -46,11 +46,11 @@ impl WindowClass {
         unsafe {
             let mut class_name: Param<PWSTR> = self.class_name.clone().into_param();
             let class = WNDCLASSW {
-                style: WNDCLASS_STYLES::CS_HREDRAW | WNDCLASS_STYLES::CS_VREDRAW,
+                style: CS_HREDRAW | CS_VREDRAW,
                 lpfnWndProc: Some(wnd_proc),
                 cbClsExtra: 0,
                 cbWndExtra: 0,
-                hInstance: HINSTANCE(GetModuleHandleW(PWSTR::default())),
+                hInstance: HINSTANCE(GetModuleHandleW(PWSTR::default()).0),
                 hIcon: Default::default(),
                 hCursor: LoadCursorW(HINSTANCE(0), IDC_ARROW),
                 hbrBackground: HBRUSH(0),
@@ -88,17 +88,14 @@ pub trait WindowAdapter {
     where
         Self: Sized,
     {
-        let mut ex_flags = WINDOW_EX_STYLE::WS_EX_APPWINDOW;
+        let mut ex_flags = WS_EX_APPWINDOW;
         if direct_composition_supported() {
-            ex_flags |= WINDOW_EX_STYLE::WS_EX_NOREDIRECTIONBITMAP;
+            ex_flags |= WS_EX_NOREDIRECTIONBITMAP;
         }
 
         self.create_window_custom(
             title,
-            WINDOW_STYLE::WS_OVERLAPPEDWINDOW
-                | WINDOW_STYLE::WS_THICKFRAME
-                | WINDOW_STYLE::WS_SYSMENU
-                | WINDOW_STYLE::WS_DLGFRAME,
+            WS_OVERLAPPEDWINDOW | WS_THICKFRAME | WS_SYSMENU | WS_DLGFRAME,
             ex_flags,
         )
     }
@@ -132,7 +129,7 @@ pub trait WindowAdapter {
                 200,
                 HWND(0),
                 HMENU(0),
-                HINSTANCE(GetModuleHandleW(PWSTR::default())),
+                HINSTANCE(GetModuleHandleW(PWSTR::default()).0),
                 Box::into_raw(bridge) as *mut _,
             );
             res
@@ -159,7 +156,7 @@ extern "system" fn wnd_proc(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPA
                 let create_struct = &*(l_param.0 as *const CREATESTRUCTW);
                 SetWindowLongPtrW(
                     h_wnd,
-                    WINDOW_LONG_PTR_INDEX::GWLP_USERDATA.0,
+                    GWLP_USERDATA.0,
                     create_struct.lpCreateParams as isize,
                 );
                 enable_full_dpi_support(h_wnd);
@@ -167,7 +164,7 @@ extern "system" fn wnd_proc(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPA
             _ => {}
         }
 
-        let ptr = GetWindowLongPtrW(h_wnd, WINDOW_LONG_PTR_INDEX::GWLP_USERDATA.0);
+        let ptr = GetWindowLongPtrW(h_wnd, GWLP_USERDATA.0);
         if ptr != 0 {
             let bridge = &*(ptr as *const EventBridge);
             let handler = &*(bridge.handler);
@@ -186,7 +183,7 @@ extern "system" fn wnd_proc(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPA
 pub fn enable_full_dpi_support(hwnd: HWND) {
     unsafe {
         let module = LoadLibraryW("User32.dll");
-        if module == 0 {
+        if module.0 == 0 {
             return;
         }
         let enable = GetProcAddress(module, "EnableNonClientDpiScaling");

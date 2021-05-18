@@ -99,7 +99,7 @@ impl WindowMenu {
         // because popup menu eats the mouse up message
         let hook = unsafe {
             SetWindowsHookExW(
-                WINDOWS_HOOK_ID::WH_MSGFILTER,
+                WH_MSGFILTER,
                 Some(Self::hook_proc),
                 HINSTANCE(0),
                 GetCurrentThreadId(),
@@ -161,11 +161,7 @@ impl WindowMenu {
         let res = unsafe {
             let res = TrackPopupMenuEx(
                 menu.menu,
-                (TRACK_POPUP_MENU_FLAGS::TPM_LEFTALIGN
-                    | TRACK_POPUP_MENU_FLAGS::TPM_TOPALIGN
-                    | TRACK_POPUP_MENU_FLAGS::TPM_VERTICAL
-                    | TRACK_POPUP_MENU_FLAGS::TPM_RETURNCMD)
-                    .0,
+                (TPM_LEFTALIGN | TPM_TOPALIGN | TPM_VERTICAL | TPM_RETURNCMD).0,
                 position.x,
                 position.y,
                 self.hwnd,
@@ -260,9 +256,9 @@ impl WindowMenu {
             );
             let mut item_info: MENUITEMINFOW = Default::default();
             item_info.cbSize = std::mem::size_of::<MENUITEMINFOW>() as u32;
-            item_info.fMask = MENU_ITEM_MASK::MIIM_STATE;
+            item_info.fMask = MIIM_STATE;
             GetMenuItemInfoW(menu, i as u32, true, &mut item_info as *mut _);
-            if item_info.fState & MENU_ITEM_STATE::MFS_DISABLED == MENU_ITEM_STATE(0) {
+            if item_info.fState & MFS_DISABLED == MENU_ITEM_STATE(0) {
                 break;
             }
         }
@@ -397,7 +393,7 @@ impl WindowMenu {
                 move || {
                     let mut event = TRACKMOUSEEVENT {
                         cbSize: size_of::<TRACKMOUSEEVENT>() as u32,
-                        dwFlags: TRACKMOUSEEVENT_FLAGS::TME_LEAVE,
+                        dwFlags: TME_LEAVE,
                         hwndTrack: hwnd,
                         dwHoverTime: 0,
                     };
@@ -425,8 +421,8 @@ impl WindowMenu {
 
         // Mimic behavior of windows menubar; element either has no menu, or it is mouse selected
         // but not highlighted (through keyboard focus)
-        current_menu.current_item_is_last = flags & MENU_ITEM_FLAGS::MF_POPUP.0 == 0
-            || flags & MENU_ITEM_FLAGS::MF_MOUSESELECT.0 == MENU_ITEM_FLAGS::MF_MOUSESELECT.0;
+        current_menu.current_item_is_last =
+            flags & MF_POPUP.0 == 0 || flags & MF_MOUSESELECT.0 == MF_MOUSESELECT.0;
     }
 
     pub fn handle_message(

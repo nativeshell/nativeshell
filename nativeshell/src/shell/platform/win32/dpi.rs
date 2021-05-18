@@ -9,7 +9,7 @@ fn set_per_monitor_aware() -> bool {
     let mut res = false;
     unsafe {
         let module = LoadLibraryW("User32.dll");
-        if module != 0 {
+        if module.0 != 0 {
             let function = GetProcAddress(module, "SetProcessDpiAwarenessContext");
             if let Some(set_awareness_context) = function {
                 let function: extern "system" fn(isize) -> BOOL =
@@ -32,7 +32,7 @@ fn set_per_monitor_dpi_aware_fallback() -> bool {
     let mut res = false;
     unsafe {
         let module = LoadLibraryW("Shcore.dll");
-        if module != 0 {
+        if module.0 != 0 {
             let function = GetProcAddress(module, "SetProcessDpiAwareness");
             if let Some(set_awareness) = function {
                 let function: extern "system" fn(i32) -> BOOL = std::mem::transmute(set_awareness);

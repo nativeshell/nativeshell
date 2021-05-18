@@ -26,13 +26,17 @@ mod bindings {
 
 // This bit of a lie, it doesn't have dxgi
 mod all_bindings {
-    pub use super::bindings::{
-        Windows::Win32::Com::*, Windows::Win32::Controls::*, Windows::Win32::DataExchange::*,
-        Windows::Win32::Debug::*, Windows::Win32::DisplayDevices::*, Windows::Win32::Dwm::*,
-        Windows::Win32::Gdi::*, Windows::Win32::KeyboardAndMouseInput::*,
-        Windows::Win32::MenusAndResources::*, Windows::Win32::Shell::*,
-        Windows::Win32::StructuredStorage::*, Windows::Win32::SystemServices::*,
-        Windows::Win32::WindowsAndMessaging::*,
+    pub use super::bindings::Windows::Win32::{
+        Graphics::{Dwm::*, Gdi::*},
+        Storage::StructuredStorage::*,
+        System::{
+            Com::*, DataExchange::*, Diagnostics::Debug::*, Memory::*, SystemServices::*,
+            Threading::*,
+        },
+        UI::{
+            Controls::*, DisplayDevices::*, KeyboardAndMouseInput::*, MenusAndResources::*,
+            Shell::*, WindowsAndMessaging::*,
+        },
     };
     pub use windows::*;
 }

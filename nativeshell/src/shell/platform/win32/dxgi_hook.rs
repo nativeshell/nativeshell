@@ -13,7 +13,7 @@ use crate::util::OkLog;
 
 use super::util::HRESULTExt;
 
-use super::{all_bindings::*, bindings::Windows::Win32::Dxgi::*};
+use super::{all_bindings::*, bindings::Windows::Win32::Graphics::Dxgi::*};
 
 type CreateTargetForHwndT = unsafe extern "system" fn(
     this: RawPtr,
@@ -389,7 +389,7 @@ pub(super) fn init_dxgi_hook() {
 fn get_module_symbol_address(module: &str, symbol: &str) -> Option<usize> {
     unsafe {
         let mut handle = GetModuleHandleW(module);
-        if handle == 0 {
+        if handle.0 == 0 {
             handle = LoadLibraryW(module);
         }
         GetProcAddress(handle, symbol).map(|addr| addr as usize)
