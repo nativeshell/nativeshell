@@ -97,16 +97,13 @@ impl PlatformMenuManager {
 
     fn schedule_update(&self) {
         let context = self.context.clone();
-        let callback = self.context.run_loop.borrow().schedule(
-            move || {
-                context
-                    .menu_manager
-                    .borrow()
-                    .get_platform_menu_manager()
-                    .update_menu();
-            },
-            Duration::from_secs(0),
-        );
+        let callback = self.context.run_loop.borrow().schedule_now(move || {
+            context
+                .menu_manager
+                .borrow()
+                .get_platform_menu_manager()
+                .update_menu();
+        });
         self.update_handle.borrow_mut().replace(callback);
     }
 

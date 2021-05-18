@@ -274,12 +274,9 @@ impl WindowMenu {
                 self.context
                     .run_loop
                     .borrow()
-                    .schedule(
-                        move || unsafe {
-                            Self::preselect_first_enabled_item(menu_hwnd, hmenu);
-                        },
-                        Duration::from_secs(0),
-                    )
+                    .schedule_now(move || unsafe {
+                        Self::preselect_first_enabled_item(menu_hwnd, hmenu);
+                    })
                     .detach();
             }
         }

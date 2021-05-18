@@ -53,7 +53,7 @@ impl RunLoop {
 
     // Convenience method to schedule callback on next run loop turn
     #[must_use]
-    pub fn schedule_next<F>(&self, callback: F) -> ScheduledCallback
+    pub fn schedule_now<F>(&self, callback: F) -> ScheduledCallback
     where
         F: FnOnce() -> () + 'static,
     {

@@ -79,16 +79,13 @@ impl DragContext {
         self.context
             .run_loop
             .borrow()
-            .schedule(
-                move || {
-                    if let Some(s) = weak.upgrade() {
-                        unsafe {
-                            s.start_drag_internal(request);
-                        }
+            .schedule_now(move || {
+                if let Some(s) = weak.upgrade() {
+                    unsafe {
+                        s.start_drag_internal(request);
                     }
-                },
-                Duration::from_secs(0),
-            )
+                }
+            })
             .detach();
         Ok(())
     }

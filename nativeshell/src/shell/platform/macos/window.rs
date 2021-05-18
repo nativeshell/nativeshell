@@ -649,11 +649,7 @@ impl PlatformWindow {
             //
             // Note there is a special support in MacOS PlatformRunLoop when scheduling tasks
             // run in 0 time to not block the dispatch queue.
-            self.context
-                .run_loop
-                .borrow()
-                .schedule(cb, Duration::from_secs(0))
-                .detach();
+            self.context.run_loop.borrow().schedule_now(cb).detach();
         }
     }
 

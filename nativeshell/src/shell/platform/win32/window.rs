@@ -310,11 +310,7 @@ impl PlatformWindow {
                 parent.modal_child.set(hwnd);
                 unsafe {
                     EnableWindow(parent.hwnd(), false);
-                    SetWindowLongPtrW(
-                        self.hwnd(),
-                        GWL_HWNDPARENT.0,
-                        parent.hwnd().0,
-                    );
+                    SetWindowLongPtrW(self.hwnd(), GWL_HWNDPARENT.0, parent.hwnd().0);
                 }
             }
             None => {}
@@ -348,15 +344,12 @@ impl PlatformWindow {
         self.context
             .run_loop
             .borrow()
-            .schedule(
-                move || {
-                    let this = weak.upgrade();
-                    if let Some(this) = this {
-                        this.window_menu.borrow().show_popup(menu, request, on_done);
-                    }
-                },
-                Duration::from_secs(0),
-            )
+            .schedule_now(move || {
+                let this = weak.upgrade();
+                if let Some(this) = this {
+                    this.window_menu.borrow().show_popup(menu, request, on_done);
+                }
+            })
             .detach();
     }
 
@@ -372,25 +365,22 @@ impl PlatformWindow {
         self.context
             .run_loop
             .borrow()
-            .schedule(
-                move || unsafe {
-                    let cmd = TrackPopupMenuEx(
-                        menu,
-                        TPM_RETURNCMD.0,
-                        position.x,
-                        position.y,
-                        hwnd,
-                        null_mut(),
-                    );
-                    SendMessageW(
-                        hwnd,
-                        WM_SYSCOMMAND as u32,
-                        WPARAM(cmd.0 as usize),
-                        LPARAM(0),
-                    );
-                },
-                Duration::from_secs(0),
-            )
+            .schedule_now(move || unsafe {
+                let cmd = TrackPopupMenuEx(
+                    menu,
+                    TPM_RETURNCMD.0,
+                    position.x,
+                    position.y,
+                    hwnd,
+                    null_mut(),
+                );
+                SendMessageW(
+                    hwnd,
+                    WM_SYSCOMMAND as u32,
+                    WPARAM(cmd.0 as usize),
+                    LPARAM(0),
+                );
+            })
             .detach();
         Ok(())
     }

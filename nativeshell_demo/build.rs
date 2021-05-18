@@ -4,7 +4,10 @@ fn build_flutter() -> BuildResult<()> {
     Flutter::build(FlutterOptions {
         local_engine: match Flutter::build_mode().as_str() {
             "debug" => Some("host_debug".into()),
+            // "debug" => Some("mac_debug_arm64".into()),
+            // "debug" => Some("host_debug_unopt".into()),
             "release" => Some("host_release".into()),
+            // "release" => Some("mac_release_arm64".into()),
             _ => None,
         },
         local_engine_src_path: None,

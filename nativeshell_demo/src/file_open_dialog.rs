@@ -201,11 +201,7 @@ impl FileOpenDialogService {
                     reply.send_ok(Value::String(name));
                 }
             };
-            self.context
-                .run_loop
-                .borrow()
-                .schedule(cb, Duration::from_secs(0))
-                .detach();
+            self.context.run_loop.borrow().schedule_now(cb).detach();
         } else {
             reply.send_error("no_window", Some("Platform window not found"), Value::Null);
         }
@@ -236,7 +232,7 @@ impl FileOpenDialogService {
             self.context
                 .run_loop
                 .borrow()
-                .schedule_next(move || {
+                .schedule_now(move || {
                     let res = dialog.run();
                     let res = match res {
                         gtk::ResponseType::Ok => {

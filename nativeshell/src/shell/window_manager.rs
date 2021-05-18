@@ -137,16 +137,13 @@ impl WindowManager {
         self.context
             .run_loop
             .borrow()
-            .schedule(
-                move || {
-                    context_copy
-                        .engine_manager
-                        .borrow_mut()
-                        .remove_engine(engine_handle)
-                        .ok_log();
-                },
-                Duration::from_secs(0),
-            )
+            .schedule_now(move || {
+                context_copy
+                    .engine_manager
+                    .borrow_mut()
+                    .remove_engine(engine_handle)
+                    .ok_log();
+            })
             .detach();
 
         self.windows.remove(&window.window_handle);
