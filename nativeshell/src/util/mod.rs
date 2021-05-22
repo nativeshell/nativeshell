@@ -1,6 +1,7 @@
 mod capsule;
 mod cell;
 mod diff;
+pub mod errno;
 mod log;
 
 pub use self::diff::*;

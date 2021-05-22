@@ -1,5 +1,8 @@
 use file_open_dialog::FileOpenDialogService;
-use nativeshell::{codec::Value, shell::{Context, ContextOptions, exec_bundle, register_observatory_listener}};
+use nativeshell::{
+    codec::Value,
+    shell::{exec_bundle, register_observatory_listener, Context, ContextOptions},
+};
 
 #[cfg(target_os = "macos")]
 #[macro_use]
@@ -9,7 +12,7 @@ mod file_open_dialog;
 
 fn main() {
     exec_bundle();
-    register_observatory_listener();
+    register_observatory_listener("nativeshell_demo".into());
 
     env_logger::builder().format_timestamp(None).init();
 
