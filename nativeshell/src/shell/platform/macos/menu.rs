@@ -5,7 +5,6 @@ use std::{
     fmt::Write,
     hash::Hash,
     rc::{Rc, Weak},
-    time::Duration,
 };
 
 use cocoa::{
