@@ -46,6 +46,12 @@ class _MacOSMenuBarState extends State<_MacOSMenuBar> {
   }
 
   @override
+  void reassemble() {
+    super.reassemble;
+    widget.menu.update();
+  }
+
+  @override
   void deactivate() {
     super.deactivate();
     final window = Window.of(context);
