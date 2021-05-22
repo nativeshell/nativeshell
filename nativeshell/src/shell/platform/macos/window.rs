@@ -126,6 +126,9 @@ impl PlatformWindow {
 
             let () =
                 msg_send![*self.platform_window, setContentViewController: *engine.view_controller];
+
+            // Temporarily set non empty window size so that flutter engine doesn't complain
+            NSWindow::setContentSize_(*self.platform_window, Size::wh(1.0, 1.0).into());
         }
 
         let drag_context = DragContext::new(self.context.clone(), weak.clone());
