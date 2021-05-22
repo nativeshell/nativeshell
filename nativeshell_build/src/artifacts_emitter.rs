@@ -286,7 +286,18 @@ impl<'a> ArtifactEmitter<'a> {
                 engine_src_path.map(|p| p.join("out").join(local_engine))
             }
             None => {
-                let engine = match (&self.build.target_platform, build_mode) {
+                let platform = match self.build.target_platform.as_str() {
+                    "darwin" => {
+                        let darwin_os = match self.build.darwin_arch.as_ref().unwrap().as_str() {
+                            "x86_64" => "x64",
+                            other => other,
+                        };
+                        format!("{}-{}", self.build.target_platform, darwin_os)
+                    }
+                    other => other.into(),
+                };
+
+                let engine = match (&platform, build_mode) {
                     (platform, "debug") => platform.into(),
                     (platform, mode) => format!("{}-{}", platform, mode),
                 };

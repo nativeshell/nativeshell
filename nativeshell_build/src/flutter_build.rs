@@ -106,6 +106,10 @@ impl Flutter {
         self.emit_flutter_artifacts(&flutter_out_root)?;
         self.emit_flutter_checks(&local_roots).unwrap();
 
+        if Self::build_mode() == "profile" {
+            cargo_emit::rustc_cfg!("flutter_profile");
+        }
+
         Ok(())
     }
 

@@ -16,6 +16,10 @@ lazy_static = "1.4.0"
 diff = "0.1.12"
 libc = "0.2.94"
 
+[build-dependencies]
+cargo-emit = "0.1"
+nativeshell_build = { path = "../nativeshell_build" }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.24"
 core-foundation = "0.9"
@@ -50,6 +54,3 @@ gtk-sys = "0.10.0"
 gdk-sys = "0.10.0"
 url = "2.2.1"
 percent-encoding = "2.1.0"
-
-[target.'cfg(target_os = "linux")'.build-dependencies]
-cargo-emit = "0.1"

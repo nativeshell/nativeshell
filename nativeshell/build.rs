@@ -1,3 +1,5 @@
+use nativeshell_build::Flutter;
+
 fn main() -> () {
     #[cfg(target_os = "windows")]
     {
@@ -120,5 +122,10 @@ fn main() -> () {
         cargo_emit::rustc_link_lib! {
             "flutter_linux_gtk",
         };
+    }
+
+    cargo_emit::rerun_if_env_changed!("FLUTTER_PROFILE");
+    if Flutter::build_mode() == "profile" {
+        cargo_emit::rustc_cfg!("flutter_profile");
     }
 }
