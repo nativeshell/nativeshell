@@ -43,13 +43,8 @@ fn dup2(src: libc::c_int, dst: libc::c_int) -> libc::c_int {
     }
 }
 
-pub fn register_observatory_listener(file_suffix: String) {
-
-    #[cfg(flutter_profile)]
-    {
-        println!("Flutter profile");
-    }
-
+#[allow(unused)]
+fn _register_observatory_listener(file_suffix: String) {
     let stdout = dup(libc::STDOUT_FILENO);
     let mut pipe = [0; 2];
     unsafe {
@@ -109,4 +104,12 @@ pub fn register_observatory_listener(file_suffix: String) {
             }
         }
     });
+}
+
+#[allow(unused_variables)]
+pub fn register_observatory_listener(file_suffix: String) {
+    #[cfg(any(flutter_profile, debug_assertions))]
+    {
+        _register_observatory_listener(file_suffix);
+    }
 }
