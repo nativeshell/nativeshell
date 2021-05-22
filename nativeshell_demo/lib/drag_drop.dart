@@ -150,21 +150,28 @@ class DropTarget extends StatefulWidget {
 }
 
 class _DropTargetState extends State<DropTarget> {
+  DragEffect pickEffect(Set<DragEffect> allowedEffects) {
+    if (allowedEffects.contains(DragEffect.Link)) {
+      return DragEffect.Link;
+    } else if (allowedEffects.contains(DragEffect.Copy)) {
+      return DragEffect.Copy;
+    } else {
+      return allowedEffects.isNotEmpty ? allowedEffects.first : DragEffect.None;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DropRegion(
       onDropOver: (event) async {
+        final res = pickEffect(event.info.allowedEffects);
+
         final data = event.info.data;
         _files = await data.get(DragData.files);
         _uris = await data.get(DragData.uris);
         _customData = await data.get(customDragData);
-        if (event.info.allowedEffects.contains(DragEffect.Link)) {
-          return DragEffect.Link;
-        } else if (event.info.allowedEffects.contains(DragEffect.Copy)) {
-          return DragEffect.Copy;
-        } else {
-          return event.info.allowedEffects.first;
-        }
+
+        return res;
       },
       onDropExit: () {
         setState(() {
@@ -204,7 +211,7 @@ class _DropTargetState extends State<DropTarget> {
                   Container(
                     height: 20,
                   ),
-                  Text(_describeDragData()),
+                  if (dropping) Text(_describeDragData()),
                 ]
               ],
             ),
