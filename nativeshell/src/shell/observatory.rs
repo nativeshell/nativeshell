@@ -14,7 +14,7 @@ fn have_observatory_url(url: &str, file_suffix: &str) {
     let file_name = format!("vmservice.{}", file_suffix);
     let tmp_dir = std::env::var(TMP_ENV).unwrap_or("/tmp".into());
     println!(
-        "nativeshell: Writing VM Service info file ${{{}}}{}",
+        "nativeshell: Writing VM Service info file into ${{{}}}{}",
         TMP_ENV, file_name,
     );
 
