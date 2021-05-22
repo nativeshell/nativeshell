@@ -115,7 +115,8 @@ impl Flutter {
 
     pub fn build_mode() -> String {
         let mut build_mode: String = std::env::var("PROFILE").unwrap().into();
-        let profile = std::env::var("FLUTTER_PROFILE").unwrap_or("false".into()) == "true";
+        let profile = std::env::var("FLUTTER_PROFILE").unwrap_or("false".into());
+        let profile = profile == "true" || profile == "1";
         if profile && build_mode != "release" {
             panic!("Profile option (FLUTTER_PROFILE) must only be enabled for release builds")
         }
