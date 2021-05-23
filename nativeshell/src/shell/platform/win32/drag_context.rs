@@ -2,7 +2,6 @@ use std::{
     cell::RefCell,
     collections::HashMap,
     rc::{Rc, Weak},
-    time::Duration,
 };
 
 use windows::create_instance;
