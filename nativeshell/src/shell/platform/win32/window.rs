@@ -30,7 +30,7 @@ use super::{
     window_menu::{WindowMenu, WindowMenuDelegate},
 };
 
-pub type PlatformWindowType = HWND;
+pub type PlatformWindowType = isize; // HWND
 
 pub struct PlatformWindow {
     context: Rc<Context>,
@@ -99,7 +99,7 @@ impl PlatformWindow {
     }
 
     pub fn get_platform_window(&self) -> PlatformWindowType {
-        self.hwnd()
+        self.hwnd().0
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformWindow>, engine: &PlatformEngine) {
