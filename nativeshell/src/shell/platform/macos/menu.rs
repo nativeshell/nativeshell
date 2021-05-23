@@ -472,7 +472,9 @@ impl PlatformMenu {
         let () = msg_send![item, setTitle:*menu_item_title];
         let () = msg_send![item, setEnabled:menu_item.enabled];
         let state: NSInteger = {
-            match menu_item.check_status == CheckStatus::CheckOn {
+            match menu_item.check_status == CheckStatus::CheckOn
+                || menu_item.check_status == CheckStatus::RadioOn
+            {
                 true => 1,
                 false => 0,
             }
