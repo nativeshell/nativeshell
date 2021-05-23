@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::shell::{
-    structs::{PopupMenuRequest, PopupMenuResponse},
+    api_model::{PopupMenuRequest, PopupMenuResponse},
     Context, IPoint, IRect,
 };
 

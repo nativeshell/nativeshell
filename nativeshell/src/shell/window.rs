@@ -13,13 +13,13 @@ use crate::{
 };
 
 use super::{
-    constants::*,
-    platform::window::PlatformWindow,
-    structs::{
+    api_constants::*,
+    api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
         PopupMenuResponse, SetMenuRequest, WindowGeometry, WindowGeometryFlags,
         WindowGeometryRequest, WindowStyle,
     },
+    platform::window::PlatformWindow,
     Context, EngineHandle, WindowMethodCallReply, WindowMethodCallResult, WindowMethodInvoker,
 };
 

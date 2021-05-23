@@ -7,7 +7,7 @@ use widestring::WideCString;
 use crate::{codec::Value, shell::ContextOptions};
 use crate::{
     codec::{MessageCodec, StandardMethodCodec},
-    shell::constants::*,
+    shell::api_constants::*,
 };
 
 use super::{all_bindings::*, drag_util::DataUtil};

@@ -1,6 +1,6 @@
 use std::rc::{Rc, Weak};
 
-use crate::shell::{structs::Menu, Context, MenuHandle, MenuManager};
+use crate::shell::{api_model::Menu, Context, MenuHandle, MenuManager};
 
 use super::error::{PlatformError, PlatformResult};
 

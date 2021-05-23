@@ -11,7 +11,7 @@ use super::{
 
 use crate::{
     shell::{
-        structs::{CheckStatus, Menu, MenuItem},
+        api_model::{CheckStatus, Menu, MenuItem},
         Context, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult},

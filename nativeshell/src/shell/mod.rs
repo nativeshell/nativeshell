@@ -1,6 +1,6 @@
+mod api_constants;
 mod binary_messenger;
 mod bundle;
-mod constants;
 mod context;
 mod engine;
 mod engine_manager;
@@ -27,5 +27,5 @@ pub use window::*;
 pub use window_manager::*;
 pub use window_method_channel::*;
 
+pub mod api_model;
 pub mod platform;
-pub mod structs;

@@ -16,8 +16,8 @@ use gtk::{
 use crate::{
     codec::Value,
     shell::{
+        api_model::{DragData, DragEffect, DragRequest, DraggingInfo, ImageData},
         platform::drag_data::{FallThroughDragDataAdapter, UriListDataAdapter},
-        structs::{DragData, DragEffect, DragRequest, DraggingInfo, ImageData},
         Context, PlatformWindowDelegate, Point,
     },
 };

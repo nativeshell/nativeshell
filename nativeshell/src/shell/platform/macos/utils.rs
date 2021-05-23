@@ -18,7 +18,7 @@ use objc::{
     runtime::{Class, Object},
 };
 
-use crate::shell::{structs::ImageData, Point, Rect, Size};
+use crate::shell::{api_model::ImageData, Point, Rect, Size};
 
 impl<'a> From<&'a Size> for NSSize {
     fn from(size: &'a Size) -> Self {

@@ -15,7 +15,7 @@ use gtk::{
 use crate::{
     codec::Value,
     shell::{
-        structs::{
+        api_model::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },

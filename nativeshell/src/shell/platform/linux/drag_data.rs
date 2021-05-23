@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::{
     codec::{MessageCodec, StandardMethodCodec, Value},
-    shell::{constants::drag_data, ContextOptions},
+    shell::{api_constants::drag_data, ContextOptions},
 };
 
 pub trait DragDataSetter {

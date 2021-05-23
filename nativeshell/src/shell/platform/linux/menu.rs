@@ -15,7 +15,7 @@ use gtk::{
 
 use crate::{
     shell::{
-        structs::{Accelerator, CheckStatus, Menu, MenuItem},
+        api_model::{Accelerator, CheckStatus, Menu, MenuItem},
         Context, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},

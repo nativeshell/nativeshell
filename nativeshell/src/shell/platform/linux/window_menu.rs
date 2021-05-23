@@ -11,7 +11,7 @@ use gtk::{
 };
 
 use crate::shell::{
-    structs::{PopupMenuRequest, PopupMenuResponse},
+    api_model::{PopupMenuRequest, PopupMenuResponse},
     IRect, Point, Rect,
 };
 

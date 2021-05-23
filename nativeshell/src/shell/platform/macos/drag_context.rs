@@ -11,7 +11,7 @@ use cocoa::{
 use objc::rc::{autoreleasepool, StrongPtr};
 
 use crate::shell::{
-    structs::{DragData, DragEffect, DragRequest, DraggingInfo},
+    api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
     Context, PlatformWindowDelegate, Point,
 };
 

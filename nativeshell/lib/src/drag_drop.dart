@@ -5,8 +5,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'constants.dart';
-import 'struts.dart';
+import 'api_constants.dart';
+import 'api_model.dart';
 import 'util.dart';
 import 'window.dart';
 import 'window_method_channel.dart';

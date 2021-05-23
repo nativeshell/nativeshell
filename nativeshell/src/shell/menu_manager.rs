@@ -10,9 +10,9 @@ use crate::{
 };
 
 use super::{
-    constants::*,
+    api_constants::*,
+    api_model::{MenuAction, MenuCreateRequest, MenuDestroyRequest, SetMenuRequest},
     platform::menu::{PlatformMenu, PlatformMenuManager},
-    structs::{MenuAction, MenuCreateRequest, MenuDestroyRequest, SetMenuRequest},
     Context, EngineHandle, WindowMethodCallResult,
 };
 

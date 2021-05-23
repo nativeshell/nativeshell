@@ -3,7 +3,7 @@ use std::rc::{Rc, Weak};
 use crate::{
     codec::Value,
     shell::{
-        structs::{
+        api_model::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowGeometry,
             WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },

@@ -9,7 +9,7 @@ use windows::create_instance;
 
 use crate::{
     shell::{
-        structs::{DragData, DragEffect, DragRequest, DraggingInfo},
+        api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
         Context, IPoint,
     },
     util::LateRefCell,

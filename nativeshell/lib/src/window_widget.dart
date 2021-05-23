@@ -4,7 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'struts.dart';
+import 'api_model.dart';
 import 'window.dart';
 import 'window_manager.dart';
 

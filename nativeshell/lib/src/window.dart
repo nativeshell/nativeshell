@@ -4,13 +4,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:pedantic/pedantic.dart';
 
-import 'struts.dart';
+import 'api_model.dart';
 import 'event.dart';
 import 'menu.dart';
 import 'util.dart';
 import 'window_manager.dart';
 import 'window_method_channel.dart';
-import 'constants.dart';
+import 'api_constants.dart';
 import 'window_widget.dart';
 
 class WindowHandle {

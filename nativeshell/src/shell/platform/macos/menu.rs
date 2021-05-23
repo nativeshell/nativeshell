@@ -20,9 +20,9 @@ use objc::{
 };
 
 use crate::{
-    shell::structs::{Menu, MenuItem, MenuItemRole},
+    shell::api_model::{Menu, MenuItem, MenuItemRole},
     shell::{
-        structs::{Accelerator, CheckStatus, MenuRole},
+        api_model::{Accelerator, CheckStatus, MenuRole},
         Context, MenuHandle, MenuManager, ScheduledCallback,
     },
     util::{update_diff, DiffResult, LateRefCell},

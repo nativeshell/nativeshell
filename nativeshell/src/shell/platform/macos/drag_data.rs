@@ -9,7 +9,7 @@ use objc::rc::StrongPtr;
 
 use crate::{
     codec::{MessageCodec, StandardMethodCodec, Value},
-    shell::{constants::drag_data, ContextOptions},
+    shell::{api_constants::drag_data, ContextOptions},
 };
 
 use super::utils::{from_nsstring, to_nsdata, to_nsstring};

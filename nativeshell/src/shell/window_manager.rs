@@ -11,7 +11,7 @@ use crate::{
 };
 
 use super::{
-    constants::*,
+    api_constants::*,
     platform::window::{PlatformWindow, PlatformWindowType},
     Context, EngineHandle, PlatformWindowDelegate, Window, WindowHandle, WindowMethodCall,
     WindowMethodCallReply,

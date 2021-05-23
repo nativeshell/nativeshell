@@ -7,7 +7,7 @@ use crate::{
     Result,
 };
 
-use super::{constants::channel, Context, EngineHandle, WindowHandle, WindowManager};
+use super::{api_constants::channel, Context, EngineHandle, WindowHandle, WindowManager};
 
 pub struct WindowMethodChannel {
     context: Rc<Context>,

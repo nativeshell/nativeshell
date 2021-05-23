@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'key_interceptor.dart';
 import 'mutex.dart';
 import 'util.dart';
-import 'constants.dart';
+import 'api_constants.dart';
 import 'menu.dart';
 
 class MenuState {

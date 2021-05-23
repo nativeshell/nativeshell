@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     shell::{
-        structs::{
+        api_model::{
             WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
         IPoint, IRect, ISize, Point, Rect, Size,
