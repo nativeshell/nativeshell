@@ -16,10 +16,27 @@ class WindowManager {
     return instance._init();
   }
 
+  Future<void> _checkApiVersion(WindowMethodDispatcher dispatcher) async {
+    final version = await dispatcher.invokeMethod(
+        channel: Channels.windowManager,
+        method: Methods.windowManagerGetApiVersion,
+        targetWindowHandle: WindowHandle.invalid);
+    if (version != currentApiVersion) {
+      print('Warning: Mismatched API version!');
+      print('  Nativeshell rust crate API version: $version');
+      print('  Nativeshell dart package API version: $currentApiVersion.');
+      print(
+          '  Please update the ${version > currentApiVersion ? 'dart package' : 'rust crate'}.');
+    }
+  }
+
   Future<void> _init() async {
     WidgetsFlutterBinding.ensureInitialized();
     KeyInterceptor.instance;
     final dispatcher = WindowMethodDispatcher.instance;
+
+    await _checkApiVersion(dispatcher);
+
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
         method: Methods.windowInit,

@@ -189,6 +189,9 @@ impl WindowManager {
         engine: EngineHandle,
     ) {
         match call.method.as_str() {
+            method::window_manager::GET_API_VERSION => {
+                reply.send(Ok(Value::I64(CURRENT_API_VERSION as i64)));
+            }
             method::window::INIT => {
                 let window = context
                     .window_manager

@@ -16,7 +16,12 @@ class Events {
   static final windowClose = 'event:Window.close';
 }
 
+const currentApiVersion = 2;
+
 class Methods {
+  // WindowManager
+  static final windowManagerGetApiVersion = 'WindowManager.getApiVersion';
+
   // Window
   static final windowCreate = 'Window.create';
   static final windowInit = 'Window.init';
