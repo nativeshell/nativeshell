@@ -22,7 +22,7 @@ use objc::{
 use crate::{
     shell::structs::{Menu, MenuItem, MenuItemRole},
     shell::{
-        structs::{Accelerator, MenuRole},
+        structs::{Accelerator, CheckStatus, MenuRole},
         Context, MenuHandle, MenuManager, ScheduledCallback,
     },
     util::{update_diff, DiffResult, LateRefCell},
@@ -472,7 +472,7 @@ impl PlatformMenu {
         let () = msg_send![item, setTitle:*menu_item_title];
         let () = msg_send![item, setEnabled:menu_item.enabled];
         let state: NSInteger = {
-            match menu_item.checked {
+            match menu_item.check_status == CheckStatus::CheckOn {
                 true => 1,
                 false => 0,
             }
