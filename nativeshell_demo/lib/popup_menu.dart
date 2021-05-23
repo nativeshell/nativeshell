@@ -18,11 +18,28 @@ class _PopupMenuState extends State<PopupMenu> {
           MenuItem(
               title: 'Regular',
               checkStatus: CheckStatus.checkOn,
-              action: () {}),
+              action: () {
+                print('Regular');
+              }),
           MenuItem(
               title: 'Custom (not wired yet)',
               checkStatus: CheckStatus.checkOff,
-              action: () {}),
+              action: () {
+                print('Custom');
+              }),
+          MenuItem.separator(),
+          MenuItem(
+              title: 'Radio On',
+              checkStatus: CheckStatus.radioOn,
+              action: () {
+                print('Radio On');
+              }),
+          MenuItem(
+              title: 'Radio Off',
+              checkStatus: CheckStatus.radioOff,
+              action: () {
+                print('Radio Off');
+              }),
         ]),
         MenuItem.separator(),
         MenuItem(title: 'Menu Item 2', action: () {}),

@@ -23,7 +23,10 @@ use crate::{
 
 use super::{
     error::{PlatformError, PlatformResult},
-    menu_item::{create_check_menu_item, menu_item_set_checked},
+    menu_item::{
+        check_menu_item_set_checked, create_check_menu_item, create_radio_menu_item,
+        radio_menu_item_set_checked,
+    },
 };
 
 pub struct PlatformMenu {
@@ -193,8 +196,16 @@ impl PlatformMenu {
         } else {
             let res = if menu_item.check_status == CheckStatus::None {
                 gtk::MenuItem::new()
-            } else {
+            } else if menu_item.check_status == CheckStatus::CheckOn
+                || menu_item.check_status == CheckStatus::CheckOff
+            {
                 create_check_menu_item().upcast::<gtk::MenuItem>()
+            } else if menu_item.check_status == CheckStatus::RadioOn
+                || menu_item.check_status == CheckStatus::RadioOff
+            {
+                create_radio_menu_item().upcast::<gtk::MenuItem>()
+            } else {
+                panic!("Invalid item check status")
             };
             let weak = self.weak_self.borrow().clone();
             res.connect_activate(move |item| {
@@ -361,9 +372,18 @@ impl PlatformMenu {
 
         if let Some(check_menu_item) = item.downcast_ref::<gtk::CheckMenuItem>() {
             self.ignore_activate.replace(true);
-            menu_item_set_checked(
+            check_menu_item_set_checked(
                 check_menu_item,
                 menu_item.check_status == CheckStatus::CheckOn,
+            );
+            self.ignore_activate.replace(false);
+        }
+
+        if let Some(radio_menu_item) = item.downcast_ref::<gtk::RadioMenuItem>() {
+            self.ignore_activate.replace(true);
+            radio_menu_item_set_checked(
+                radio_menu_item,
+                menu_item.check_status == CheckStatus::RadioOn,
             );
             self.ignore_activate.replace(false);
         }
@@ -381,10 +401,28 @@ impl PlatformMenu {
     }
 
     fn can_update(old_item: &MenuItem, new_item: &MenuItem) -> bool {
-        // can't change separator item to non separator
-        return old_item.separator == new_item.separator
-            && (old_item.check_status == CheckStatus::None)
-                == (new_item.check_status == CheckStatus::None);
+        #[derive(PartialEq)]
+        enum MenuItemType {
+            Separator,
+            Regular,
+            CheckBox,
+            Radio,
+        }
+        fn get_menu_item_type(item: &MenuItem) -> MenuItemType {
+            if item.separator {
+                return MenuItemType::Separator;
+            }
+            match item.check_status {
+                CheckStatus::None => return MenuItemType::Regular,
+                CheckStatus::CheckOn => MenuItemType::CheckBox,
+                CheckStatus::CheckOff => MenuItemType::CheckBox,
+                CheckStatus::RadioOn => MenuItemType::Radio,
+                CheckStatus::RadioOff => MenuItemType::Radio,
+            }
+        }
+
+        // can't change separator item to non separator or regular/radio/checkbox
+        return get_menu_item_type(old_item) == get_menu_item_type(new_item);
     }
 
     fn on_move_current(&self, direction: MenuDirectionType) {

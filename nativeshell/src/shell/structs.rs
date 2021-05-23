@@ -256,6 +256,8 @@ pub enum CheckStatus {
     None,
     CheckOn,
     CheckOff,
+    RadioOn,
+    RadioOff,
 }
 
 impl Default for CheckStatus {

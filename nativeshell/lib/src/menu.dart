@@ -38,6 +38,8 @@ enum CheckStatus {
   none,
   checkOn,
   checkOff,
+  radioOn,
+  radioOff,
 }
 
 class MenuItem {
