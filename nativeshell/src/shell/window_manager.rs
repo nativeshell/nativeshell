@@ -192,7 +192,7 @@ impl WindowManager {
             method::window_manager::GET_API_VERSION => {
                 reply.send(Ok(Value::I64(CURRENT_API_VERSION as i64)));
             }
-            method::window::INIT => {
+            method::window_manager::INIT_WINDOW => {
                 let window = context
                     .window_manager
                     .borrow()
@@ -215,7 +215,7 @@ impl WindowManager {
                     })),
                 }
             }
-            method::window::CREATE => {
+            method::window_manager::CREATE_WINDOW => {
                 let create_request: WindowCreateRequest = from_value(&call.arguments).unwrap();
                 reply.send(Ok(context
                     .window_manager

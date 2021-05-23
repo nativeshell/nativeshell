@@ -14,14 +14,21 @@ pub(crate) mod channel {
     pub const MENU_MANAGER: &str = "nativeshell/menu-manager";
 }
 
+pub const CURRENT_API_VERSION: i32 = 1;
+
 pub(crate) mod method {
 
-    pub mod window {
-        // Without targetWindowHandle, directed to Window Manager
-        pub const CREATE: &str = "Window.create";
+    pub mod window_manager {
+        pub const GET_API_VERSION: &str = "WindowManager.getApiVersion";
 
-        // Window targetWindowHandle, directed to Window Manager
-        pub const INIT: &str = "Window.init";
+        // Request creation of new window
+        pub const CREATE_WINDOW: &str = "WindowManager.createWindow";
+
+        // Initializes current isolate window
+        pub const INIT_WINDOW: &str = "WindowManager.initWindow";
+    }
+
+    pub mod window {
 
         // Request to show the window (may be delayed until window itself calls readyToShow)
         pub const SHOW: &str = "Window.show";

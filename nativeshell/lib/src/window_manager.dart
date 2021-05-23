@@ -39,7 +39,7 @@ class WindowManager {
 
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
-        method: Methods.windowInit,
+        method: Methods.windowManagerInitWindow,
         targetWindowHandle: WindowHandle.invalid);
 
     _currentWindow = WindowHandle(result['currentWindow'] as int);
@@ -65,7 +65,7 @@ class WindowManager {
     final dispatcher = WindowMethodDispatcher.instance;
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
-        method: Methods.windowCreate,
+        method: Methods.windowManagerCreateWindow,
         targetWindowHandle: WindowHandle.invalid,
         arguments: {
           'parent': currentWindow.handle.value,
