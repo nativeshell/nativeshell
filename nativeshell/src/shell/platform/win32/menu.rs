@@ -11,7 +11,7 @@ use super::{
 
 use crate::{
     shell::{
-        structs::{Menu, MenuItem},
+        structs::{CheckStatus, Menu, MenuItem},
         Context, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult},
@@ -88,7 +88,7 @@ impl PlatformMenu {
         if !item.enabled {
             state |= MFS_DISABLED;
         }
-        if item.checked {
+        if item.check_status == CheckStatus::CheckOn {
             state |= MFS_CHECKED;
         }
 

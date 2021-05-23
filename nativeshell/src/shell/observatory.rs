@@ -70,18 +70,19 @@ fn dup2(src: libc::c_int, dst: libc::c_int) -> libc::c_int {
 
 #[allow(unused)]
 fn _register_observatory_listener(file_suffix: String) {
-    let stdout = dup(libc::STDOUT_FILENO);
+    const STDOUT_FILENO: i32 = 1;
+    let stdout = dup(STDOUT_FILENO);
     let mut pipe = [0; 2];
     unsafe {
         #[cfg(target_family = "windows")]
-        libc::pipe(pipe.as_mut_ptr(), libc::STDOUT_FILENO, libc::O_NOINHERIT);
+        libc::pipe(pipe.as_mut_ptr(), STDOUT_FILENO as u32, libc::O_NOINHERIT);
 
         #[cfg(target_family = "unix")]
         libc::pipe(pipe.as_mut_ptr());
 
-        libc::close(libc::STDOUT_FILENO);
+        libc::close(STDOUT_FILENO);
     }
-    dup2(pipe[1], libc::STDOUT_FILENO);
+    dup2(pipe[1], STDOUT_FILENO);
     thread::spawn(move || {
         let mut buf = [0u8; 1024];
         let mut string = String::new();
@@ -116,7 +117,7 @@ fn _register_observatory_listener(file_suffix: String) {
                         let substr = &string[..i];
                         if substr.starts_with(URL_PREFIX) {
                             // revert to the original stdout
-                            dup2(stdout, libc::STDOUT_FILENO);
+                            dup2(stdout, STDOUT_FILENO);
 
                             have_observatory_url(&substr[URL_PREFIX.len()..], &file_suffix);
                             return;
