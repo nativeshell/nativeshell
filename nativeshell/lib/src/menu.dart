@@ -34,11 +34,17 @@ enum MenuRole {
   services,
 }
 
+enum CheckStatus {
+  none,
+  checkOn,
+  checkOff,
+}
+
 class MenuItem {
   MenuItem({
     required this.title,
     required this.action,
-    this.checked = false,
+    this.checkStatus = CheckStatus.none,
     this.accelerator,
   })  : separator = false,
         submenu = null,
@@ -49,7 +55,7 @@ class MenuItem {
     required this.submenu,
   })  : separator = false,
         action = null,
-        checked = false,
+        checkStatus = CheckStatus.none,
         role = null,
         accelerator = null;
 
@@ -78,7 +84,7 @@ class MenuItem {
     this.accelerator,
   })  : action = null,
         separator = false,
-        checked = false,
+        checkStatus = CheckStatus.none,
         title = title ?? _titleForRole(role),
         role = role,
         submenu = null;
@@ -87,7 +93,7 @@ class MenuItem {
       : title = '',
         action = null,
         separator = true,
-        checked = false,
+        checkStatus = CheckStatus.none,
         role = null,
         submenu = null,
         accelerator = null;
@@ -100,7 +106,7 @@ class MenuItem {
   final Menu? submenu;
 
   final bool separator;
-  final bool checked;
+  final CheckStatus checkStatus;
 
   bool get disabled => submenu == null && action == null;
 

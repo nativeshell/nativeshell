@@ -15,7 +15,7 @@ use gtk::{
 
 use crate::{
     shell::{
-        structs::{Accelerator, Menu, MenuItem},
+        structs::{Accelerator, CheckStatus, Menu, MenuItem},
         Context, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},
@@ -23,7 +23,7 @@ use crate::{
 
 use super::{
     error::{PlatformError, PlatformResult},
-    menu_item::{create_menu_item, menu_item_set_checked},
+    menu_item::{create_check_menu_item, menu_item_set_checked},
 };
 
 pub struct PlatformMenu {
@@ -59,7 +59,8 @@ impl PlatformMenu {
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
         self.weak_self.set(weak.clone());
         unsafe {
-            self.menu.set_data("nativeshell_platform_menu", weak.clone());
+            self.menu
+                .set_data("nativeshell_platform_menu", weak.clone());
         }
 
         // find top level menu and fire callback
@@ -190,7 +191,11 @@ impl PlatformMenu {
         let res = if menu_item.separator {
             gtk::SeparatorMenuItem::new().upcast::<gtk::MenuItem>()
         } else {
-            let res = create_menu_item().upcast::<gtk::MenuItem>();
+            let res = if menu_item.check_status == CheckStatus::None {
+                gtk::MenuItem::new()
+            } else {
+                create_check_menu_item().upcast::<gtk::MenuItem>()
+            };
             let weak = self.weak_self.borrow().clone();
             res.connect_activate(move |item| {
                 if let Some(s) = weak.upgrade() {
@@ -356,7 +361,10 @@ impl PlatformMenu {
 
         if let Some(check_menu_item) = item.downcast_ref::<gtk::CheckMenuItem>() {
             self.ignore_activate.replace(true);
-            menu_item_set_checked(check_menu_item, menu_item.checked);
+            menu_item_set_checked(
+                check_menu_item,
+                menu_item.check_status == CheckStatus::CheckOn,
+            );
             self.ignore_activate.replace(false);
         }
 
@@ -374,7 +382,9 @@ impl PlatformMenu {
 
     fn can_update(old_item: &MenuItem, new_item: &MenuItem) -> bool {
         // can't change separator item to non separator
-        return old_item.separator == new_item.separator;
+        return old_item.separator == new_item.separator
+            && (old_item.check_status == CheckStatus::None)
+                == (new_item.check_status == CheckStatus::None);
     }
 
     fn on_move_current(&self, direction: MenuDirectionType) {

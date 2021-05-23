@@ -250,6 +250,20 @@ pub struct Accelerator {
     pub control: bool,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum CheckStatus {
+    None,
+    CheckOn,
+    CheckOff,
+}
+
+impl Default for CheckStatus {
+    fn default() -> Self {
+        CheckStatus::None
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuItem {
@@ -257,7 +271,7 @@ pub struct MenuItem {
     pub title: String,
     pub enabled: bool,
     pub separator: bool,
-    pub checked: bool,
+    pub check_status: CheckStatus,
     pub role: Option<MenuItemRole>,
     pub submenu: Option<MenuHandle>,
     pub accelerator: Option<Accelerator>,

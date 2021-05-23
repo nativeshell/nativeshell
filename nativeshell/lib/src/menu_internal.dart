@@ -325,7 +325,7 @@ class MenuElement {
         'submenu': item.submenu?.state.currentHandle?.value,
         'enabled': item.action != null || item.submenu != null,
         'separator': item.separator,
-        'checked': item.checked,
+        'checkStatus': enumToString(item.checkStatus),
         'role': item.role != null ? enumToString(item.role) : null,
         'accelerator': item.accelerator?.serialize(),
       };

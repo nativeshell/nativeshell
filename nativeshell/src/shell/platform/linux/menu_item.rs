@@ -49,7 +49,7 @@ fn menu_item_get_type() -> glib_sys::GType {
     unsafe { TYPE }
 }
 
-pub(super) fn create_menu_item() -> gtk::CheckMenuItem {
+pub(super) fn create_check_menu_item() -> gtk::CheckMenuItem {
     unsafe {
         let instance = gobject_sys::g_object_new(menu_item_get_type(), std::ptr::null_mut());
         gobject_sys::g_object_ref_sink(instance);

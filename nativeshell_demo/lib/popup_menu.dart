@@ -15,8 +15,14 @@ class _PopupMenuState extends State<PopupMenu> {
 
   List<MenuItem> _buildMenuItems() => [
         MenuItem.children(title: 'Window Titlebar', children: [
-          MenuItem(title: 'Regular', checked: true, action: () {}),
-          MenuItem(title: 'Custom (not wired yet)', action: () {}),
+          MenuItem(
+              title: 'Regular',
+              checkStatus: CheckStatus.checkOn,
+              action: () {}),
+          MenuItem(
+              title: 'Custom (not wired yet)',
+              checkStatus: CheckStatus.checkOff,
+              action: () {}),
         ]),
         MenuItem.separator(),
         MenuItem(title: 'Menu Item 2', action: () {}),
