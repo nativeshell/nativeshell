@@ -133,12 +133,6 @@ impl PlatformWindow {
 
         self.schedule_first_frame_notification();
 
-        if self.parent.is_some() {
-            // For whatever reason this needs to be set upfront
-            let win = self.parent.as_ref().unwrap().window.clone();
-            self.window.set_transient_for(Some(&win));
-        }
-
         let weak = self.weak_self.borrow().clone();
         let weak_clone = weak.clone();
         self.window.connect_delete_event(move |_, _| {
@@ -425,6 +419,11 @@ impl PlatformWindow {
         self.modal_close_callback
             .borrow_mut()
             .replace(Box::new(done_callback));
+
+        if let Some(parent) = self.parent.as_ref() {
+            let parent_window = parent.window.clone();
+            self.window.set_transient_for(Some(&parent_window));
+        }
 
         self.window.set_modal(true);
         self.window
