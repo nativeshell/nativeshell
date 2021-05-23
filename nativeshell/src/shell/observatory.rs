@@ -86,6 +86,7 @@ fn _register_observatory_listener(file_suffix: String) {
     thread::spawn(move || {
         let mut buf = [0u8; 1024];
         let mut string = String::new();
+        let mut have_url = false;
 
         const URL_PREFIX: &str = "flutter: Observatory listening on ";
         loop {
@@ -108,6 +109,10 @@ fn _register_observatory_listener(file_suffix: String) {
                 read
             };
 
+            if have_url {
+                continue;
+            }
+
             let utf8 = String::from_utf8_lossy(&buf[0..read as usize]);
             string.push_str(&utf8);
 
@@ -116,11 +121,26 @@ fn _register_observatory_listener(file_suffix: String) {
                     {
                         let substr = &string[..i];
                         if substr.starts_with(URL_PREFIX) {
-                            // revert to the original stdout
-                            dup2(stdout, STDOUT_FILENO);
+                            have_url = true;
 
-                            have_observatory_url(&substr[URL_PREFIX.len()..], &file_suffix);
-                            return;
+                            // after reverting to the original stdout there's no flutter output
+                            // anymore; Would be nice to know why this happens;
+                            #[cfg(target_family = "windows")]
+                            {
+                                let url: String = substr[URL_PREFIX.len()..].into();
+                                let file_suffix = file_suffix.clone();
+                                thread::spawn(move || {
+                                    have_observatory_url(&url, &file_suffix);
+                                });
+                            }
+
+                            #[cfg(target_family = "unix")]
+                            {
+                                // revert to the original stdout and terminate the thread
+                                dup2(stdout, STDOUT_FILENO);
+                                have_observatory_url(&substr[URL_PREFIX.len()..], &file_suffix);
+                                return;
+                            }
                         }
                     }
                     string.replace_range(..i + 1, "");
