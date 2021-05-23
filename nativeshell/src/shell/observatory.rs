@@ -2,24 +2,49 @@ use std::thread;
 
 use crate::util::errno::{errno, set_errno};
 
-fn have_observatory_url(url: &str, file_suffix: &str) {
+fn get_temp_environemt() -> Option<&'static str> {
     #[cfg(target_family = "windows")]
-    const TMP_ENV: &str = "TEMP";
-
+    {
+        const TEMP: &str = "TEMP";
+        return Some(TEMP);
+    }
     #[cfg(target_family = "unix")]
-    const TMP_ENV: &str = "TMPDIR";
+    {
+        const TMPDIR: &str = "TMPDIR";
+        const XDG_RUNTIME_DIR: &str = "XDG_RUNTIME_DIR";
+        if std::env::var(XDG_RUNTIME_DIR).is_ok() {
+            return Some(XDG_RUNTIME_DIR);
+        } else if std::env::var(TMPDIR).is_ok() {
+            return Some(TMPDIR);
+        } else {
+            return None;
+        }
+    }
+}
 
-    let info = VMServiceInfoFile { uri: url.into() };
-    let content = serde_json::to_string_pretty(&info).unwrap();
-    let file_name = format!("vmservice.{}", file_suffix);
-    let tmp_dir = std::env::var(TMP_ENV).unwrap_or("/tmp".into());
-    println!(
-        "nativeshell: Writing VM Service info file into ${{{}}}{}",
-        TMP_ENV, file_name,
-    );
+fn have_observatory_url(url: &str, file_suffix: &str) {
+    let temp = get_temp_environemt();
+    match temp {
+        Some(temp) => {
+            let dir = std::env::var(temp).unwrap();
+            let separator = if dir.ends_with("/") { "" } else { "/" };
+            let info = VMServiceInfoFile { uri: url.into() };
+            let content = serde_json::to_string_pretty(&info).unwrap();
+            let file_name = format!("vmservice.{}", file_suffix);
 
-    let file = format!("{}{}", tmp_dir, file_name);
-    std::fs::write(file, &content).unwrap();
+            println!(
+                "nativeshell: Writing VM Service info file into ${{{}}}{}{}",
+                temp, separator, file_name,
+            );
+
+            let file = format!("{}{}{}", dir, separator, file_name);
+            std::fs::write(file, &content).unwrap();
+        }
+        None => {
+            println!("nativeshell: Could not determine temporary folder environment variable.");
+            println!("nativeshell: VM Service info file not written.");
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
