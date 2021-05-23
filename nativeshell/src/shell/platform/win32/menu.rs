@@ -77,7 +77,7 @@ impl PlatformMenu {
             .map(|m| m.menu)
             .unwrap_or_else(|| HMENU(0));
 
-        let item_type = {
+        let mut item_type = {
             match item.separator {
                 true => MFT_SEPARATOR,
                 false => MFT_STRING,
@@ -89,6 +89,10 @@ impl PlatformMenu {
             state |= MFS_DISABLED;
         }
         if item.check_status == CheckStatus::CheckOn {
+            state |= MFS_CHECKED;
+        }
+        if item.check_status == CheckStatus::RadioOn {
+            item_type |= MFT_RADIOCHECK;
             state |= MFS_CHECKED;
         }
 
