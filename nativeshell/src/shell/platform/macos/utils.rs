@@ -1,4 +1,4 @@
-use std::{os::raw::c_char, slice, sync::Arc};
+use std::{ffi::CString, mem::ManuallyDrop, os::raw::c_char, slice, sync::Arc};
 
 use cocoa::{
     appkit::{CGFloat, NSImage},
@@ -14,8 +14,9 @@ use core_graphics::{
 };
 
 use objc::{
+    declare::ClassDecl,
     rc::StrongPtr,
-    runtime::{Class, Object},
+    runtime::{objc_getClass, Class, Object},
 };
 
 use crate::shell::{api_model::ImageData, Point, Rect, Size};
@@ -153,4 +154,17 @@ pub fn ns_image_from(image: ImageData) -> StrongPtr {
             size:NSSize::new(image.width as CGFloat, image.height as CGFloat)
         ])
     }
+}
+
+struct MyClassDecl {
+    _cls: *mut Class,
+}
+
+pub(super) fn class_decl_from_name(name: &str) -> ManuallyDrop<ClassDecl> {
+    let name = CString::new(name).unwrap();
+    let class = unsafe { objc_getClass(name.as_ptr() as *const _) as *mut _ };
+    let res = MyClassDecl { _cls: class };
+    // bit dirty, unfortunatelly ClassDecl doesn't let us create instance with custom
+    // class, and it's now worth replicating the entire functionality here
+    ManuallyDrop::new(unsafe { std::mem::transmute(res) })
 }

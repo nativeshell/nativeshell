@@ -6,7 +6,6 @@ use std::{
     time::Duration,
 };
 
-use cocoa::appkit::{NSScreen, NSWindowTabbingMode};
 use cocoa::{
     appkit::{
         NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
@@ -14,7 +13,10 @@ use cocoa::{
     base::{id, nil, BOOL, NO, YES},
     foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSString, NSUInteger},
 };
-use core_foundation::date::CFAbsoluteTimeGetCurrent;
+use cocoa::{
+    appkit::{NSScreen, NSWindowTabbingMode},
+    foundation::NSProcessInfo,
+};
 
 use objc::{
     declare::ClassDecl,
@@ -25,7 +27,10 @@ use objc::{
     runtime::{Class, Object, Sel},
 };
 
-use NSEventType::{NSLeftMouseDown, NSLeftMouseUp, NSMouseMoved, NSRightMouseDown, NSRightMouseUp};
+use NSEventType::{
+    NSLeftMouseDown, NSLeftMouseUp, NSMouseEntered, NSMouseExited, NSMouseMoved, NSRightMouseDown,
+    NSRightMouseUp,
+};
 
 use crate::{
     codec::Value,
@@ -61,6 +66,7 @@ pub struct PlatformWindow {
     show_when_ready: Cell<bool>,
     drag_context: LateRefCell<DragContext>,
     last_event: RefCell<HashMap<u64, StrongPtr>>,
+    ignore_enter_leave_until: Cell<f64>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -110,6 +116,7 @@ impl PlatformWindow {
                 show_when_ready: Cell::new(false),
                 last_event: RefCell::new(HashMap::new()),
                 drag_context: LateRefCell::new(),
+                ignore_enter_leave_until: Cell::new(0.0),
             }
         })
     }
@@ -556,7 +563,8 @@ impl PlatformWindow {
                 .values()
                 .filter(|e| {
                     let event_type = e.eventType();
-                    event_type as i32 >= 1 && event_type as i32 <= 9
+                    event_type as i32 >= NSLeftMouseDown as i32
+                        && event_type as i32 <= NSMouseExited as i32
                 })
                 .max_by_key(|x| x.eventNumber())
                 .cloned();
@@ -579,7 +587,7 @@ impl PlatformWindow {
                     let event: id = msg_send![class!(NSEvent), mouseEventWithType: NSMouseMoved
                         location:location
                         modifierFlags:NSEvent::modifierFlags(nil)
-                        timestamp:CFAbsoluteTimeGetCurrent()
+                        timestamp: Self::system_uptime()
                         windowNumber:0
                         context:nil
                         eventNumber:NSEvent::eventNumber(*last_event)
@@ -590,6 +598,22 @@ impl PlatformWindow {
                 }
             }
         });
+    }
+
+    pub fn should_send_event(&self, event: StrongPtr) -> bool {
+        let event_type = unsafe { NSEvent::eventType(*event) };
+        if event_type == NSMouseEntered || event_type == NSMouseExited {
+            let timestamp = unsafe { NSEvent::timestamp(*event) };
+            // we attempt to ignore the event, unfortunately this doesn't work for
+            // MouseEntered, as it is delivered to NSTrackingArea by NSApplication
+            // directlly. We do however counteract it with
+            // subsequent MouseMove produced by synthetize_mouse_move_if_needed()
+            if timestamp < self.ignore_enter_leave_until.get() {
+                self.synthetize_mouse_move_if_needed();
+                return false;
+            }
+        }
+        true
     }
 
     pub fn set_pending_effect(&self, effect: DragEffect) {
@@ -619,6 +643,13 @@ impl PlatformWindow {
         }
     }
 
+    fn system_uptime() -> f64 {
+        unsafe {
+            let info = NSProcessInfo::processInfo(nil);
+            msg_send![info, systemUptime]
+        }
+    }
+
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
         F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
@@ -635,8 +666,12 @@ impl PlatformWindow {
             let weak = self.weak_self.clone_value();
             let cb = move || {
                 let item_selected: BOOL = msg_send![*menu, popUpMenuPositioningItem:nil atLocation:position inView:view.clone()];
+
                 let on_done = on_done.take();
                 if let Some(s) = weak.upgrade() {
+                    // When hiding menu NSApplication will for whatever reason replay
+                    // 'queued' stale MouseEnter/Leave events.
+                    s.ignore_enter_leave_until.replace(Self::system_uptime());
                     s.synthetize_mouse_move_if_needed();
                 }
                 if let Some(on_done) = on_done {
@@ -693,8 +728,21 @@ unsafe impl Sync for WindowClass {}
 struct WindowDelegateClass(*const Class);
 unsafe impl Sync for WindowDelegateClass {}
 
+extern "C" fn accepts_first_mouse(_this: &Object, _sel: Sel, _event: id) -> BOOL {
+    YES
+}
+
 lazy_static! {
     static ref WINDOW_CLASS: WindowClass = unsafe {
+        // FlutterView doesn't override acceptsFirstMouse: so we do it here
+        {
+            let mut class = class_decl_from_name("FlutterView");
+            class.add_method(
+                sel!(acceptsFirstMouse:),
+                accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
+            );
+        }
+
         let window_superclass = class!(NSWindow);
         let mut decl = ClassDecl::new("IMFlutterWindow", window_superclass).unwrap();
 
@@ -875,15 +923,22 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) -> () {
 extern "C" fn send_event(this: &mut Object, _: Sel, e: id) -> () {
     unsafe {
         let event = StrongPtr::retain(e);
-        with_state(this, move |state| {
-            let event_type = NSEvent::eventType(*event);
-            state
-                .last_event
-                .borrow_mut()
-                .insert(event_type as u64, event.clone());
-        });
-        let superclass = superclass(this);
-        let () = msg_send![super(this, superclass), sendEvent: e];
+        let should_send = with_state_res(
+            this,
+            move |state| {
+                let event_type = NSEvent::eventType(*event);
+                state
+                    .last_event
+                    .borrow_mut()
+                    .insert(event_type as u64, event.clone());
+                state.should_send_event(event)
+            },
+            || true,
+        );
+        if should_send {
+            let superclass = superclass(this);
+            let () = msg_send![super(this, superclass), sendEvent: e];
+        }
     }
 }
 
