@@ -21,6 +21,7 @@ impl PlatformEngine {
             let class = class!(FlutterViewController);
             let view_controller: id = msg_send![class, alloc];
             let view_controller = StrongPtr::new(msg_send![view_controller, initWithProject: nil]);
+            let () = msg_send![*view_controller, setMouseTrackingMode: 3]; // always track mouse
             let engine: id = msg_send![*view_controller, engine];
             let embedder_api: *mut c_void = msg_send![engine, embedderAPI];
             override_key_event(embedder_api);
