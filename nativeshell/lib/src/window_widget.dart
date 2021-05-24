@@ -199,8 +199,8 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
       _geometryPending = true;
     } else {
       _geometryInProgress = true;
-      await builtWindow.updateWindowSize(
-          WindowManager.instance.currentWindow, _snapToPixelBoundary(size));
+      await builtWindow.updateWindowSize(WindowManager.instance.currentWindow,
+          _sanitizeAndSnapToPixelBoundary(size));
       _geometryInProgress = false;
       if (_geometryPending) {
         _geometryPending = false;
@@ -256,22 +256,8 @@ class _RenderWindowLayout extends RenderProxyBox {
           var w = child!.getMaxIntrinsicWidth(double.infinity);
           var h = child!.getMaxIntrinsicHeight(double.infinity);
 
-          // sane default in case intrinsic size can't be determined
-          if (w == 0) {
-            w = 100;
-          }
-          if (h == 0) {
-            h = 100;
-          }
-
-          // Error messages can get huge
-          if (w > 10000) {
-            w = 800;
-            h = 400;
-          }
-
           await builtWindow.initializeWindow(
-              win, _snapToPixelBoundary(Size(w, h)));
+              win, _sanitizeAndSnapToPixelBoundary(Size(w, h)));
           await win.readyToShow();
         });
       });
@@ -281,7 +267,24 @@ class _RenderWindowLayout extends RenderProxyBox {
   bool hasLayout = false;
 }
 
-Size _snapToPixelBoundary(Size size) {
+Size _sanitizeAndSnapToPixelBoundary(Size size) {
+  var w = size.width;
+  var h = size.height;
+  // sane default in case intrinsic size can't be determined
+  if (w == 0) {
+    w = 100;
+  }
+  if (h == 0) {
+    h = 100;
+  }
+
+  // Error messages can get huge
+  if (w > 10000) {
+    w = 800;
+    h = 400;
+  }
+  size = Size(w, h);
+
   final ratio = WidgetsBinding.instance!.window.devicePixelRatio;
   size = size / ratio;
   size = Size(size.width.ceilToDouble(), size.height.ceilToDouble());
