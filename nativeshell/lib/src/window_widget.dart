@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -18,6 +19,9 @@ abstract class WindowBuilder {
     ));
     await window.show();
   }
+
+  Future<void> updateWindowConstraints(
+      LocalWindow window, Size intrinsicContentSize) async {}
 
   bool get autoSizeWindow => false;
 
@@ -63,6 +67,8 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
             context: this,
             child: _WindowLayout(
               builtWindow: build,
+              updatingConstraints: updatingConstraints,
+              updatingConstraintsDone: updatingConstraintsDone,
               child: _WindowLayoutInner(
                 builtWindow: build,
                 child: Builder(
@@ -91,6 +97,28 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
 
   _Status status = _Status.notInitialized;
   dynamic initData;
+  bool updatingConstraints = false;
+  int constraintsUpdateCookie = 0;
+
+  @override
+  void requestUpdateConstraints() {
+    ++constraintsUpdateCookie;
+    setState(() {
+      updatingConstraints = true;
+    });
+  }
+
+  void updatingConstraintsDone() {
+    final cookie = constraintsUpdateCookie;
+    SchedulerBinding.instance!.addPostFrameCallback((Duration _) {
+      if (constraintsUpdateCookie == cookie) {
+        // not changed in the meanwhile
+        setState(() {
+          updatingConstraints = false;
+        });
+      }
+    });
+  }
 
   @override
   void registerTapCallback(ValueChanged<PointerDownEvent> cb) {
@@ -120,6 +148,7 @@ abstract class WindowContext {
 
   void registerTapCallback(ValueChanged<PointerDownEvent> e);
   void unregisterTapCallback(ValueChanged<PointerDownEvent> e);
+  void requestUpdateConstraints();
 
   static WindowContext of(BuildContext context) {
     final res = context
@@ -212,35 +241,67 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
   final WindowBuilder builtWindow;
+  final bool updatingConstraints;
+  final VoidCallback updatingConstraintsDone;
 
   const _WindowLayout({
     Key? key,
     required Widget child,
     required this.builtWindow,
+    required this.updatingConstraints,
+    required this.updatingConstraintsDone,
   }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _RenderWindowLayout(builtWindow);
+    return _RenderWindowLayout(
+        builtWindow, updatingConstraints, updatingConstraintsDone);
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayout renderObject) {
     renderObject.builtWindow = builtWindow;
+    renderObject.updatingConstraints = updatingConstraints;
+    renderObject.updatingConstraintsDone = updatingConstraintsDone;
+    if (updatingConstraints) {
+      renderObject.markNeedsLayout();
+    }
   }
 }
 
 class _RenderWindowLayout extends RenderProxyBox {
-  _RenderWindowLayout(this.builtWindow);
+  _RenderWindowLayout(
+      this.builtWindow, this.updatingConstraints, this.updatingConstraintsDone);
 
   WindowBuilder builtWindow;
+  bool updatingConstraints;
+  VoidCallback updatingConstraintsDone;
 
   @override
   void performLayout() {
     if (builtWindow.autoSizeWindow) {
       final constraints =
           BoxConstraints.loose(Size(double.infinity, double.infinity));
+      child!.layout(constraints, parentUsesSize: true);
+      size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
+    } else if (updatingConstraints) {
+      var w = child!.getMaxIntrinsicWidth(double.infinity);
+      var h = child!.getMinIntrinsicHeight(w);
+      final intrinsicSize = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+      final win = WindowManager.instance.currentWindow;
+      builtWindow.updateWindowConstraints(win, intrinsicSize);
+
+      final maxSize = Size(max(intrinsicSize.width, size.width),
+          max(intrinsicSize.height, size.height));
+
+      if (maxSize.width > size.width || maxSize.height > size.height) {
+        builtWindow.updateWindowSize(win, maxSize);
+      } else {
+        updatingConstraintsDone();
+      }
+
+      final constraints = BoxConstraints.loose(maxSize);
       child!.layout(constraints, parentUsesSize: true);
       size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
     } else {
@@ -254,10 +315,11 @@ class _RenderWindowLayout extends RenderProxyBox {
       SchedulerBinding.instance!.scheduleFrameCallback((timeStamp) {
         SchedulerBinding.instance!.addPostFrameCallback((timeStamp) async {
           var w = child!.getMaxIntrinsicWidth(double.infinity);
-          var h = child!.getMaxIntrinsicHeight(double.infinity);
+          var h = child!.getMinIntrinsicHeight(w);
 
-          await builtWindow.initializeWindow(
-              win, _sanitizeAndSnapToPixelBoundary(Size(w, h)));
+          final size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+          await builtWindow.initializeWindow(win, size);
+          await builtWindow.updateWindowConstraints(win, size);
           await win.readyToShow();
         });
       });
