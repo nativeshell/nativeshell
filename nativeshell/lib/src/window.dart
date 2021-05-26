@@ -215,7 +215,8 @@ class LocalWindow extends Window {
 
   Menu? get currentWindowMenu => _currentWindowMenu;
 
-  Future<void> setWindowMenu(Menu? menu) async {
+  Future<Menu?> setWindowMenu(Menu? menu) async {
+    final res = _currentWindowMenu;
     if (_currentWindowMenu != null) {
       await _currentWindowMenu!.state.unmaterialize();
     }
@@ -224,6 +225,7 @@ class LocalWindow extends Window {
     await _invokeMethod(Methods.windowSetWindowMenu, {
       'handle': handle?.value,
     });
+    return res;
   }
 
   Future<void> performDrag() async {

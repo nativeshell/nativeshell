@@ -8,14 +8,20 @@ import 'package:flutter/services.dart';
 import 'key_interceptor.dart';
 import 'menu.dart';
 import 'accelerator.dart';
+import 'menu_bar.dart';
 import 'menu_internal.dart';
 import 'window.dart';
 import 'window_widget.dart';
 
 class MenuBarInternal extends StatefulWidget {
   final Menu menu;
+  final MenuItemBuilder builder;
 
-  const MenuBarInternal({Key? key, required this.menu}) : super(key: key);
+  const MenuBarInternal({
+    Key? key,
+    required this.menu,
+    required this.builder,
+  }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -204,12 +210,14 @@ class _MenuBarInternalState extends State<MenuBarInternal>
 
   @override
   Future<void> destroyMenu(MenuHandle menu) async {
-    setState(() {
-      _elements = <MenuElement>[];
-    });
+    if (mounted) {
+      setState(() {
+        _elements = <MenuElement>[];
+      });
+    }
   }
 
-  static Menu? _currentMenu;
+  Menu? _currentMenu;
 
   void updateMenu(Menu menu) async {
     if (_currentMenu == menu) {
@@ -431,12 +439,21 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // need to access this in dispose
+    windowContext = WindowContext.of(context);
+  }
+
+  @override
   void dispose() {
-    super.dispose();
     MenuManager.instance().unregisterDelegate(this);
     KeyInterceptor.instance
         .unregisterHandler(_onRawKeyEvent, stage: InterceptorStage.pre);
-    WindowContext.of(context).unregisterTapCallback(_onWindowTap);
+    if (windowContext != null) {
+      windowContext!.unregisterTapCallback(_onWindowTap);
+    }
+    super.dispose();
   }
 
   void _moveToMenu(int delta) {
@@ -505,13 +522,8 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   // Under normal circumstances, releasing ALT key unfocuses menu; However
   // this is not true when mnemonics key was pressed
   bool _ignoreNextAltKeyUp = false;
-}
 
-enum MenuItemState {
-  regular,
-  hovered,
-  selected,
-  disabled,
+  WindowContext? windowContext;
 }
 
 class Mnemonics {
@@ -585,37 +597,14 @@ class MenuBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(builder: (context) {
+    final child = Builder(builder: (context) {
       final mnemonic = Mnemonics.parse(item.item.title);
-      Color background;
-      Color foreground;
-      switch (itemState) {
-        case MenuItemState.regular:
-          background = Colors.transparent;
-          foreground = Colors.white;
-          break;
-        case MenuItemState.hovered:
-          background = Colors.white.withAlpha(50);
-          foreground = Colors.white;
-          break;
-        case MenuItemState.selected:
-          background = Colors.white.withAlpha(100);
-          foreground = Colors.white;
-          break;
-        case MenuItemState.disabled:
-          background = Colors.transparent;
-          foreground = Colors.white.withAlpha(100);
-          break;
-      }
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        color: background,
-        child: RichText(
-          text: mnemonic.asTextSpan(
-              DefaultTextStyle.of(context).style.copyWith(color: foreground),
-              showMnemonics),
-        ),
+      return RichText(
+        text: mnemonic.asTextSpan(
+            DefaultTextStyle.of(context).style, showMnemonics),
       );
     });
+
+    return menuBarState.widget.builder(context, child, itemState);
   }
 }

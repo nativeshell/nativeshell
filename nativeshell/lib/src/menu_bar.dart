@@ -7,20 +7,35 @@ import 'menu.dart';
 import 'menu_bar_internal.dart';
 import 'window.dart';
 
+enum MenuItemState {
+  regular,
+  hovered,
+  selected,
+  disabled,
+}
+
+typedef MenuItemBuilder = Widget Function(
+    BuildContext context, Widget child, MenuItemState state);
+
 class MenuBar extends StatelessWidget {
   const MenuBar({
     Key? key,
     required this.menu,
+    required this.itemBuilder,
   }) : super(key: key);
 
   final Menu menu;
+  final MenuItemBuilder itemBuilder;
 
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS) {
       return _MacOSMenuBar(menu: menu);
     } else {
-      return MenuBarInternal(menu: menu);
+      return MenuBarInternal(
+        menu: menu,
+        builder: itemBuilder,
+      );
     }
   }
 }
@@ -56,7 +71,7 @@ class _MacOSMenuBarState extends State<_MacOSMenuBar> {
     super.deactivate();
     final window = Window.of(context);
     if (window.currentWindowMenu == widget.menu) {
-      window.setWindowMenu(null);
+      window.setWindowMenu(_previousMenu);
     }
   }
 
@@ -67,13 +82,24 @@ class _MacOSMenuBarState extends State<_MacOSMenuBar> {
     setState(() {});
   }
 
+  void _updateMenu() async {
+    final menu = await Window.of(context).setWindowMenu(widget.menu);
+    // only remember the first 'original' menu;
+    if (!_havePreviousMenu) {
+      _previousMenu = menu;
+      _havePreviousMenu = true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_firstBuild) {
-      Window.of(context).setWindowMenu(widget.menu);
+      _updateMenu();
     }
     return Container(width: 0, height: 0);
   }
 
   bool _firstBuild = true;
+  bool _havePreviousMenu = false;
+  Menu? _previousMenu;
 }
