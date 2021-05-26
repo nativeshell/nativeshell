@@ -5,8 +5,8 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, Geometry, Gravity, WMDecoration, WMFunction, WindowExt, WindowHints};
-use glib::{Cast, ObjectExt, Type};
+use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt};
+use glib::{Cast, ObjectExt};
 use gtk::{
     propagate_event, ContainerExt, EventBox, GtkWindowExt, Inhibit, Overlay, OverlayExt, Widget,
     WidgetExt,
@@ -19,7 +19,7 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
-        Context, IRect, ISize, PlatformWindowDelegate, Point, ScheduledCallback, Size,
+        Context, ISize, PlatformWindowDelegate, Point, ScheduledCallback, Size,
     },
     util::{LateRefCell, OkLog},
 };
@@ -30,6 +30,7 @@ use super::{
     error::{PlatformError, PlatformResult},
     flutter::View,
     menu::PlatformMenu,
+    size_widget::{create_size_widget, size_widget_set_min_size},
     utils::{get_session_type, synthetize_button_up, translate_event_to_window, SessionType},
     window_menu::WindowMenu,
 };
@@ -55,6 +56,7 @@ pub struct PlatformWindow {
     parent: Option<Rc<PlatformWindow>>,
     pub(super) delegate: Weak<dyn PlatformWindowDelegate>,
     modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>) -> ()>>>,
+    size_widget: Widget,
     pub(super) view: LateRefCell<View>,
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
@@ -84,6 +86,7 @@ impl PlatformWindow {
             delegate,
             modal_close_callback: RefCell::new(None),
             parent,
+            size_widget: create_size_widget(),
             view: LateRefCell::new(),
             ready_to_show: Cell::new(false),
             show_when_ready: Cell::new(false),
@@ -111,13 +114,13 @@ impl PlatformWindow {
         let overlay = Overlay::new();
         self.window.add(&overlay);
 
-        overlay.add(&self.window_menu.borrow().menu_bar_container);
+        overlay.add(&self.size_widget);
+        overlay.add_overlay(&self.window_menu.borrow().menu_bar_container);
 
         self.view.set(engine.view.clone());
         overlay.add_overlay(&self.view.borrow().clone());
-        self.view.borrow().grab_focus();
 
-        self.update_preferred_size();
+        self.view.borrow().grab_focus();
 
         self.window.realize();
         unsafe {
@@ -240,20 +243,6 @@ impl PlatformWindow {
         Inhibit(false)
     }
 
-    // Override preferred width and height on FlView; We'll be taking care of window sizing
-    // so just return minimal value required for Gtk to not use the default 200
-    fn update_preferred_size(&self) {
-        let gtype = self.view.borrow().get_type();
-        if let Type::Other(gtype) = gtype {
-            unsafe {
-                let c = gobject_sys::g_type_class_peek(gtype) as *mut gtk_sys::GtkWidgetClass;
-                let c = &mut *c;
-                c.get_preferred_width = Some(Self::get_preferred_size);
-                c.get_preferred_height = Some(Self::get_preferred_size);
-            }
-        }
-    }
-
     fn get_event_box(&self) -> Option<EventBox> {
         let mut res: Option<EventBox> = None;
         self.view.borrow().forall(|w| {
@@ -263,15 +252,6 @@ impl PlatformWindow {
             }
         });
         res
-    }
-
-    unsafe extern "C" fn get_preferred_size(
-        _widget: *mut gtk_sys::GtkWidget,
-        minimum: *mut i32,
-        natural: *mut i32,
-    ) {
-        *minimum = 1;
-        *natural = 1;
     }
 
     fn schedule_first_frame_notification(&self) {
@@ -372,32 +352,6 @@ impl PlatformWindow {
         }
     }
 
-    // see init_platform for explanation
-    pub(super) fn on_move_resize(&self, target_rect: IRect) {
-        if let Some(style) = self.last_window_style.borrow().as_ref() {
-            if !style.can_resize {
-                // gtk on x11 needs tight constraints for window to be non resizable
-                self.window.get_window().unwrap().set_geometry_hints(
-                    Some(&Geometry {
-                        min_width: target_rect.width,
-                        min_height: target_rect.height,
-                        max_width: target_rect.width,
-                        max_height: target_rect.height,
-                        base_width: 0,
-                        base_height: 0,
-                        width_inc: 0,
-                        height_inc: 0,
-                        min_aspect: 0.0,
-                        max_aspect: 0.0,
-                        win_gravity: Gravity::NorthWest,
-                    })
-                    .unwrap(),
-                    WindowHints::MIN_SIZE | WindowHints::MAX_SIZE,
-                );
-            }
-        }
-    }
-
     pub fn close(&self) -> PlatformResult<()> {
         self.deleting.replace(true);
         self.window.close();
@@ -444,10 +398,6 @@ impl PlatformWindow {
 
         let geometry = &geometry.geometry;
 
-        // first set_geometry is always tight; between first and last set_geometry
-        // during continuous resizing we want tight=false; that relaxes constaints
-        // on windows, which results in smoother resizing
-
         self._set_geometry(geometry.clone());
         let weak = self.weak_self.borrow().clone();
         let geometry_clone = geometry.clone();
@@ -463,7 +413,7 @@ impl PlatformWindow {
                     s._set_geometry(geometry_clone);
                 }
             },
-            Duration::from_millis(1000 / 60 + 1),
+            Duration::from_millis(1000 / 30 + 1),
         );
         self.resize_finish_handle.borrow_mut().replace(handle);
 
@@ -471,7 +421,6 @@ impl PlatformWindow {
             frame_origin: geometry.frame_origin.is_some() && get_session_type() == SessionType::X11,
             content_size: geometry.content_size.is_some(),
             min_content_size: geometry.min_content_size.is_some(),
-            max_content_size: geometry.max_content_size.is_some(),
             ..Default::default()
         })
     }
@@ -482,47 +431,32 @@ impl PlatformWindow {
                 .move_(frame_origin.x as i32, frame_origin.y as i32);
         }
         if let Some(content_size) = &geometry.content_size {
-            self.window
-                .resize(content_size.width as i32, content_size.height as i32);
+            if !self.window.get_resizable() {
+                size_widget_set_min_size(
+                    &self.size_widget,
+                    content_size.width as i32,
+                    content_size.height as i32,
+                );
+                self.window.queue_resize();
+            } else {
+                self.window
+                    .resize(content_size.width as i32, content_size.height as i32);
+            }
         }
 
-        let mut hints = WindowHints::empty();
-        if geometry.min_content_size.is_some() || !self.window.get_resizable() {
-            hints |= WindowHints::MIN_SIZE;
+        if self.window.get_resizable() {
+            let min_content_size: ISize = geometry
+                .min_content_size
+                .clone()
+                .unwrap_or(Size::wh(0.0, 0.0))
+                .into();
+
+            size_widget_set_min_size(
+                &self.size_widget,
+                min_content_size.width,
+                min_content_size.height,
+            );
         }
-        if geometry.max_content_size.is_some() || !self.window.get_resizable() {
-            hints |= WindowHints::MAX_SIZE;
-        }
-
-        let min_content_size: ISize = geometry
-            .min_content_size
-            .clone()
-            .unwrap_or(Size::wh(0.0, 0.0))
-            .into();
-
-        let max_content_size: ISize = geometry
-            .min_content_size
-            .clone()
-            .unwrap_or(Size::wh(10000.0, 10000.0))
-            .into();
-
-        self.window.set_geometry_hints(
-            None::<&Widget>,
-            Some(&Geometry {
-                min_width: min_content_size.width,
-                min_height: min_content_size.height,
-                max_width: max_content_size.width,
-                max_height: max_content_size.height,
-                base_width: 0,
-                base_height: 0,
-                width_inc: 0,
-                height_inc: 0,
-                min_aspect: 0.0,
-                max_aspect: 0.0,
-                win_gravity: Gravity::NorthWest,
-            }),
-            hints,
-        );
     }
 
     pub fn get_geometry(&self) -> PlatformResult<WindowGeometry> {
@@ -550,7 +484,7 @@ impl PlatformWindow {
             min_frame_size: None,
             max_frame_size: None,
             min_content_size: last_request.min_content_size,
-            max_content_size: last_request.max_content_size,
+            max_content_size: None,
         })
     }
 
@@ -559,7 +493,6 @@ impl PlatformWindow {
             frame_origin: get_session_type() == SessionType::X11,
             content_size: true,
             min_content_size: true,
-            max_content_size: true,
             ..Default::default()
         })
     }
@@ -599,12 +532,6 @@ impl PlatformWindow {
         }
 
         window.set_functions(func);
-
-        // update geometry - this is needed to set proper min/max size for (non)resizable windows
-        let geometry = self.last_geometry_request.borrow().clone();
-        if let Some(geometry) = geometry {
-            self.set_geometry(geometry).ok_log();
-        }
 
         Ok(())
     }

@@ -15,3 +15,4 @@ pub mod run_loop;
 pub mod utils;
 pub mod window;
 pub mod window_menu;
+pub mod size_widget;
