@@ -63,9 +63,9 @@ class KeyInterceptor {
     required InterceptorStage stage,
   }) {
     if (stage == InterceptorStage.pre) {
-      _handlersPre.add(handler);
+      _handlersPre.remove(handler);
     } else {
-      _handlersPost.add(handler);
+      _handlersPost.remove(handler);
     }
   }
 
