@@ -409,7 +409,7 @@ impl WindowBaseState {
 
             s |= WS_SYSMENU;
             self.set_close_enabled(style.can_close);
-            if style.can_maximize {
+            if style.can_maximize && style.can_resize {
                 s |= WS_MAXIMIZEBOX;
             }
             if style.can_minimize {
