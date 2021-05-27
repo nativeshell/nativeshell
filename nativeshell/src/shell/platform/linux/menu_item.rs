@@ -108,13 +108,12 @@ pub(super) fn radio_menu_item_set_checked(item: &gtk::RadioMenuItem, checked: bo
 fn activate_menu_item(item: &gtk::MenuItem) {
     unsafe {
         let instance: *mut gtk_sys::GtkMenuItem = item.to_glib_none().0;
-        let type_instance = &*(instance as *mut gobject_sys::GTypeInstance);
-        let class = gobject_sys::g_type_class_peek((*type_instance.g_class).g_type);
-        let parent_class =
-            gobject_sys::g_type_class_peek_parent(class) as *mut gtk_sys::GtkMenuItemClass;
-        let parent_class = &*parent_class;
 
-        if let Some(activate) = parent_class.activate {
+        let item_class = gobject_sys::g_type_class_peek(gtk_sys::gtk_check_menu_item_get_type())
+            as *mut gtk_sys::GtkMenuItemClass;
+        let item_class = &*item_class;
+
+        if let Some(activate) = item_class.activate {
             activate(instance as *mut _);
         }
     }
