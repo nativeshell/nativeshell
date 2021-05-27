@@ -72,6 +72,35 @@ class Geometry {
   final Size? minContentSize;
   final Size? maxContentSize;
 
+  Geometry copyWith({
+    Offset? frameOrigin,
+    Size? frameSize,
+    Offset? contentOrigin,
+    Size? contentSize,
+    Size? minFrameSize,
+    Size? maxFrameSize,
+    Size? minContentSize,
+    Size? maxContentSize,
+  }) {
+    return Geometry(
+      frameOrigin: frameOrigin ?? this.frameOrigin,
+      frameSize: frameSize ?? this.frameSize,
+      contentOrigin: contentOrigin ?? this.contentOrigin,
+      contentSize: contentSize ?? this.contentSize,
+      minFrameSize: minFrameSize ?? this.minFrameSize,
+      maxFrameSize: maxFrameSize ?? this.maxFrameSize,
+      minContentSize: minContentSize ?? this.minContentSize,
+      maxContentSize: maxContentSize ?? this.maxContentSize,
+    );
+  }
+
+  Geometry translate(double dx, double dy) {
+    return copyWith(
+      frameOrigin: frameOrigin?.translate(dx, dy),
+      contentOrigin: contentOrigin?.translate(dx, dy),
+    );
+  }
+
   Map serialize() => {
         'frameOrigin': frameOrigin?.serialize(),
         'frameSize': frameSize?.serialize(),
