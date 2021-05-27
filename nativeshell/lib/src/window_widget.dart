@@ -348,8 +348,8 @@ Size _sanitizeAndSnapToPixelBoundary(Size size) {
   size = Size(w, h);
 
   final ratio = WidgetsBinding.instance!.window.devicePixelRatio;
-  size = size / ratio;
+  size = size * ratio;
   size = Size(size.width.ceilToDouble(), size.height.ceilToDouble());
-  size *= ratio;
+  size /= ratio;
   return size;
 }
