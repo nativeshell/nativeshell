@@ -28,6 +28,30 @@ abstract class WindowBuilder {
   Future<void> updateWindowSize(LocalWindow window, Size contentSize) async {
     await window.setGeometry(Geometry(contentSize: contentSize));
   }
+
+  // Convenience function to calculate initial geometry for centered windows
+  Future<Geometry> centerInParent(LocalWindow window, Size contentSize) async {
+    final parent = window.parentWindow;
+    if (parent != null) {
+      final parentGeometry = await parent.getGeometry();
+      final parentOrigin =
+          parentGeometry.contentOrigin ?? parentGeometry.frameOrigin;
+      final parentSize =
+          parentGeometry.contentSize ?? parentGeometry.contentSize;
+      if (parentOrigin != null && parentSize != null) {
+        final origin = Offset(
+            parentOrigin.dx + parentSize.width / 2 - contentSize.width / 2,
+            parentOrigin.dy + parentSize.height / 2 - contentSize.height / 2);
+        return Geometry(
+            contentOrigin: origin,
+            // in case backend doesn't support contentOrigin, frameOrigin will be used
+            frameOrigin: origin,
+            contentSize: contentSize);
+      }
+    }
+
+    return Geometry(contentSize: contentSize);
+  }
 }
 
 typedef WindowBuilderProvider = WindowBuilder Function(dynamic initData);
