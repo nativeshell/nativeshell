@@ -291,7 +291,7 @@ pub struct Menu {
     pub role: Option<MenuRole>,
     pub items: Vec<MenuItem>,
 }
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuCreateRequest {
     pub handle: Option<MenuHandle>,

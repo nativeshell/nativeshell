@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum DiffResult<T> {
     Remove(T),
     Update(T, T),
