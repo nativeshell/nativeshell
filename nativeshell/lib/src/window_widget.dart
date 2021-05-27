@@ -53,12 +53,15 @@ class WindowWidget extends StatefulWidget {
 enum _Status { notInitialized, initializing, initialized }
 
 class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
+  WindowBuilder? _builder;
+
   @override
   Widget build(BuildContext context) {
     _maybeInitialize();
     if (status == _Status.initialized) {
       final window = WindowManager.instance.currentWindow;
-      final build = widget.builder(window.initData);
+      _builder ??= widget.builder(window.initData);
+
       return Listener(
         onPointerDown: _onWindowTap,
         child: Container(
@@ -66,14 +69,14 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
           child: _WindowContextWidget(
             context: this,
             child: _WindowLayout(
-              builtWindow: build,
+              builtWindow: _builder!,
               updatingConstraints: updatingConstraints,
               updatingConstraintsDone: updatingConstraintsDone,
               child: _WindowLayoutInner(
-                builtWindow: build,
+                builtWindow: _builder!,
                 child: Builder(
                   builder: (context) {
-                    return build.build(context);
+                    return _builder!.build(context);
                   },
                 ),
               ),
