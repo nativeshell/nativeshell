@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pedantic/pedantic.dart';
 
 import 'api_model.dart';
@@ -133,6 +134,13 @@ class Window {
     }
   }
 
+  // Invoke custom method on target window. To handle the method see the
+  // WindowMethodCallHandlerMixin class below.
+  Future<dynamic> callMethod(String method, [dynamic argument]) {
+    return _DefaultMethodCallHandler.instance.channel
+        .invokeMethod(handle, method, argument);
+  }
+
   final _initializedCompleter = Completer<void>();
   Completer<void>? _showCompleter;
   bool? _visible;
@@ -241,4 +249,59 @@ class LocalWindow extends Window {
 
   final dynamic initData;
   final WindowHandle? _parentWindow;
+}
+
+//
+// Handling custom methods on windows
+//
+
+typedef MethodCallHandler = FutureOr<dynamic> Function(dynamic argument);
+
+mixin WindowMethodCallHandlerMixin<T extends StatefulWidget> on State<T>
+    implements _WindowMethodCallHandler {
+  @override
+  MethodCallHandler? onMethodCall(String method);
+
+  @override
+  void initState() {
+    super.initState();
+    _DefaultMethodCallHandler.instance.handlers.add(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _DefaultMethodCallHandler.instance.handlers.remove(this);
+  }
+}
+
+abstract class _WindowMethodCallHandler {
+  MethodCallHandler? onMethodCall(String method);
+}
+
+//
+//
+//
+
+class _DefaultMethodCallHandler {
+  final channel = WindowMethodChannel('window.default-method-handler');
+  static final instance = _DefaultMethodCallHandler();
+
+  final handlers = <_WindowMethodCallHandler>[];
+
+  _DefaultMethodCallHandler() {
+    channel.setMethodCallHandler(onMethodCall);
+  }
+
+  Future<dynamic> onMethodCall(WindowMethodCall call) async {
+    for (final h in handlers) {
+      final handler = h.onMethodCall(call.method);
+      if (handler != null) {
+        return handler(call.arguments);
+      }
+    }
+    throw PlatformException(
+        code: 'no-handler',
+        message: 'No handler was registered to handle "${call.method}"');
+  }
 }
