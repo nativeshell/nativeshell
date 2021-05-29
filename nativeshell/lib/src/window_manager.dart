@@ -23,10 +23,10 @@ class WindowManager {
         targetWindowHandle: WindowHandle.invalid);
     if (version != currentApiVersion) {
       print('Warning: Mismatched API version!');
-      print('  Nativeshell rust crate API version: $version');
-      print('  Nativeshell dart package API version: $currentApiVersion.');
+      print('  NativeShell Rust crate API version: $version');
+      print('  NativeShell Dart package API version: $currentApiVersion.');
       print(
-          '  Please update the ${version > currentApiVersion ? 'dart package' : 'rust crate'}.');
+          '  Please update the ${version > currentApiVersion ? 'Dart package' : 'Rust crate'}.');
     }
   }
 
