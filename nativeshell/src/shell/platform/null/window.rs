@@ -79,6 +79,10 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
+    pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }

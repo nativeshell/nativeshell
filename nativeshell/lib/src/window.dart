@@ -79,6 +79,10 @@ class Window {
         await _invokeMethod(Methods.windowSupportedGeometry));
   }
 
+  Future<void> setTitle(String title) {
+    return _invokeMethod(Methods.windowSetTitle, title);
+  }
+
   Future<void> setStyle(WindowStyle style) {
     return _invokeMethod(Methods.windowSetStyle, style.serialize());
   }

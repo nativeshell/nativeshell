@@ -399,6 +399,13 @@ impl PlatformWindow {
         Ok(())
     }
 
+    pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        unsafe {
+            NSWindow::setTitle_(*self.platform_window, *to_nsstring(&title));
+        }
+        Ok(())
+    }
+
     pub fn is_modal(&self) -> bool {
         self.modal_close_callback.borrow().is_some()
     }

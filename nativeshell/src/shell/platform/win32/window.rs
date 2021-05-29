@@ -282,6 +282,10 @@ impl PlatformWindow {
         self.state.borrow().supported_geometry()
     }
 
+    pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        Ok(())
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         self.state.borrow().set_style(style)?;
         self.force_redraw();

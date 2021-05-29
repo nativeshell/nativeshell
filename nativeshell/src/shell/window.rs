@@ -152,6 +152,12 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn set_title(&self, title: String) -> Result<()> {
+        self.platform_window()
+            .set_title(title)
+            .map_err(|e| e.into())
+    }
+
     fn perform_window_drag(&self) -> Result<()> {
         self.platform_window()
             .perform_window_drag()
@@ -276,6 +282,9 @@ impl Window {
             }
             method::window::SET_STYLE => {
                 return Self::reply(reply, &arg, |style| self.set_style(style));
+            }
+            method::window::SET_TITLE => {
+                return Self::reply(reply, &arg, |title| self.set_title(title));
             }
             method::window::PERFORM_WINDOW_DRAG => {
                 return Self::reply(reply, &arg, |()| self.perform_window_drag());

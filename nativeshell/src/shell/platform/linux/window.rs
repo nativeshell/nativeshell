@@ -497,6 +497,10 @@ impl PlatformWindow {
         })
     }
 
+    pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        Ok(())
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         self.last_window_style.borrow_mut().replace(style.clone());
 

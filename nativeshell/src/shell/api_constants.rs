@@ -54,6 +54,7 @@ pub(crate) mod method {
         pub const SUPPORTED_GEOMETRY: &str = "Window.supportedGeometry";
 
         pub const SET_STYLE: &str = "Window.setStyle";
+        pub const SET_TITLE: &str = "Window.setTitle";
         pub const PERFORM_WINDOW_DRAG: &str = "Window.performWindowDrag";
 
         pub const SHOW_POPUP_MENU: &str = "Window.showPopupMenu";

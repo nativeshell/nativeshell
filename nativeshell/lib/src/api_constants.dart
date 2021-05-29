@@ -37,6 +37,7 @@ class Methods {
   static final windowSupportedGeometry = 'Window.supportedGeometry';
 
   static final windowSetStyle = 'Window.setStyle';
+  static final windowSetTitle = 'Window.setTitle';
   static final windowPerformWindowDrag = 'Window.performWindowDrag';
 
   static final windowShowPopupMenu = 'Window.showPopupMenu';
