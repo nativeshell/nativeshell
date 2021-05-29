@@ -105,7 +105,7 @@ impl PlatformWindow {
     pub fn assign_weak_self(&self, weak: Weak<PlatformWindow>, engine: &PlatformEngine) {
         self.weak_self.set(weak.clone());
 
-        let win = self.create_window("Hello!");
+        let win = self.create_window("");
         self.hwnd.set(win);
 
         self.state.set(WindowBaseState::new(win, weak.clone()));
@@ -283,7 +283,7 @@ impl PlatformWindow {
     }
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
-        Ok(())
+        self.state.borrow().set_title(title)
     }
 
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {

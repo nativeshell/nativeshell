@@ -381,6 +381,13 @@ impl WindowBaseState {
         }
     }
 
+    pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        unsafe {
+            SetWindowTextW(self.hwnd, title);
+        }
+        Ok(())
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         *self.style.borrow_mut() = style.clone();
         unsafe {

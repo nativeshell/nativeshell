@@ -93,7 +93,7 @@ fn main() -> () {
                 GetMessageW, PeekMessageW, TranslateMessage, DispatchMessageW, DestroyWindow, CreateWindowExW,
                 DefWindowProcW, SetWindowLongW, GetWindowLongW, ShowWindow, SetProcessDPIAware,
                 SetWindowPos, GetWindowRect, GetClientRect, SetParent, GetParent, MoveWindow, SetForegroundWindow,
-                SetTimer, SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx, FindWindowW,
+                SetTimer, SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx, FindWindowW, SetWindowTextW,
                 GetGUIThreadInfo, WindowFromPoint, LoadCursorW,
                 // Structures
                 CREATESTRUCTW, MSG, WINDOWPOS, NCCALCSIZE_PARAMS,
