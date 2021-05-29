@@ -498,6 +498,7 @@ impl PlatformWindow {
     }
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        self.window.set_title(&title);
         Ok(())
     }
 
