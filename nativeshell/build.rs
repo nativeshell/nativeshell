@@ -112,9 +112,6 @@ fn main() -> () {
                 TPM_LEFTALIGN, TPM_TOPALIGN, TPM_VERTICAL, TPM_RETURNCMD,
             },
         );
-        // cargo_emit::rustc_link_lib! {
-        // "flutter_windows.dll",
-        // }
     }
 
     #[cfg(target_os = "linux")]
