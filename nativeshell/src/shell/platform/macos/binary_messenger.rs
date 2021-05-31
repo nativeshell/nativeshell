@@ -44,7 +44,6 @@ impl PlatformBinaryMessenger {
                 callback(data, BinaryMessengerReply::new(cb));
             };
 
-            // no copy, flutter will copy the block
             let block = ConcreteBlock::new(closure);
             let block = block.copy();
 
