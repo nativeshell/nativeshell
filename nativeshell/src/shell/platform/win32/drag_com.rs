@@ -2,7 +2,7 @@ use std::{
     cell::{RefCell, RefMut},
     collections::HashMap,
     mem::{self, forget},
-    rc::{Rc, Weak},
+    rc::Weak,
     slice,
 };
 
@@ -10,16 +10,15 @@ use windows::{create_instance, IUnknown, Interface, HRESULT};
 
 use super::{
     all_bindings::*,
-    drag_util::{CLSID_DragDropHelper, DataUtil, DROPEFFECT},
+    drag_util::{CLSID_DragDropHelper, DataUtil},
     util::{com_object_from_ptr, get_raw_ptr, HRESULTExt},
 };
 
 pub trait DropTargetDelegate {
-    fn drag_enter(&self, object: IDataObject, pt: &POINTL, effect_mask: DROPEFFECT) -> DROPEFFECT;
-    fn drag_over(&self, pt: &POINTL, effect_mask: DROPEFFECT) -> DROPEFFECT;
+    fn drag_enter(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32;
+    fn drag_over(&self, pt: &POINTL, effect_mask: u32) -> u32;
     fn drag_leave(&self);
-    fn perform_drop(&self, object: IDataObject, pt: &POINTL, effect_mask: DROPEFFECT)
-        -> DROPEFFECT;
+    fn perform_drop(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32;
 }
 
 #[repr(C)]
@@ -33,6 +32,7 @@ pub(super) struct DropTarget {
 
 #[allow(dead_code)]
 impl DropTarget {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(hwnd: HWND, delegate: Weak<dyn DropTargetDelegate>) -> IDropTarget {
         let helper: IDropTargetHelper = create_instance(&CLSID_DragDropHelper).unwrap();
         let target = Box::new(Self {
@@ -100,15 +100,13 @@ impl DropTarget {
     ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate
-                    .drag_enter(p_data_obj.clone().unwrap(), &pt, DROPEFFECT(*pdw_effect))
-                    .0;
+                *pdw_effect = delegate.drag_enter(p_data_obj.clone().unwrap(), &pt, *pdw_effect);
             }
 
             self.drop_target_helper
                 .DragEnter(
                     self.hwnd,
-                    p_data_obj.clone(),
+                    p_data_obj,
                     &mut pt as *mut POINTL as *mut _,
                     *pdw_effect,
                 )
@@ -125,7 +123,7 @@ impl DropTarget {
     ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate.drag_over(&pt, DROPEFFECT(*pdw_effect)).0;
+                *pdw_effect = delegate.drag_over(&pt, *pdw_effect);
             }
 
             self.drop_target_helper
@@ -155,17 +153,11 @@ impl DropTarget {
     ) -> ::windows::HRESULT {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate
-                    .perform_drop(p_data_obj.clone().unwrap(), &pt, DROPEFFECT(*pdw_effect))
-                    .0;
+                *pdw_effect = delegate.perform_drop(p_data_obj.clone().unwrap(), &pt, *pdw_effect);
             }
 
             self.drop_target_helper
-                .Drop(
-                    p_data_obj.clone(),
-                    &mut pt as *mut POINTL as *mut _,
-                    *pdw_effect,
-                )
+                .Drop(p_data_obj, &mut pt as *mut POINTL as *mut _, *pdw_effect)
                 .ok_log();
         }
         S_OK
@@ -266,6 +258,7 @@ impl EnumFORMATETC {
         }
     }
 
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(formats: Vec<FORMATETC>) -> IEnumFORMATETC {
         Self::new_(formats, 0)
     }
@@ -317,7 +310,7 @@ impl EnumFORMATETC {
         let mut offset = 0;
         let dest: &mut [FORMATETC] = unsafe { slice::from_raw_parts_mut(rgelt, celt as usize) };
         while celt > 0 && self.remaining() > 0 {
-            dest[offset] = self.formats.get(self.index).unwrap().clone();
+            dest[offset] = *self.formats.get(self.index).unwrap();
 
             celt -= 1;
             self.index += 1;
@@ -396,7 +389,7 @@ impl EnumFORMATETC {
         this: ::windows::RawPtr,
         ppenum: *mut ::windows::RawPtr,
     ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).clone(std::mem::transmute(ppenum))
+        (*(this as *mut Self)).clone(ppenum as *mut _)
     }
 }
 
@@ -415,7 +408,8 @@ const DATA_E_FORMATETC: i32 = -2147221404 + 1;
 #[allow(dead_code)]
 impl DataObject {
     // Using weak reference just in case some other software keeps DragObject alive after drag is finished
-    pub fn new(data: Rc<RefCell<HashMap<u32, Vec<u8>>>>) -> IDataObject {
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new(data: Weak<RefCell<HashMap<u32, Vec<u8>>>>) -> IDataObject {
         let target = Box::new(Self {
             _abi: Box::new(IDataObject_abi(
                 Self::_query_interface,
@@ -432,7 +426,7 @@ impl DataObject {
                 Self::_enum_d_advise,
             )),
             ref_cnt: 1,
-            data: Rc::downgrade(&data),
+            data,
         });
 
         unsafe {
@@ -604,12 +598,6 @@ impl DataObject {
     ) -> ::windows::HRESULT {
         let format = unsafe { &*pformatetc };
 
-        // println!(
-        //     "SET: {}, {}",
-        //     clipboard_format_to_string(format.cf_format as u32),
-        //     format.tymed
-        // );
-
         self.with_data_or(
             |mut data| {
                 if format.tymed == TYMED_HGLOBAL.0 as u32 {
@@ -638,7 +626,7 @@ impl DataObject {
 
                         let mut stream_data = Vec::<u8>::new();
                         let mut buf: [u8; 4096] = [0; 4096];
-                        if let Some(stream) = stream.clone() {
+                        if let Some(stream) = stream {
                             loop {
                                 let mut num_read: u32 = 0;
                                 if !stream
@@ -743,8 +731,8 @@ impl DataObject {
         pmedium: *mut STGMEDIUM_abi,
     ) -> ::windows::HRESULT {
         // make sure rust won't try to release garbage
-        (&mut *pmedium).pUnkForRelease = std::ptr::null_mut();
-        (*(this as *mut Self)).get_data(pformatetc_in, std::mem::transmute(pmedium))
+        (*pmedium).pUnkForRelease = std::ptr::null_mut();
+        (*(this as *mut Self)).get_data(pformatetc_in, pmedium as *mut _)
     }
 
     unsafe extern "system" fn _get_data_here(
@@ -752,7 +740,7 @@ impl DataObject {
         pformatetc: *mut FORMATETC,
         pmedium: *mut STGMEDIUM_abi,
     ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).get_data_here(pformatetc, std::mem::transmute(pmedium))
+        (*(this as *mut Self)).get_data_here(pformatetc, pmedium as *mut _)
     }
 
     unsafe extern "system" fn _query_get_data(
@@ -776,7 +764,7 @@ impl DataObject {
         pmedium: *mut STGMEDIUM_abi,
         f_release: BOOL,
     ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).set_data(pformatetc, std::mem::transmute(pmedium), f_release)
+        (*(this as *mut Self)).set_data(pformatetc, pmedium as *mut _, f_release)
     }
 
     unsafe extern "system" fn _enum_format_etc(
@@ -784,7 +772,7 @@ impl DataObject {
         dw_direction: u32,
         ppenum_format_etc: *mut windows::RawPtr,
     ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).enum_format_etc(dw_direction, std::mem::transmute(ppenum_format_etc))
+        (*(this as *mut Self)).enum_format_etc(dw_direction, ppenum_format_etc as *mut _)
     }
 
     unsafe extern "system" fn _d_advise(
@@ -802,18 +790,18 @@ impl DataObject {
         )
     }
 
-    pub unsafe extern "system" fn _d_unadvise(
+    unsafe extern "system" fn _d_unadvise(
         this: ::windows::RawPtr,
         dw_connection: u32,
     ) -> ::windows::HRESULT {
         (*(this as *mut Self)).d_unadvise(dw_connection)
     }
 
-    pub unsafe extern "system" fn _enum_d_advise(
+    unsafe extern "system" fn _enum_d_advise(
         this: ::windows::RawPtr,
         ppenum_advise: *mut windows::RawPtr,
     ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).enum_d_advise(std::mem::transmute(ppenum_advise))
+        (*(this as *mut Self)).enum_d_advise(ppenum_advise as *mut _)
     }
 }
 
@@ -828,6 +816,7 @@ pub struct DropSource {
 
 #[allow(dead_code)]
 impl DropSource {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> IDropSource {
         let target = Box::new(Self {
             _abi: Box::new(IDropSource_abi(

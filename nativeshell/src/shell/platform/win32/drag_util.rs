@@ -23,17 +23,9 @@ pub const CLSID_DragDropHelper: Guid = Guid::from_values(
     [0x83, 0x9a, 0x0, 0xc0, 0x4f, 0xd9, 0x18, 0xd0],
 );
 
-#[derive(Clone, Debug)]
-pub struct DROPEFFECT(pub u32);
-
-pub const DROPEFFECT_NONE: i32 = 0;
-pub const DROPEFFECT_COPY: i32 = 1;
-pub const DROPEFFECT_MOVE: i32 = 2;
-pub const DROPEFFECT_LINK: i32 = 4;
-
-pub fn convert_drop_effect_mask(mask: DROPEFFECT) -> Vec<DragEffect> {
+pub fn convert_drop_effect_mask(mask: u32) -> Vec<DragEffect> {
     let mut res = Vec::new();
-    let mask = mask.0 as i32;
+
     if mask & DROPEFFECT_COPY == DROPEFFECT_COPY {
         res.push(DragEffect::Copy);
     }
@@ -46,22 +38,21 @@ pub fn convert_drop_effect_mask(mask: DROPEFFECT) -> Vec<DragEffect> {
     res
 }
 
-pub fn convert_drag_effect(effect: &DragEffect) -> DROPEFFECT {
-    let res = match effect {
+pub fn convert_drag_effect(effect: &DragEffect) -> u32 {
+    match effect {
         DragEffect::None => DROPEFFECT_NONE,
         DragEffect::Copy => DROPEFFECT_COPY,
         DragEffect::Link => DROPEFFECT_LINK,
         DragEffect::Move => DROPEFFECT_MOVE,
-    };
-    DROPEFFECT(res as u32)
+    }
 }
 
-pub fn convert_drag_effects(effects: &[DragEffect]) -> DROPEFFECT {
+pub fn convert_drag_effects(effects: &[DragEffect]) -> u32 {
     let mut res: u32 = 0;
     for e in effects {
-        res |= convert_drag_effect(e).0;
+        res |= convert_drag_effect(e);
     }
-    DROPEFFECT(res)
+    res
 }
 
 pub fn create_dragimage_bitmap(image: &ImageData) -> HBITMAP {
@@ -130,7 +121,7 @@ pub fn create_dragimage_bitmap(image: &ImageData) -> HBITMAP {
 
         ReleaseDC(HWND(0), dc);
 
-        return bitmap;
+        bitmap
     }
 }
 
@@ -214,7 +205,7 @@ impl DataUtil {
         str.to_string_lossy().into()
     }
 
-    pub fn bundle_files(files: &Vec<String>) -> Vec<u8> {
+    pub fn bundle_files(files: &[String]) -> Vec<u8> {
         let mut res = Vec::new();
 
         let drop_files = DROPFILES {

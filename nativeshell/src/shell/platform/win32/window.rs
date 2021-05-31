@@ -32,6 +32,7 @@ use super::{
 
 pub type PlatformWindowType = isize; // HWND
 
+#[allow(clippy::type_complexity)]
 pub struct PlatformWindow {
     context: Rc<Context>,
     hwnd: Cell<HWND>,
@@ -62,13 +63,13 @@ impl PlatformWindow {
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
         PlatformWindow {
-            context: context,
+            context,
             hwnd: Cell::new(HWND(0)),
             child_hwnd: Cell::new(HWND(0)),
             state: LateRefCell::new(),
             window_menu: LateRefCell::new(),
             drag_context: LateRefCell::new(),
-            parent: parent,
+            parent,
             modal_child: Cell::new(None),
             weak_self: LateRefCell::new(),
             flutter_controller: LateRefCell::new(),
@@ -144,7 +145,7 @@ impl PlatformWindow {
             weak.clone(),
         ));
 
-        let drag_context = Rc::new(DragContext::new(self.context.clone(), weak.clone()));
+        let drag_context = Rc::new(DragContext::new(self.context.clone(), weak));
         self.drag_context.set(drag_context.clone());
         drag_context.assign_weak_self(Rc::downgrade(&drag_context));
     }
@@ -600,9 +601,7 @@ impl PlatformWindow {
             }
         }
 
-        unsafe {
-            return DefSubclassProc(h_wnd, u_msg, w_param, l_param);
-        };
+        unsafe { DefSubclassProc(h_wnd, u_msg, w_param, l_param) }
     }
 
     extern "system" fn subclass_proc(

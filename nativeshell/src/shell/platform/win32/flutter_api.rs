@@ -1,5 +1,6 @@
 #[allow(non_camel_case_types)]
 pub type size_t = usize;
+#[allow(clippy::upper_case_acronyms)]
 pub type UINT = u32;
 
 use super::all_bindings::*;

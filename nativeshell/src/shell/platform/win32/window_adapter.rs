@@ -79,9 +79,7 @@ pub trait WindowAdapter {
     fn wnd_proc(&self, h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT;
 
     fn default_wnd_proc(&self, h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
-        unsafe {
-            return DefWindowProcW(h_wnd, msg, w_param, l_param);
-        }
+        unsafe { DefWindowProcW(h_wnd, msg, w_param, l_param) }
     }
 
     fn create_window(&self, title: &str) -> HWND
@@ -151,6 +149,7 @@ extern "system" {
 
 extern "system" fn wnd_proc(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
     unsafe {
+        #[allow(clippy::single_match)]
         match msg {
             WM_NCCREATE => {
                 let create_struct = &*(l_param.0 as *const CREATESTRUCTW);

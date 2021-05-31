@@ -86,8 +86,8 @@ unsafe extern "system" fn dcomposition_create_device(
     let mut global = GLOBAL.lock().unwrap();
     let res =
         global.dcomposition_create_device.as_ref().unwrap()(dxgi_device, iid, dcomposition_device);
-    if !global.create_target_for_hwnd.is_some() {
-        let device: &Option<IUnknown> = mem::transmute(dcomposition_device);
+    if global.create_target_for_hwnd.is_none() {
+        let device = &*(dcomposition_device as *const Option<IUnknown>);
         let vtable = ::windows::Interface::vtable(device.as_ref().unwrap());
         let myvtable: &[usize] = std::slice::from_raw_parts(std::mem::transmute(vtable), 7);
 
@@ -104,7 +104,7 @@ unsafe extern "system" fn dcomposition_create_device(
             .create_target_for_hwnd
             .replace(mem::transmute(dt.trampoline()));
     }
-    return res;
+    res
 }
 
 thread_local! {
@@ -229,7 +229,7 @@ unsafe extern "system" fn create_swap_chain_for_hwnd(
     if let Some(swap_chain) = &(*pp_swap_chain) {
         hook_swap_chain(swap_chain.clone())
     }
-    return res;
+    res
 }
 
 unsafe extern "system" fn create_swap_chain_for_composition(
@@ -252,7 +252,7 @@ unsafe extern "system" fn create_swap_chain_for_composition(
     if let Some(swap_chain) = &(*pp_swap_chain) {
         hook_swap_chain(swap_chain.clone())
     }
-    return res;
+    res
 }
 
 unsafe extern "system" fn d3d11_create_device(
@@ -323,7 +323,7 @@ unsafe extern "system" fn d3d11_create_device(
         }
     }
 
-    return res;
+    res
 }
 
 struct Global {

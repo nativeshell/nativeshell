@@ -26,6 +26,10 @@ pub struct Displays {
     pub displays: Vec<Display>,
 }
 
+fn equals(x1: f64, x2: f64) -> bool {
+    (x1 - x2).abs() < f64::EPSILON
+}
+
 // Takes series of displays with physical bounds and calculates logical bounds for them
 impl Displays {
     pub fn new(displays: Vec<PhysicalDisplay>) -> Self {
@@ -262,7 +266,7 @@ impl Work {
                     .map(|d2| d2.adjusted_logical.y2())
                     .max_by(|a, b| a.partial_cmp(b).unwrap())
                     .unwrap_or(d.adjusted_logical.y);
-                if d.adjusted_logical.x != min_x || d.adjusted_logical.y != min_y {
+                if !equals(d.adjusted_logical.x, min_x) || !equals(d.adjusted_logical.y, min_y) {
                     let d = &mut self.state[i];
                     d.adjusted_logical.x = min_x;
                     d.adjusted_logical.y = min_y;
@@ -300,7 +304,7 @@ impl Work {
         if self
             .state
             .iter()
-            .all(|d| d.original.scale == first.original.scale)
+            .all(|d| equals(d.original.scale, first.original.scale))
         {
             // all screens have same scaling factor, simply scale all rects
             for d in &mut self.state {

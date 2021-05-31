@@ -3,7 +3,6 @@ use std::collections::hash_map::Keys;
 
 use super::{Value, ValueError};
 
-use serde;
 use serde::de::IntoDeserializer;
 
 type Result<T> = std::result::Result<T, ValueError>;

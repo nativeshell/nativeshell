@@ -21,7 +21,7 @@ use super::{
     },
     drag_util::{
         convert_drag_effect, convert_drag_effects, convert_drop_effect_mask,
-        create_dragimage_bitmap, CLSID_DragDropHelper, DROPEFFECT, DROPEFFECT_NONE,
+        create_dragimage_bitmap, CLSID_DragDropHelper,
     },
     error::PlatformResult,
     util::HRESULTExt,
@@ -118,7 +118,7 @@ impl DragContext {
         let window = self.window.upgrade().unwrap();
         let data = self.serialize_drag_data(request.data);
         let data = Rc::new(RefCell::new(data));
-        let data = DataObject::new(data.clone());
+        let data = DataObject::new(Rc::downgrade(&data));
         let helper: IDragSourceHelper = create_instance(&CLSID_DragDropHelper).unwrap();
         let hbitmap = create_dragimage_bitmap(&request.image);
         let image_start = window.local_to_global(request.rect.origin());
@@ -143,12 +143,12 @@ impl DragContext {
         let source = DropSource::new();
         let ok_effects = convert_drag_effects(&request.allowed_effects);
         let mut effects_out: u32 = 0;
-        let res = DoDragDrop(data, source, ok_effects.0, &mut effects_out as *mut u32);
+        let res = DoDragDrop(data, source, ok_effects, &mut effects_out as *mut u32);
 
         if let Some(delegate) = window.delegate() {
             let mut effect = DragEffect::None;
             if res == DRAGDROP_S_DROP {
-                effect = convert_drop_effect_mask(DROPEFFECT(effects_out))
+                effect = convert_drop_effect_mask(effects_out)
                     .first()
                     .cloned()
                     .unwrap_or(DragEffect::None);
@@ -159,10 +159,10 @@ impl DragContext {
 }
 
 impl DropTargetDelegate for DragContext {
-    fn drag_enter(&self, object: IDataObject, pt: &POINTL, effect_mask: DROPEFFECT) -> DROPEFFECT {
+    fn drag_enter(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32 {
         let window = self.window.upgrade().unwrap();
         if !window.is_enabled() {
-            return DROPEFFECT(DROPEFFECT_NONE as u32);
+            return DROPEFFECT_NONE;
         }
         let data = self.deserialize_drag_data(object);
         self.drag_data.replace(Some(data.clone()));
@@ -170,7 +170,7 @@ impl DropTargetDelegate for DragContext {
         let pt = window.global_to_local(&IPoint::xy(pt.x, pt.y));
         let info = DraggingInfo {
             location: pt,
-            data: data,
+            data,
             allowed_effects: convert_drop_effect_mask(effect_mask),
         };
         if let Some(delegate) = window.delegate() {
@@ -179,10 +179,10 @@ impl DropTargetDelegate for DragContext {
         convert_drag_effect(&self.next_drag_effect.borrow())
     }
 
-    fn drag_over(&self, pt: &POINTL, effect_mask: DROPEFFECT) -> DROPEFFECT {
+    fn drag_over(&self, pt: &POINTL, effect_mask: u32) -> u32 {
         let window = self.window.upgrade().unwrap();
         if !window.is_enabled() {
-            return DROPEFFECT(DROPEFFECT_NONE as u32);
+            return DROPEFFECT_NONE;
         }
         let pt = window.global_to_local(&IPoint::xy(pt.x, pt.y));
         let info = DraggingInfo {
@@ -205,15 +205,10 @@ impl DropTargetDelegate for DragContext {
         }
     }
 
-    fn perform_drop(
-        &self,
-        object: IDataObject,
-        pt: &POINTL,
-        effect_mask: DROPEFFECT,
-    ) -> DROPEFFECT {
+    fn perform_drop(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32 {
         let window = self.window.upgrade().unwrap();
         if !window.is_enabled() {
-            return DROPEFFECT(DROPEFFECT_NONE as u32);
+            return DROPEFFECT_NONE;
         }
         let res = convert_drag_effect(&self.next_drag_effect.replace(DragEffect::None));
         let pt = window.global_to_local(&IPoint::xy(pt.x, pt.y));

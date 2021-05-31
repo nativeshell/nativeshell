@@ -40,7 +40,7 @@ impl FilesDragDataAdapter {
 
 impl DragDataAdapter for FilesDragDataAdapter {
     fn retrieve_drag_data(&self, data: IDataObject, data_out: &mut HashMap<String, Value>) {
-        let files = DataUtil::get_data(data.clone(), CF_HDROP.0)
+        let files = DataUtil::get_data(data, CF_HDROP.0)
             .map(DataUtil::extract_files)
             .ok();
 
@@ -85,7 +85,7 @@ impl UrlsDragDataAdapter {
         if data.is_ok() {
             return data.map(|d| DataUtil::extract_url_w(&d));
         }
-        let data = DataUtil::get_data(data_object.clone(), self.format_inet_url);
+        let data = DataUtil::get_data(data_object, self.format_inet_url);
         data.map(|d| DataUtil::extract_url(&d))
     }
 }
@@ -139,7 +139,7 @@ impl DragDataAdapter for FallThroughDragDataAdapter {
     fn retrieve_drag_data(&self, data: IDataObject, data_out: &mut HashMap<String, Value>) {
         let codec: &'static dyn MessageCodec<Value> = &StandardMethodCodec;
 
-        let data = DataUtil::get_data(data.clone(), self.format);
+        let data = DataUtil::get_data(data, self.format);
         if let Ok(data) = data {
             let value = codec.decode_message(&data).unwrap();
             if let Value::Map(value) = value {

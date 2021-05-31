@@ -14,6 +14,9 @@ pub(super) fn to_utf16(string: &str) -> Vec<u16> {
     res
 }
 
+/// # Safety
+///
+/// Data must be properly aligned (see slice::from_raw_parts)
 pub unsafe fn as_u8_slice<T: Sized>(p: &T) -> &[u8] {
     ::std::slice::from_raw_parts((p as *const T) as *const u8, ::std::mem::size_of::<T>())
 }
@@ -21,18 +24,21 @@ pub unsafe fn as_u8_slice<T: Sized>(p: &T) -> &[u8] {
 pub fn get_raw_ptr<T>(t: &T) -> usize {
     struct Extractor(usize);
     unsafe {
-        let s: &Extractor = std::mem::transmute(t);
+        let s = &*(t as *const _ as *const Extractor);
         s.0
     }
 }
 
+/// # Safety
+///
+/// ptr must point to a valid COM object instance
 pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T> {
     if ptr == std::ptr::null_mut() {
         None
     } else {
         struct ComObject(windows::RawPtr);
         let e = ComObject(ptr);
-        let t: &T = std::mem::transmute(&e);
+        let t = &*(&e as *const _ as *const T);
         Some(t.clone())
     }
 }
@@ -52,7 +58,7 @@ impl HRESULTExt for HRESULT {
                     .args(format_args!(
                         "Unexpected windows error 0x{:X} ({}) at {}",
                         self.0,
-                        hresult_description(self.0).unwrap_or("Unknown".into()),
+                        hresult_description(self.0).unwrap_or_else(|| "Unknown".into()),
                         location
                     ))
                     .file(Some(location.file()))
@@ -66,7 +72,6 @@ impl HRESULTExt for HRESULT {
         }
     }
 
-    #[must_use]
     fn as_platform_result(&self) -> PlatformResult<()> {
         if self.is_ok() {
             Ok(())
@@ -100,7 +105,6 @@ fn HRESULT_FROM_WIN32(x: u32) -> u32 {
 }
 
 impl BoolResultExt for BOOL {
-    #[must_use]
     fn as_platform_result(&self) -> PlatformResult<()> {
         if self.as_bool() {
             Ok(())

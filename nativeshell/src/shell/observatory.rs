@@ -6,7 +6,7 @@ fn get_temp_environemt() -> Option<&'static str> {
     #[cfg(target_family = "windows")]
     {
         const TEMP: &str = "TEMP";
-        return Some(TEMP);
+        Some(TEMP)
     }
     #[cfg(target_family = "unix")]
     {
@@ -127,6 +127,7 @@ fn _register_observatory_listener(file_suffix: String) {
                         #[cfg(target_family = "windows")]
                         {
                             let file_suffix = file_suffix.clone();
+                            let url: String = url.into();
                             thread::spawn(move || {
                                 have_observatory_url(&url, &file_suffix);
                             });

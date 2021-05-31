@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use serde;
-
 use super::{Value, ValueError};
 
 struct Serializer;

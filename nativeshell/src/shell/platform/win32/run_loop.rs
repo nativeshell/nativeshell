@@ -70,7 +70,7 @@ impl State {
     fn next_handle(&self) -> HandleType {
         let r = self.next_handle.get();
         self.next_handle.replace(r + 1);
-        return r;
+        r
     }
 
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
@@ -104,7 +104,7 @@ impl State {
                 .borrow()
                 .iter()
                 .filter(|v| v.1.scheduled <= now)
-                .map(|v| v.0.clone())
+                .map(|v| *v.0)
                 .collect();
             if pending.is_empty() {
                 break;

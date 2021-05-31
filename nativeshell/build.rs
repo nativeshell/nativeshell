@@ -27,6 +27,7 @@ fn main() {
                 IAdviseSink, RegisterDragDrop, DoDragDrop,
                 // constants
                 TYMED_HGLOBAL, TYMED_ISTREAM, DATADIR_GET, DVASPECT_CONTENT, COINIT_APARTMENTTHREADED,
+                DROPEFFECT_COPY, DROPEFFECT_MOVE, DROPEFFECT_LINK, DROPEFFECT_NONE,
             },
             Windows::Win32::System::DataExchange::{
                 RegisterClipboardFormatW, GetClipboardFormatNameW

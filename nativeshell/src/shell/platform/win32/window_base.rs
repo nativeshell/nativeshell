@@ -290,7 +290,7 @@ impl WindowBaseState {
 
     pub fn local_to_global(&self, offset: &Point) -> IPoint {
         let scaled: IPoint = offset.scaled(self.get_scaling_factor()).into();
-        return self.local_to_global_physical(&scaled);
+        self.local_to_global_physical(&scaled)
     }
 
     pub fn local_to_global_physical(&self, offset: &IPoint) -> IPoint {
@@ -323,18 +323,18 @@ impl WindowBaseState {
     fn to_physical(&self, offset: &Point) -> IPoint {
         Displays::get_displays()
             .convert_logical_to_physical(offset)
-            .unwrap_or(offset.clone().into())
+            .unwrap_or_else(|| offset.clone().into())
     }
 
     fn to_logical(&self, offset: &IPoint) -> Point {
         Displays::get_displays()
             .convert_physical_to_logical(offset)
-            .unwrap_or(offset.clone().into())
+            .unwrap_or_else(|| offset.clone().into())
     }
 
     pub fn is_rtl(&self) -> bool {
         let style = WINDOW_EX_STYLE(unsafe { GetWindowLongW(self.hwnd, GWL_EXSTYLE) } as u32);
-        return style & WS_EX_LAYOUTRTL == WS_EX_LAYOUTRTL;
+        style & WS_EX_LAYOUTRTL == WS_EX_LAYOUTRTL
     }
 
     pub fn get_scaling_factor(&self) -> f64 {
@@ -392,7 +392,7 @@ impl WindowBaseState {
         *self.style.borrow_mut() = style.clone();
         unsafe {
             let mut s = WINDOW_STYLE(GetWindowLongW(self.hwnd, GWL_STYLE) as u32);
-            s = s & WINDOW_STYLE(!(WS_OVERLAPPEDWINDOW | WS_DLGFRAME).0);
+            s &= WINDOW_STYLE(!(WS_OVERLAPPEDWINDOW | WS_DLGFRAME).0);
 
             if style.frame == WindowFrame::Regular {
                 s |= WS_CAPTION;
@@ -456,7 +456,7 @@ impl WindowBaseState {
 
     pub fn has_redirection_surface(&self) -> bool {
         let style = WINDOW_EX_STYLE(unsafe { GetWindowLongW(self.hwnd, GWL_EXSTYLE) } as u32);
-        return (style & WS_EX_NOREDIRECTIONBITMAP).0 == 0;
+        (style & WS_EX_NOREDIRECTIONBITMAP).0 == 0
     }
 
     pub fn remove_border(&self) -> bool {

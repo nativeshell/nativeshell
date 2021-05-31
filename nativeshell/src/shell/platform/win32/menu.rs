@@ -56,19 +56,19 @@ impl PlatformMenu {
         };
         Self {
             handle,
-            menu: menu,
+            menu,
             previous_menu: RefCell::new(Default::default()),
             weak_self: RefCell::new(Weak::new()),
         }
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
-        *self.weak_self.borrow_mut() = weak.clone();
+        *self.weak_self.borrow_mut() = weak;
     }
 
-    pub fn get_menu_item_info<'a>(
+    pub fn get_menu_item_info(
         item: &MenuItem,
-        title: &'a Vec<u16>,
+        title: &[u16],
         manager: &MenuManager,
     ) -> MENUITEMINFOW {
         let submenu = item
@@ -122,19 +122,18 @@ impl PlatformMenu {
         // First remove items for menu;
         let diff: Vec<_> = diff
             .iter()
-            .filter_map(|res| match res {
+            .filter(|res| match res {
                 DiffResult::Remove(res) => {
                     unsafe {
                         RemoveMenu(self.menu, res.id as u32, MF_BYCOMMAND);
                     }
-                    None
+                    false
                 }
-                _ => Some(res),
+                _ => true,
             })
             .collect();
 
-        for i in 0..diff.len() {
-            let d = diff[i];
+        for (i, d) in diff.iter().enumerate() {
             match d {
                 DiffResult::Remove(_) => {
                     panic!("Should have been already removed.")

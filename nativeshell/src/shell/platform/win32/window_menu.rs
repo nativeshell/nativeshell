@@ -19,7 +19,7 @@ use super::{
 };
 
 pub trait WindowMenuDelegate {
-    fn get_state<'a>(&'a self) -> Ref<'a, WindowBaseState>;
+    fn get_state(&self) -> Ref<WindowBaseState>;
 }
 
 pub struct WindowMenu {
@@ -66,8 +66,8 @@ impl WindowMenu {
     ) -> Self {
         Self {
             context,
-            hwnd: hwnd,
-            child_hwnd: child_hwnd,
+            hwnd,
+            child_hwnd,
             delegate: Some(delegate),
             current_menu: RefCell::new(None),
             mouse_state: RefCell::new(MouseState {
@@ -254,9 +254,12 @@ impl WindowMenu {
                 WPARAM(VK_DOWN as usize),
                 LPARAM(0),
             );
-            let mut item_info: MENUITEMINFOW = Default::default();
-            item_info.cbSize = std::mem::size_of::<MENUITEMINFOW>() as u32;
-            item_info.fMask = MIIM_STATE;
+            let mut item_info = MENUITEMINFOW {
+                cbSize: std::mem::size_of::<MENUITEMINFOW>() as u32,
+                fMask: MIIM_STATE,
+                ..Default::default()
+            };
+
             GetMenuItemInfoW(menu, i as u32, true, &mut item_info as *mut _);
             if item_info.fState & MFS_DISABLED == MENU_ITEM_STATE(0) {
                 break;
@@ -436,7 +439,7 @@ impl WindowMenu {
             Self::WM_MENU_HOOK => {
                 let ptr = l_param.0 as *const MSG;
                 let msg: &MSG = unsafe { &*ptr };
-                self.on_menu_hook(msg.clone());
+                self.on_menu_hook(*msg);
             }
             Self::WM_MENU_HWND => {
                 self.on_menu_hwnd(HWND(w_param.0 as isize));

@@ -6,8 +6,6 @@ use std::{convert::TryFrom, f64::NAN, fmt};
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use serde;
-
 pub use self::deserializer::{from_value, from_value_owned};
 pub use self::serializer::to_value;
 

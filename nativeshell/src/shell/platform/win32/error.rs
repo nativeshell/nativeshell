@@ -29,7 +29,7 @@ impl Display for PlatformError {
                     f,
                     "Error 0x{:X} ({})",
                     hresult,
-                    hresult_description(*hresult).unwrap_or("Unknown".into())
+                    hresult_description(*hresult).unwrap_or_else(|| "Unknown".into())
                 )
             }
             PlatformError::NotAvailable => {

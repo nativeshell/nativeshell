@@ -1,4 +1,5 @@
 #![allow(clippy::new_without_default)]
+#![allow(clippy::manual_range_contains)]
 
 pub mod codec;
 pub mod shell;

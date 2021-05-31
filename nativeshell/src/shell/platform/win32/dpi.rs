@@ -48,10 +48,8 @@ fn set_per_monitor_dpi_aware_fallback() -> bool {
 pub fn become_dpi_aware() {
     static BECOME_AWARE: Once = Once::new();
     BECOME_AWARE.call_once(|| {
-        if !set_per_monitor_aware() {
-            if !set_per_monitor_dpi_aware_fallback() {
-                unsafe { SetProcessDPIAware() };
-            }
+        if !set_per_monitor_aware() && !set_per_monitor_dpi_aware_fallback() {
+            unsafe { SetProcessDPIAware() };
         }
     });
 }
