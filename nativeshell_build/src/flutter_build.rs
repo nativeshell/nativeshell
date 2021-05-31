@@ -67,6 +67,12 @@ impl Flutter {
         }
     }
 
+    fn do_flutter_pub_get(&self) -> BuildResult<()> {
+        let mut command = self.create_flutter_command();
+        command.arg("pub").arg("get");
+        self.run_command(command)
+    }
+
     fn do_build(&self) -> BuildResult<()> {
         let flutter_out_root = self.out_dir.join("flutter");
         let flutter_out_dart_tool = flutter_out_root.join(".dart_tool");
@@ -77,9 +83,7 @@ impl Flutter {
         let package_config_out = flutter_out_dart_tool.join("package_config.json");
 
         if !Path::exists(&package_config) {
-            return Err(BuildError::OtherError(
-                "package_config.json does not exist. Run flutter pub get first".to_owned(),
-            ));
+            self.do_flutter_pub_get()?;
         }
 
         Self::copy(&package_config, &package_config_out)?;
@@ -216,6 +220,34 @@ impl Flutter {
         Ok(())
     }
 
+    fn create_flutter_command(&self) -> Command {
+        let mut command: Command = if cfg!(target_os = "windows") {
+            let mut c = Command::new("cmd");
+            c.args(&["/C", "flutter"]);
+            c
+        } else {
+            Command::new("flutter")
+        };
+        command
+    }
+
+    fn run_command(&self, mut command: Command) -> BuildResult<()> {
+        let output = command
+            .output()
+            .wrap_error(FileOperation::Command, "flutter".into())?;
+
+        if !output.status.success() {
+            Err(BuildError::FlutterToolError {
+                command: format!("{:?}", command),
+                status: output.status,
+                stderr: String::from_utf8_lossy(&output.stderr).into(),
+                stdout: String::from_utf8_lossy(&output.stdout).into(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+
     fn run_flutter_assemble<PathRef: AsRef<Path>>(&self, working_dir: PathRef) -> BuildResult<()> {
         let rebased = pathdiff::diff_paths(&self.root_dir, &working_dir).unwrap();
 
@@ -240,13 +272,7 @@ impl Flutter {
             )],
         };
 
-        let mut command: Command = if cfg!(target_os = "windows") {
-            let mut c = Command::new("cmd");
-            c.args(&["/C", "flutter"]);
-            c
-        } else {
-            Command::new("flutter")
-        };
+        let mut command = self.create_flutter_command();
         command.current_dir(&working_dir);
 
         if let Some(local_engine) = &self.options.local_engine {
@@ -274,20 +300,8 @@ impl Flutter {
             .arg("-v")
             .arg("--suppress-analytics")
             .args(actions);
-        let output = command
-            .output()
-            .wrap_error(FileOperation::Command, "flutter".into())?;
 
-        if !output.status.success() {
-            Err(BuildError::FlutterToolError {
-                command: format!("{:?}", command),
-                status: output.status,
-                stderr: String::from_utf8_lossy(&output.stderr).into(),
-                stdout: String::from_utf8_lossy(&output.stdout).into(),
-            })
-        } else {
-            Ok(())
-        }
+        self.run_command(command)
     }
 
     fn emit_flutter_artifacts<PathRef: AsRef<Path>>(
