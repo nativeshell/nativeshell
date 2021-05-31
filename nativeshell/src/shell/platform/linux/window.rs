@@ -127,7 +127,7 @@ impl PlatformWindow {
             self.window
                 .get_window()
                 .unwrap()
-                .set_data("nativeshell_platform_window", weak.clone());
+                .set_data("nativeshell_platform_window", weak);
         }
 
         // by default make window resizable, non resizable window need size
@@ -150,7 +150,7 @@ impl PlatformWindow {
         self.drop_context
             .set(DropContext::new(self.context.clone(), weak.clone()));
         self.drag_context
-            .set(DragContext::new(self.context.clone(), weak.clone()));
+            .set(DragContext::new(self.context.clone(), weak));
         self.connect_drag_drop_events();
     }
 
@@ -447,8 +447,7 @@ impl PlatformWindow {
         if self.window.get_resizable() {
             let min_content_size: ISize = geometry
                 .min_content_size
-                .clone()
-                .unwrap_or(Size::wh(0.0, 0.0))
+                .unwrap_or_else(|| Size::wh(0.0, 0.0))
                 .into();
 
             size_widget_set_min_size(
@@ -477,7 +476,7 @@ impl PlatformWindow {
         let content_size = Size::wh(content_size.0 as f64, content_size.1 as f64);
 
         Ok(WindowGeometry {
-            frame_origin: frame_origin,
+            frame_origin,
             frame_size: None,
             content_origin: None,
             content_size: Some(content_size),

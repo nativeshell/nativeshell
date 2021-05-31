@@ -54,7 +54,6 @@ use super::{
 
 pub type PlatformWindowType = StrongPtr;
 
-#[allow(clippy::type_complexity)]
 pub struct PlatformWindow {
     context: Rc<Context>,
     platform_window: PlatformWindowType,

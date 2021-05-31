@@ -62,8 +62,7 @@ impl PlatformMenu {
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
         self.weak_self.set(weak.clone());
         unsafe {
-            self.menu
-                .set_data("nativeshell_platform_menu", weak.clone());
+            self.menu.set_data("nativeshell_platform_menu", weak);
         }
 
         // find top level menu and fire callback
@@ -113,20 +112,19 @@ impl PlatformMenu {
         // First remove items from menu
         let diff: Vec<_> = diff
             .iter()
-            .filter_map(|res| match res {
+            .filter(|res| match res {
                 DiffResult::Remove(res) => {
                     let item = self.id_to_menu_item.borrow_mut().remove(&res.id);
                     if let Some(item) = item {
                         self.menu.remove(&item);
                     }
-                    None
+                    false
                 }
-                _ => Some(res),
+                _ => true,
             })
             .collect();
 
-        for i in 0..diff.len() {
-            let d = diff[i];
+        for (i, d) in diff.iter().enumerate() {
             match d {
                 DiffResult::Remove(_) => {
                     panic!("Should have been already removed.")
@@ -288,7 +286,7 @@ impl PlatformMenu {
                 res.write_char('_').unwrap();
             }
         }
-        return res;
+        res
     }
 
     fn accelerator_label_code(accelerator: &Accelerator) -> i32 {
@@ -413,7 +411,7 @@ impl PlatformMenu {
                 return MenuItemType::Separator;
             }
             match item.check_status {
-                CheckStatus::None => return MenuItemType::Regular,
+                CheckStatus::None => MenuItemType::Regular,
                 CheckStatus::CheckOn => MenuItemType::CheckBox,
                 CheckStatus::CheckOff => MenuItemType::CheckBox,
                 CheckStatus::RadioOn => MenuItemType::Radio,
@@ -422,7 +420,7 @@ impl PlatformMenu {
         }
 
         // can't change separator item to non separator or regular/radio/checkbox
-        return get_menu_item_type(old_item) == get_menu_item_type(new_item);
+        get_menu_item_type(old_item) == get_menu_item_type(new_item)
     }
 
     fn on_move_current(&self, direction: MenuDirectionType) {

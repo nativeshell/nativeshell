@@ -1,3 +1,5 @@
+#![allow(clippy::from_over_into)]
+
 use std::{mem::ManuallyDrop, os::raw::c_char};
 
 use super::flutter_sys;

@@ -34,7 +34,7 @@ impl PlatformRunLoop {
     fn next_handle(&self) -> HandleType {
         let r = self.next_handle.get();
         self.next_handle.replace(r + 1);
-        return r;
+        r
     }
 
     #[must_use]

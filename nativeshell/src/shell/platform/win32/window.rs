@@ -32,7 +32,6 @@ use super::{
 
 pub type PlatformWindowType = isize; // HWND
 
-#[allow(clippy::type_complexity)]
 pub struct PlatformWindow {
     context: Rc<Context>,
     hwnd: Cell<HWND>,

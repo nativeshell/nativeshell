@@ -146,6 +146,7 @@ impl DropContext {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn drag_data_received<T: IsA<Widget>>(
         &self,
         _widget: &T,
@@ -238,10 +239,7 @@ impl DropContext {
 
         let mut atoms = Vec::<Atom>::new();
         for adapter in adapters {
-            adapter
-                .data_formats()
-                .iter()
-                .for_each(|a| atoms.push(a.clone()));
+            adapter.data_formats().iter().for_each(|a| atoms.push(*a));
         }
 
         let entries: Vec<TargetEntry> = atoms
@@ -308,7 +306,7 @@ impl DragContext {
         targets
     }
 
-    fn convert_effects_to_gtk(effects: &Vec<DragEffect>) -> DragAction {
+    fn convert_effects_to_gtk(effects: &[DragEffect]) -> DragAction {
         let mut res = DragAction::empty();
         for e in effects {
             res |= DropContext::convert_effect_to_gtk(*e);
@@ -386,8 +384,7 @@ impl DragContext {
             image.height,
             image.bytes_per_row,
         );
-        let surface = surface.unwrap();
-        surface
+        surface.unwrap()
     }
 
     pub fn get_data(&self, selection_data: &SelectionData, target_info: u32) {

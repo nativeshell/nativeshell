@@ -53,7 +53,7 @@ impl DragDataAdapter for UriListDataAdapter {
             }
         }
         if let Some(string) = data.get_text() {
-            let parts = string.split("\n");
+            let parts = string.split('\n');
             for part in parts {
                 let part = part.trim().to_string();
                 if !part.is_empty() && !uris.contains(&part) {
@@ -66,7 +66,7 @@ impl DragDataAdapter for UriListDataAdapter {
         let mut res_paths = Vec::<String>::new();
 
         for uri in uris {
-            if let Some(parsed) = Url::parse(&uri).ok() {
+            if let Ok(parsed) = Url::parse(&uri) {
                 if parsed.scheme() == "file"
                     && parsed.query().is_none()
                     && parsed.fragment().is_none()
@@ -133,7 +133,7 @@ impl DragDataAdapter for UriListDataAdapter {
                 formats: vec![Atom::intern("text/uri-list")],
             }),
             Box::new(UriDragData {
-                uris: uris.clone(),
+                uris,
                 set_as_uris: false,
                 formats: vec![
                     Atom::intern("UTF8_STRING"),

@@ -33,7 +33,7 @@ impl PlatformEngine {
     pub fn new() -> Self {
         let project = flutter::DartProject::new();
         let view = flutter::View::new(&project);
-        PlatformEngine { view: view }
+        PlatformEngine { view }
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {
@@ -44,8 +44,7 @@ impl PlatformEngine {
         let engine = self.view.get_engine();
         let engine: *mut flutter_sys::FlEngine = engine.to_glib_none().0;
         let engine = engine as *mut u8;
-        let api =
-            unsafe { engine.offset(std::mem::size_of::<_FlEngine>() as isize) } as *mut c_void;
+        let api = unsafe { engine.add(std::mem::size_of::<_FlEngine>()) } as *mut c_void;
         override_key_event(api);
     }
 
