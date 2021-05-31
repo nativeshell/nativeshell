@@ -116,7 +116,7 @@ class MenuState {
     _currentElements.clear();
   }
 
-  Future<void>   _updateLocked() async {
+  Future<void> _updateLocked() async {
     final removed = <MenuState>[];
     final preserved = <MenuState>[];
     final added = <MenuState>[];
