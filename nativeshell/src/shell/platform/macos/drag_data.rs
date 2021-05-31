@@ -59,8 +59,7 @@ impl PasteboardItems {
     }
 
     pub fn get_items(&mut self) -> Vec<StrongPtr> {
-        let res = self.items.clone();
-        res
+        self.items.clone()
     }
 }
 

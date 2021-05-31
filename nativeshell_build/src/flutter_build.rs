@@ -59,7 +59,7 @@ impl Flutter {
         Flutter {
             root_dir: std::env::var("CARGO_MANIFEST_DIR").unwrap().into(),
             out_dir: std::env::var("OUT_DIR").unwrap().into(),
-            options: options,
+            options,
             build_mode: Flutter::build_mode(),
             target_os: Flutter::target_os(),
             target_platform: Flutter::target_platform(),
@@ -114,8 +114,8 @@ impl Flutter {
     }
 
     pub fn build_mode() -> String {
-        let mut build_mode: String = std::env::var("PROFILE").unwrap().into();
-        let profile = std::env::var("FLUTTER_PROFILE").unwrap_or("false".into());
+        let mut build_mode: String = std::env::var("PROFILE").unwrap();
+        let profile = std::env::var("FLUTTER_PROFILE").unwrap_or_else(|_| "false".into());
         let profile = profile == "true" || profile == "1";
         if profile && build_mode != "release" {
             panic!("Profile option (FLUTTER_PROFILE) must only be enabled for release builds")
@@ -197,7 +197,7 @@ impl Flutter {
                 // remove unc from windows canonicalize
                 let absolute = simplified(&absolute);
                 let mut absolute = absolute.to_slash_lossy();
-                if !absolute.starts_with("/") {
+                if !absolute.starts_with('/') {
                     absolute = format!("/{}", absolute);
                 }
                 absolute = format!("file://{}", absolute);

@@ -33,7 +33,8 @@ impl<'a> ArtifactEmitter<'a> {
     pub fn emit_flutter_data(&self) -> BuildResult<()> {
         let data_dir = self.artifacts_out_dir.join("data");
         if data_dir.exists() {
-            std::fs::remove_dir_all(&data_dir).expect(&format!("Failed to remove {:?}", data_dir));
+            std::fs::remove_dir_all(&data_dir)
+                .unwrap_or_else(|_| panic!("Failed to remove {:?}", data_dir));
         }
         let assets_dst_dir = mkdir(&data_dir, Some("flutter_assets"))?;
         let assets_src_dir = {
@@ -78,7 +79,7 @@ impl<'a> ArtifactEmitter<'a> {
                 let lib_dir = self.artifacts_out_dir.join("lib");
                 if lib_dir.exists() {
                     std::fs::remove_dir_all(&lib_dir)
-                        .expect(&format!("Failed to remove {:?}", lib_dir));
+                        .unwrap_or_else(|_| panic!("Failed to remove {:?}", lib_dir));
                 }
                 mkdir(&lib_dir, None::<PathBuf>)?;
                 Self::copy_to(&app_so, &lib_dir, false)?;
@@ -305,7 +306,7 @@ impl<'a> ArtifactEmitter<'a> {
             }
         };
 
-        let path = path.ok_or(BuildError::OtherError(
+        let path = path.ok_or_else(|| BuildError::OtherError(
             "Coud not determine flutter artifacts location; Please make sure that flutter is in PATH".into()))?;
 
         if !path.exists() {

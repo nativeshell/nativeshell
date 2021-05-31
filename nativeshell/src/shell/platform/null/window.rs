@@ -59,7 +59,7 @@ impl PlatformWindow {
 
     pub fn show_modal<F>(&self, done_callback: F)
     where
-        F: FnOnce(PlatformResult<Value>) -> () + 'static,
+        F: FnOnce(PlatformResult<Value>) + 'static,
     {
         done_callback(Err(PlatformError::NotImplemented))
     }
@@ -99,7 +99,7 @@ impl PlatformWindow {
 
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         on_done(Err(PlatformError::NotImplemented))
     }

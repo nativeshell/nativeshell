@@ -17,7 +17,7 @@ impl PlatformBinaryMessenger {
 
     pub fn register_channel_handler<F>(&self, channel: &str, callback: F)
     where
-        F: Fn(&[u8], BinaryMessengerReply) -> () + 'static,
+        F: Fn(&[u8], BinaryMessengerReply) + 'static,
     {
         self.messenger.set_message_handler_on_channel(
             channel,
@@ -36,7 +36,7 @@ impl PlatformBinaryMessenger {
 
     pub fn send_message<F>(&self, channel: &str, message: &[u8], reply: F) -> PlatformResult<()>
     where
-        F: FnOnce(&[u8]) -> () + 'static,
+        F: FnOnce(&[u8]) + 'static,
     {
         self.messenger
             .send_message(channel, message.into(), move |data| {

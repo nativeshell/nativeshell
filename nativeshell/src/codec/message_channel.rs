@@ -24,7 +24,7 @@ impl<V> MessageChannel<V> {
         callback: F,
     ) -> Self
     where
-        F: Fn(V, MessageReply<V>) -> () + 'static,
+        F: Fn(V, MessageReply<V>) + 'static,
     {
         Self::new_with_engine_manager(
             context.clone(),
@@ -45,12 +45,12 @@ impl<V> MessageChannel<V> {
         engine_manager: &EngineManager,
     ) -> Self
     where
-        F: Fn(V, MessageReply<V>) -> () + 'static,
+        F: Fn(V, MessageReply<V>) + 'static,
     {
         let res = MessageChannel {
             context: context.clone(),
             sender: MessageSender {
-                context: context,
+                context,
                 engine_handle,
                 channel_name: channel_name.into(),
                 codec,
@@ -94,7 +94,7 @@ where
 impl<V> MessageSender<V> {
     pub fn send_message<F>(&self, message: &V, reply: F) -> Result<()>
     where
-        F: FnOnce(V) -> () + 'static,
+        F: FnOnce(V) + 'static,
     {
         let encoded = self.codec.encode_message(message);
         let engine_manager = self.context.engine_manager.borrow();

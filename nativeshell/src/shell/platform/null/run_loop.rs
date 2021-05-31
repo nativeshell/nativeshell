@@ -16,7 +16,7 @@ impl PlatformRunLoop {
     #[must_use]
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         INVALID_HANDLE
     }
@@ -36,7 +36,7 @@ pub struct PlatformRunLoopSender {}
 impl PlatformRunLoopSender {
     pub fn send<F>(&self, callback: F)
     where
-        F: FnOnce() -> () + 'static + Send,
+        F: FnOnce() + 'static + Send,
     {
     }
 }

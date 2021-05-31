@@ -120,7 +120,7 @@ pub fn to_nsdata(data: &[u8]) -> StrongPtr {
     }
 }
 
-pub unsafe fn superclass<'a>(this: &'a Object) -> &'a Class {
+pub unsafe fn superclass(this: &Object) -> &Class {
     let superclass: id = msg_send![this, superclass];
     &*(superclass as *const _)
 }

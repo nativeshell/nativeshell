@@ -19,14 +19,14 @@ pub struct PlatformBinaryMessenger {
 impl PlatformBinaryMessenger {
     pub fn from_handle(handle: StrongPtr) -> Self {
         PlatformBinaryMessenger {
-            handle: handle,
+            handle,
             registered: RefCell::new(HashSet::new()),
         }
     }
 
     pub fn register_channel_handler<F>(&self, channel: &str, callback: F)
     where
-        F: Fn(&[u8], BinaryMessengerReply) -> () + 'static,
+        F: Fn(&[u8], BinaryMessengerReply) + 'static,
     {
         unsafe {
             let closure = move |data: id, reply: &mut Block<(id,), ()>| {
@@ -66,7 +66,7 @@ impl PlatformBinaryMessenger {
 
     pub fn send_message<F>(&self, channel: &str, message: &[u8], reply: F) -> PlatformResult<()>
     where
-        F: FnOnce(&[u8]) -> () + 'static,
+        F: FnOnce(&[u8]) + 'static,
     {
         // we know we're going to be called only once, but rust doesn't
         let r = Rc::new(RefCell::new(Some(reply)));

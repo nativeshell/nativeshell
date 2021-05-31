@@ -1,7 +1,7 @@
 mod deserializer;
 mod serializer;
 
-use std::{convert::TryFrom, f64::NAN, fmt, mem};
+use std::{convert::TryFrom, f64::NAN, fmt};
 
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -56,6 +56,7 @@ impl_from!(Value::F64List, Vec<f64>);
 impl_from!(Value::List, Vec<Value>);
 impl_from!(Value::Map, HashMap<Value, Value>);
 
+#[allow(clippy::if_same_then_else)]
 fn eq_map(m1: &HashMap<Value, Value>, m2: &HashMap<Value, Value>) -> bool {
     if m1.len() != m2.len() {
         false
@@ -90,7 +91,7 @@ impl Eq for Value {}
 fn hash_f64<H: std::hash::Hasher>(value: f64, state: &mut H) {
     // normalize NAN
     let value: f64 = if value.is_nan() { NAN } else { value };
-    let transmuted: u64 = unsafe { mem::transmute(value) };
+    let transmuted: u64 = value.to_bits();
     state.write_u64(transmuted);
 }
 

@@ -1,6 +1,6 @@
 use nativeshell_build::Flutter;
 
-fn main() -> () {
+fn main() {
     #[cfg(target_os = "windows")]
     {
         windows::build!(

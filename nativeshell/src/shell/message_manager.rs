@@ -7,8 +7,8 @@ use crate::codec::{
 
 use super::{Context, EngineHandle, EngineManager};
 
-type MessageCallback = dyn Fn(Value, MessageReply<Value>, EngineHandle) -> ();
-type MethodCallback = dyn Fn(MethodCall<Value>, MethodCallReply<Value>, EngineHandle) -> ();
+type MessageCallback = dyn Fn(Value, MessageReply<Value>, EngineHandle);
+type MethodCallback = dyn Fn(MethodCall<Value>, MethodCallReply<Value>, EngineHandle);
 
 pub struct MessageManager {
     context: Rc<Context>,
@@ -100,7 +100,7 @@ impl MessageManager {
         self.message_channels
             .get(&engine)
             .and_then(|e| e.get(channel))
-            .and_then(|e| Some(e.sender().clone()))
+            .map(|e| e.sender().clone())
     }
 
     pub fn get_method_invoker(
@@ -111,7 +111,7 @@ impl MessageManager {
         self.method_channels
             .get(&engine)
             .and_then(|e| e.get(channel))
-            .and_then(|e| Some(e.invoker().clone()))
+            .map(|e| e.invoker().clone())
     }
 
     pub(super) fn engine_created(&mut self, engine_manager: &EngineManager, engine: EngineHandle) {
@@ -179,13 +179,12 @@ impl MessageManager {
             channel,
             &StandardMethodCodec,
             move |value, reply| {
-                let engine = engine.clone();
                 Self::on_message(handlers.clone(), value, &channel_str, reply, engine);
             },
             engine_manager,
         );
         let map = self.message_channels.entry(engine);
-        let entry = map.or_insert_with(|| HashMap::new());
+        let entry = map.or_insert_with(HashMap::new);
         entry.insert(channel.into(), message_channel);
     }
 
@@ -203,13 +202,12 @@ impl MessageManager {
             channel,
             &StandardMethodCodec,
             move |call, reply| {
-                let engine = engine.clone();
                 Self::on_method(handlers.clone(), call, &channel_str, reply, engine);
             },
             engine_manager,
         );
         let map = self.method_channels.entry(engine);
-        let entry = map.or_insert_with(|| HashMap::new());
+        let entry = map.or_insert_with(HashMap::new);
         entry.insert(channel.into(), method_channel);
     }
 }

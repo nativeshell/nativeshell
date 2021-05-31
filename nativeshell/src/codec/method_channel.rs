@@ -24,7 +24,7 @@ impl<V> MethodChannel<V> {
         callback: F,
     ) -> Self
     where
-        F: Fn(MethodCall<V>, MethodCallReply<V>) -> () + 'static,
+        F: Fn(MethodCall<V>, MethodCallReply<V>) + 'static,
     {
         Self::new_with_engine_manager(
             context.clone(),
@@ -45,12 +45,12 @@ impl<V> MethodChannel<V> {
         engine_manager: &EngineManager,
     ) -> Self
     where
-        F: Fn(MethodCall<V>, MethodCallReply<V>) -> () + 'static,
+        F: Fn(MethodCall<V>, MethodCallReply<V>) + 'static,
     {
         let res = MethodChannel {
             context: context.clone(),
             invoker: MethodInvoker {
-                context: context.clone(),
+                context,
                 engine_handle,
                 channel_name: channel_name.into(),
                 codec,
@@ -95,7 +95,7 @@ where
 impl<V> MethodInvoker<V> {
     pub fn call_method<F>(&self, method: String, args: V, reply: F) -> Result<()>
     where
-        F: FnOnce(MethodCallResult<V>) -> () + 'static,
+        F: FnOnce(MethodCallResult<V>) + 'static,
     {
         let encoded = self.codec.encode_method_call(&MethodCall { method, args });
         let engine_manager = self.context.engine_manager.borrow();

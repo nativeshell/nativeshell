@@ -30,13 +30,12 @@ impl Default for AppBundleOptions {
         Self {
             bundle_identifier: "dev.nativeshell.example".into(),
             bundle_name: format!("{}.app", std::env::var("CARGO_PKG_NAME").unwrap()),
-            bundle_display_name: std::env::var("CARGO_PKG_NAME").unwrap().into(),
-            bundle_version: std::env::var("CARGO_PKG_VERSION").unwrap().into(),
-            bundle_short_version_string: std::env::var("CARGO_PKG_VERSION").unwrap().into(),
+            bundle_display_name: std::env::var("CARGO_PKG_NAME").unwrap(),
+            bundle_version: std::env::var("CARGO_PKG_VERSION").unwrap(),
+            bundle_short_version_string: std::env::var("CARGO_PKG_VERSION").unwrap(),
             // TODO: This need better default
             minimum_system_version: std::env::var("MACOSX_DEPLOYMENT_TARGET")
-                .unwrap_or("10.13".into())
-                .into(),
+                .unwrap_or_else(|_| "10.13".into()),
             executable_path: std::env::var("CARGO_PKG_NAME").unwrap().into(),
             icon_file: "App.icns".into(),
             info_plist_template: None,
@@ -66,7 +65,7 @@ impl MacOSBundle {
 
         if bundle_path.exists() {
             std::fs::remove_dir_all(&bundle_path)
-                .expect(&format!("Failed to remove {:?}", bundle_path));
+                .unwrap_or_else(|_| panic!("Failed to remove {:?}", bundle_path));
         }
 
         mkdir::<_, PathBuf>(&bundle_path, None)?;

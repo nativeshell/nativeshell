@@ -142,13 +142,13 @@ extern "C" {
 extern "C" {
     pub fn FlutterDesktopViewControllerForceRedraw(
         controller: FlutterDesktopViewControllerRef,
-    ) -> ();
+    );
 }
 extern "C" {
     pub fn FlutterDesktopViewControllerEnableDirectComposition(
         controller: FlutterDesktopViewControllerRef,
         use_direct_composition: bool,
-    ) -> ();
+    );
 }
 extern "C" {
     pub fn FlutterDesktopViewControllerHandleTopLevelWindowProc(

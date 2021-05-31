@@ -218,7 +218,7 @@ impl DropContext {
 
     fn with_delegate<F>(&self, callback: F)
     where
-        F: FnOnce(Rc<dyn PlatformWindowDelegate>) -> (),
+        F: FnOnce(Rc<dyn PlatformWindowDelegate>),
     {
         let win = self.window.upgrade();
         if let Some(delegate) = win.and_then(|w| w.delegate.upgrade()) {
@@ -400,7 +400,7 @@ impl DragContext {
 
     fn with_delegate<F>(&self, callback: F)
     where
-        F: FnOnce(Rc<dyn PlatformWindowDelegate>) -> (),
+        F: FnOnce(Rc<dyn PlatformWindowDelegate>),
     {
         let win = self.window.upgrade();
         if let Some(delegate) = win.and_then(|w| w.delegate.upgrade()) {

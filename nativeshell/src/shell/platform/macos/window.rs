@@ -54,6 +54,7 @@ use super::{
 
 pub type PlatformWindowType = StrongPtr;
 
+#[allow(clippy::type_complexity)]
 pub struct PlatformWindow {
     context: Rc<Context>,
     platform_window: PlatformWindowType,
@@ -61,7 +62,7 @@ pub struct PlatformWindow {
     platform_delegate: StrongPtr,
     weak_self: LateRefCell<Weak<PlatformWindow>>,
     delegate: Weak<dyn PlatformWindowDelegate>,
-    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>) -> ()>>>,
+    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>)>>>,
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     drag_context: LateRefCell<DragContext>,
@@ -138,7 +139,7 @@ impl PlatformWindow {
             NSWindow::setContentSize_(*self.platform_window, Size::wh(1.0, 1.0).into());
         }
 
-        let drag_context = DragContext::new(self.context.clone(), weak.clone());
+        let drag_context = DragContext::new(self.context.clone(), weak);
         drag_context.register(*self.platform_window);
         self.drag_context.set(drag_context);
     }
@@ -345,7 +346,8 @@ impl PlatformWindow {
                 .max_by_key(|x| x.eventNumber())
                 .cloned();
             if let Some(last_event) = last_event {
-                Ok(msg_send![*self.platform_window, performWindowDragWithEvent:*last_event])
+                let () = msg_send![*self.platform_window, performWindowDragWithEvent:*last_event];
+                Ok(())
             } else {
                 Err(PlatformError::NoEventFound)
             }
@@ -387,7 +389,7 @@ impl PlatformWindow {
             let mut collection_behavior = NSWindow::collectionBehavior(*self.platform_window);
             let no_fullscreen: NSWindowCollectionBehavior =
                 std::mem::transmute((1 << 9) as NSUInteger);
-            if style.can_full_screen == false {
+            if !style.can_full_screen {
                 collection_behavior |= no_fullscreen;
             } else {
                 collection_behavior &= !no_fullscreen;
@@ -442,8 +444,8 @@ impl PlatformWindow {
                     let actual_height: NSInteger = msg_send![contents, height];
 
                     // only show if size matches, otherwise we caught the view during resizing
-                    if actual_width as f64 == expected_width
-                        && actual_height as f64 == expected_height
+                    if actual_width == expected_width as NSInteger
+                        && actual_height == expected_height as NSInteger
                     {
                         s.actually_show();
                         if let Some(delegate) = s.delegate.upgrade() {
@@ -484,7 +486,7 @@ impl PlatformWindow {
 
     pub fn show_modal<F>(&self, done_callback: F)
     where
-        F: FnOnce(PlatformResult<Value>) -> () + 'static,
+        F: FnOnce(PlatformResult<Value>) + 'static,
     {
         self.modal_close_callback
             .borrow_mut()
@@ -659,7 +661,7 @@ impl PlatformWindow {
 
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         unsafe {
             // cocoa eats mouse up on popup menu
@@ -721,7 +723,7 @@ impl PlatformWindow {
 
     pub(super) fn with_delegate<F>(&self, callback: F)
     where
-        F: FnOnce(Rc<dyn PlatformWindowDelegate>) -> (),
+        F: FnOnce(Rc<dyn PlatformWindowDelegate>),
     {
         let delegate = self.delegate.upgrade();
         if let Some(delegate) = delegate {
@@ -756,7 +758,7 @@ lazy_static! {
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
         decl.add_method(
             sel!(sendEvent:),
-            send_event as extern "C" fn(&mut Object, Sel, id) -> (),
+            send_event as extern "C" fn(&mut Object, Sel, id),
         );
 
         decl.add_method(
@@ -771,7 +773,7 @@ lazy_static! {
 
         decl.add_method(
             sel!(draggingExited:),
-            dragging_exited as extern "C" fn(&mut Object, Sel, id) -> (),
+            dragging_exited as extern "C" fn(&mut Object, Sel, id),
         );
 
         decl.add_method(
@@ -788,7 +790,7 @@ lazy_static! {
         decl.add_method(
             sel!(draggingSession:endedAtPoint:operation:),
             dragging_session_ended_at_point
-                as extern "C" fn(&mut Object, Sel, id, NSPoint, NSDragOperation) -> (),
+                as extern "C" fn(&mut Object, Sel, id, NSPoint, NSDragOperation),
         );
 
         decl.add_ivar::<*mut c_void>("imState");
@@ -811,17 +813,17 @@ lazy_static! {
 
         decl.add_method(
             sel!(windowWillClose:),
-            window_will_close as extern "C" fn(&Object, Sel, id) -> (),
+            window_will_close as extern "C" fn(&Object, Sel, id),
         );
 
         decl.add_method(
             sel!(windowDidBecomeKey:),
-            window_did_become_key as extern "C" fn(&Object, Sel, id) -> (),
+            window_did_become_key as extern "C" fn(&Object, Sel, id),
         );
 
         decl.add_method(
             sel!(windowDidResignKey:),
-            window_did_resign_key as extern "C" fn(&Object, Sel, id) -> (),
+            window_did_resign_key as extern "C" fn(&Object, Sel, id),
         );
 
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
@@ -834,7 +836,7 @@ lazy_static! {
 
 fn with_state<F>(this: &Object, callback: F)
 where
-    F: FnOnce(Rc<PlatformWindow>) -> (),
+    F: FnOnce(Rc<PlatformWindow>),
 {
     let state_ptr = unsafe {
         let state_ptr: *mut c_void = *this.get_ivar("imState");
@@ -886,7 +888,7 @@ extern "C" fn window_should_close(this: &Object, _: Sel, _: id) -> BOOL {
     NO
 }
 
-extern "C" fn window_will_close(this: &Object, _: Sel, _: id) -> () {
+extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
         unsafe {
             let child_windows: id = msg_send![*state.platform_window, childWindows];
@@ -905,7 +907,7 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) -> () {
     });
 }
 
-extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) -> () {
+extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, _delegate| {
         state
             .context
@@ -916,7 +918,7 @@ extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) -> () {
     });
 }
 
-extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) -> () {
+extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, _delegate| {
         state
             .context
@@ -927,7 +929,7 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) -> () {
     });
 }
 
-extern "C" fn send_event(this: &mut Object, _: Sel, e: id) -> () {
+extern "C" fn send_event(this: &mut Object, _: Sel, e: id) {
     unsafe {
         let event = StrongPtr::retain(e);
         let should_send = with_state_res(
@@ -965,7 +967,7 @@ extern "C" fn dragging_updated(this: &mut Object, _: Sel, info: id) -> NSDragOpe
     )
 }
 
-extern "C" fn dragging_exited(this: &mut Object, _: Sel, info: id) -> () {
+extern "C" fn dragging_exited(this: &mut Object, _: Sel, info: id) {
     with_state(this, move |state| {
         state.drag_context.borrow().dragging_exited(info)
     })
@@ -1003,7 +1005,7 @@ extern "C" fn dragging_session_ended_at_point(
     session: id,
     point: NSPoint,
     operation: NSDragOperation,
-) -> () {
+) {
     with_state(this, move |state| {
         state
             .drag_context

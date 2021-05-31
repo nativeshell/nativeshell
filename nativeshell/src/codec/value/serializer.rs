@@ -60,7 +60,7 @@ impl serde::Serializer for Serializer {
 
     #[inline]
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-        let value = i64::try_from(v).or_else(|_| Err(Self::Error::ConversionError))?;
+        let value = i64::try_from(v).map_err(|_| Self::Error::ConversionError)?;
         self.serialize_i64(value)
     }
 

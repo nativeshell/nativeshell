@@ -1,3 +1,5 @@
+#![allow(clippy::new_without_default)]
+
 pub mod codec;
 pub mod shell;
 pub mod util;

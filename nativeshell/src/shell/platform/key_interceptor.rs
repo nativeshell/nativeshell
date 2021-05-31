@@ -63,7 +63,8 @@ pub(super) fn override_key_event(proc_table: *mut c_void) {
     // Fragile as it may be, right now this seems to be the only reasonable way to intercept
     // keyboard events, which is absolutely required for menubar component
 
-    let mut proc_table: &mut EngineProcTable = unsafe { std::mem::transmute(proc_table) };
+    let mut proc_table: &mut EngineProcTable =
+        unsafe { &mut *(proc_table as *mut EngineProcTable) };
     if proc_table.size != 280 {
         warn!(
             "Unexpected proc table size {}. Please update shell/platform/common/override_key_event",

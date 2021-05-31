@@ -48,7 +48,7 @@ impl Window {
         Self {
             context,
             window_handle,
-            engine_handle: engine_handle,
+            engine_handle,
             platform_window: LateRefCell::new(),
             init_data,
             parent,
@@ -63,7 +63,7 @@ impl Window {
 
     // fn invoke_method<F>(&self, method: &str, arg: Value, reply: F)
     // where
-    //     F: FnOnce(Result<Value, PlatformError>) -> () + 'static,
+    //     F: FnOnce(Result<Value, PlatformError>) + 'static,
     // {
     //     let message = encode_method(&self.window_handle, method, arg);
     //     self.message_sender.send_message(&message, |r| {
@@ -172,7 +172,7 @@ impl Window {
 
     fn show_popup_menu<F>(&self, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(Result<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(Result<PopupMenuResponse>) + 'static,
     {
         let menu = self
             .context

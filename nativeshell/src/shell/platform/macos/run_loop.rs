@@ -46,7 +46,7 @@ impl PlatformRunLoop {
     fn next_handle(&self) -> HandleType {
         let r = self.next_handle.get();
         self.next_handle.replace(r + 1);
-        return r;
+        r
     }
 
     pub fn unschedule(&self, handle: HandleType) {
@@ -55,7 +55,7 @@ impl PlatformRunLoop {
 
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         let handle = self.next_handle();
         self.callbacks
@@ -63,7 +63,7 @@ impl PlatformRunLoop {
             .insert(handle, Box::new(callback));
 
         let data = Box::new(CallbackData {
-            handle: handle,
+            handle,
             callbacks: self.callbacks.clone(),
         });
 
@@ -148,7 +148,7 @@ struct SenderCallbackData {
 impl PlatformRunLoopSender {
     pub fn send<F>(&self, callback: F)
     where
-        F: FnOnce() -> () + 'static + Send,
+        F: FnOnce() + 'static + Send,
     {
         let data = Box::new(SenderCallbackData {
             callback: Box::new(callback),

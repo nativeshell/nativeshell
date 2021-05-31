@@ -44,7 +44,7 @@ pub struct PlatformWindow {
     modal_child: Cell<Option<HWND>>,
     flutter_controller: LateRefCell<FlutterDesktopViewControllerRef>,
     delegate: Weak<dyn PlatformWindowDelegate>,
-    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>) -> ()>>>,
+    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>)>>>,
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     mouse_state: RefCell<MouseState>,
@@ -302,7 +302,7 @@ impl PlatformWindow {
 
     pub fn show_modal<F>(&self, done_callback: F)
     where
-        F: FnOnce(PlatformResult<Value>) -> () + 'static,
+        F: FnOnce(PlatformResult<Value>) + 'static,
     {
         self.modal_close_callback
             .borrow_mut()
@@ -337,7 +337,7 @@ impl PlatformWindow {
 
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         let weak = self.weak_self.clone_value();
 

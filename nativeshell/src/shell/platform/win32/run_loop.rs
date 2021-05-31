@@ -18,10 +18,10 @@ pub struct PlatformRunLoop {
 
 struct Timer {
     scheduled: Instant,
-    callback: Box<dyn FnOnce() -> ()>,
+    callback: Box<dyn FnOnce()>,
 }
 
-type SenderCallback = Box<dyn FnOnce() -> () + Send>;
+type SenderCallback = Box<dyn FnOnce() + Send>;
 
 struct State {
     next_handle: Cell<HandleType>,
@@ -75,7 +75,7 @@ impl State {
 
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         let handle = self.next_handle();
 
@@ -184,7 +184,7 @@ impl PlatformRunLoop {
     #[must_use]
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         self.state.schedule(callback, in_time)
     }
@@ -211,7 +211,7 @@ pub struct PlatformRunLoopSender {
 impl PlatformRunLoopSender {
     pub fn send<F>(&self, callback: F)
     where
-        F: FnOnce() -> () + 'static + Send,
+        F: FnOnce() + 'static + Send,
     {
         {
             let mut callbacks = self.callbacks.lock().unwrap();

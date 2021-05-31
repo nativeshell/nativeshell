@@ -10,7 +10,7 @@ use super::{
 pub struct ContextOptions {
     pub app_namespace: String,
 
-    pub on_last_engine_removed: Box<dyn Fn(Rc<Context>) -> ()>,
+    pub on_last_engine_removed: Box<dyn Fn(Rc<Context>)>,
     pub custom_drag_data_adapters: Vec<Box<dyn DragDataAdapter>>,
 }
 
@@ -59,6 +59,6 @@ impl Context {
         self.window_manager.set(WindowManager::new(context.clone()));
         self.menu_manager.set(MenuManager::new(context.clone()));
 
-        init_platform(context.clone()).map_err(|e| e.into())
+        init_platform(context).map_err(|e| e.into())
     }
 }

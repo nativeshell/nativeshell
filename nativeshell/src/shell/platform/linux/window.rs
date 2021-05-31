@@ -55,7 +55,7 @@ pub struct PlatformWindow {
     weak_self: LateRefCell<Weak<PlatformWindow>>,
     parent: Option<Rc<PlatformWindow>>,
     pub(super) delegate: Weak<dyn PlatformWindowDelegate>,
-    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>) -> ()>>>,
+    modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>)>>>,
     size_widget: Widget,
     pub(super) view: LateRefCell<View>,
     ready_to_show: Cell<bool>,
@@ -368,7 +368,7 @@ impl PlatformWindow {
 
     pub fn show_modal<F>(&self, done_callback: F)
     where
-        F: FnOnce(PlatformResult<Value>) -> () + 'static,
+        F: FnOnce(PlatformResult<Value>) + 'static,
     {
         self.modal_close_callback
             .borrow_mut()
@@ -579,7 +579,7 @@ impl PlatformWindow {
 
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         self.window_menu
             .borrow()

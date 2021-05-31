@@ -13,11 +13,11 @@ fn get_temp_environemt() -> Option<&'static str> {
         const TMPDIR: &str = "TMPDIR";
         const XDG_RUNTIME_DIR: &str = "XDG_RUNTIME_DIR";
         if std::env::var(XDG_RUNTIME_DIR).is_ok() {
-            return Some(XDG_RUNTIME_DIR);
+            Some(XDG_RUNTIME_DIR)
         } else if std::env::var(TMPDIR).is_ok() {
-            return Some(TMPDIR);
+            Some(TMPDIR)
         } else {
-            return None;
+            None
         }
     }
 }
@@ -27,7 +27,7 @@ fn have_observatory_url(url: &str, file_suffix: &str) {
     match temp {
         Some(temp) => {
             let dir = std::env::var(temp).unwrap();
-            let separator = if dir.ends_with("/") { "" } else { "/" };
+            let separator = if dir.ends_with('/') { "" } else { "/" };
             let info = VMServiceInfoFile { uri: url.into() };
             let content = serde_json::to_string_pretty(&info).unwrap();
             let file_name = format!("vmservice.{}", file_suffix);
@@ -116,37 +116,32 @@ fn _register_observatory_listener(file_suffix: String) {
             let utf8 = String::from_utf8_lossy(&buf[0..read as usize]);
             string.push_str(&utf8);
 
-            loop {
-                if let Some(i) = string.find('\n') {
-                    {
-                        let substr = &string[..i];
-                        if substr.starts_with(URL_PREFIX) {
-                            have_url = true;
+            while let Some(i) = string.find('\n') {
+                {
+                    let substr = &string[..i];
+                    if let Some(url) = substr.strip_prefix(URL_PREFIX) {
+                        have_url = true;
 
-                            // after reverting to the original stdout there's no flutter output
-                            // anymore; Would be nice to know why this happens;
-                            #[cfg(target_family = "windows")]
-                            {
-                                let url: String = substr[URL_PREFIX.len()..].into();
-                                let file_suffix = file_suffix.clone();
-                                thread::spawn(move || {
-                                    have_observatory_url(&url, &file_suffix);
-                                });
-                            }
+                        // after reverting to the original stdout there's no flutter output
+                        // anymore; Would be nice to know why this happens;
+                        #[cfg(target_family = "windows")]
+                        {
+                            let file_suffix = file_suffix.clone();
+                            thread::spawn(move || {
+                                have_observatory_url(&url, &file_suffix);
+                            });
+                        }
 
-                            #[cfg(target_family = "unix")]
-                            {
-                                // revert to the original stdout and terminate the thread
-                                dup2(stdout, STDOUT_FILENO);
-                                have_observatory_url(&substr[URL_PREFIX.len()..], &file_suffix);
-                                return;
-                            }
+                        #[cfg(target_family = "unix")]
+                        {
+                            // revert to the original stdout and terminate the thread
+                            dup2(stdout, STDOUT_FILENO);
+                            have_observatory_url(&url, &file_suffix);
+                            return;
                         }
                     }
-                    string.replace_range(..i + 1, "");
-                } else {
-                    break;
                 }
+                string.replace_range(..i + 1, "");
             }
         }
     });

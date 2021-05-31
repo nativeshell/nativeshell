@@ -17,7 +17,7 @@ use super::{
     },
 };
 
-type Callback = Box<dyn Fn(&[u8], BinaryMessengerReply) -> ()>;
+type Callback = Box<dyn Fn(&[u8], BinaryMessengerReply)>;
 
 pub struct PlatformBinaryMessenger {
     handle: Cell<FlutterDesktopMessengerRef>,
@@ -72,7 +72,7 @@ impl PlatformBinaryMessenger {
 
     pub fn register_channel_handler<F>(&self, channel: &str, callback: F)
     where
-        F: Fn(&[u8], BinaryMessengerReply) -> () + 'static,
+        F: Fn(&[u8], BinaryMessengerReply) + 'static,
     {
         let callback = Box::new(callback);
         self.callbacks
@@ -112,15 +112,15 @@ impl PlatformBinaryMessenger {
         user_data: *mut ::std::os::raw::c_void,
     ) {
         let data = slice::from_raw_parts(data, data_size);
-        let b: Box<Box<dyn FnOnce(&[u8]) -> ()>> = Box::from_raw(user_data as *mut _);
+        let b: Box<Box<dyn FnOnce(&[u8])>> = Box::from_raw(user_data as *mut _);
         b(data);
     }
 
     pub fn send_message<F>(&self, channel: &str, message: &[u8], reply: F) -> PlatformResult<()>
     where
-        F: FnOnce(&[u8]) -> () + 'static,
+        F: FnOnce(&[u8]) + 'static,
     {
-        let b: Box<dyn FnOnce(&[u8]) -> ()> = Box::new(reply);
+        let b: Box<dyn FnOnce(&[u8])> = Box::new(reply);
         let b = Box::new(b);
         let c_channel = CString::new(channel).unwrap();
         if !unsafe {

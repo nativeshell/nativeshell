@@ -78,7 +78,7 @@ fn unmodified_character_for_virtual_key(scancode: i64) -> (u16, u16) {
         );
 
         CFRelease(input_source);
-        return (unichar, unichar_shift);
+        (unichar, unichar_shift)
     }
 }
 
@@ -99,7 +99,7 @@ pub fn process_key_event(data: Vec<u8>) -> Vec<u8> {
     // [NSEvent charactersIgnoringModifiers] which is used as source for
     // characters_ignoring_modifiers doesn't ignore the SHIFT modifier
     //
-    if let Some(_) = &event.characters_ignoring_modifiers {
+    if event.characters_ignoring_modifiers.is_some() {
         let char = unmodified_character_for_virtual_key(event.key_code as i64);
         event.characters_ignoring_modifiers_ex =
             Some(String::from_utf16_lossy(std::slice::from_ref(&char.0)));

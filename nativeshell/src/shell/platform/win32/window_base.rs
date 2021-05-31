@@ -52,7 +52,7 @@ impl WindowBaseState {
 
     pub fn show<F>(&self, callback: F) -> PlatformResult<()>
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         unsafe {
             ShowWindow(self.hwnd, SW_SHOW); // false is not an error

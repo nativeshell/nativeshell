@@ -19,7 +19,7 @@ pub struct EngineManager {
 impl EngineManager {
     pub(super) fn new(context: Rc<Context>) -> Self {
         Self {
-            context: context,
+            context,
             engines: HashMap::new(),
             next_handle: EngineHandle(1),
         }
@@ -67,7 +67,7 @@ impl EngineManager {
 
     // Posts message on all engines
     pub fn broadcast_message(&self, channel: &str, message: &[u8]) -> Result<()> {
-        for (_handle, engine) in &self.engines {
+        for engine in self.engines.values() {
             engine
                 .borrow()
                 .binary_messenger()

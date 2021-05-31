@@ -59,7 +59,7 @@ pub struct PlatformMenuManager {
 impl PlatformMenuManager {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
-            context: context,
+            context,
             app_menu: RefCell::new(None),
             window_menus: RefCell::new(HashMap::new()),
             update_handle: RefCell::new(None),
@@ -116,7 +116,7 @@ impl PlatformMenuManager {
             }
         }
         self.schedule_update();
-        return Ok(());
+        Ok(())
     }
 
     pub fn set_menu_for_window(&self, window: StrongPtr, menu: Option<Rc<PlatformMenu>>) {
@@ -176,7 +176,7 @@ impl PlatformMenu {
                 menu: StrongPtr::new(menu),
                 previous_menu: RefCell::new(Default::default()),
                 id_to_menu_item: RefCell::new(HashMap::new()),
-                target: target,
+                target,
                 weak_self: LateRefCell::new(),
             }
         }
@@ -185,7 +185,7 @@ impl PlatformMenu {
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
         self.weak_self.set(weak.clone());
         unsafe {
-            let state_ptr = Box::into_raw(Box::new(weak.clone())) as *mut c_void;
+            let state_ptr = Box::into_raw(Box::new(weak)) as *mut c_void;
             (**self.target).set_ivar("imState", state_ptr);
         }
     }
@@ -202,7 +202,7 @@ impl PlatformMenu {
         // if adding same submenu while it already exists
         let diff: Vec<_> = diff
             .iter()
-            .filter_map(|res| match res {
+            .filter(|res| match res {
                 DiffResult::Remove(res) => {
                     let item = self.id_to_menu_item.borrow_mut().remove(&res.id);
                     if let Some(item) = item {
@@ -212,14 +212,13 @@ impl PlatformMenu {
                             let () = msg_send![*self.menu, removeItem:*item];
                         }
                     }
-                    None
+                    false
                 }
-                _ => Some(res),
+                _ => true,
             })
             .collect();
 
-        for i in 0..diff.len() {
-            let d = diff[i];
+        for (i, d) in diff.iter().enumerate() {
             match d {
                 DiffResult::Remove(_) => {
                     panic!("Should have been already removed.")
@@ -310,7 +309,7 @@ impl PlatformMenu {
 
     fn can_update(old_item: &MenuItem, new_item: &MenuItem) -> bool {
         // can't change separator item to non separator
-        return old_item.separator == new_item.separator;
+        old_item.separator == new_item.separator
     }
 
     fn update_menu_item(&self, item: id, menu_item: &MenuItem, menu_manager: &MenuManager) {
@@ -435,7 +434,7 @@ impl PlatformMenu {
             res |= NSEventModifierFlags::NSShiftKeyMask;
         }
 
-        return res;
+        res
     }
 
     unsafe fn update_from_menu_item(
@@ -461,7 +460,7 @@ impl PlatformMenu {
 
             if let Some(accelerator) = &menu_item.accelerator {
                 let str = self.accelerator_label_to_string(accelerator);
-                if str.len() > 0 {
+                if !str.is_empty() {
                     let () = msg_send![item, setKeyEquivalent: to_nsstring(&str)];
                     let () = msg_send![item, setKeyEquivalentModifierMask:
                         self.accelerator_label_to_modifier_flags(accelerator)];
@@ -503,7 +502,7 @@ impl PlatformMenu {
             } else {
                 let res = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
                     *to_nsstring(""),
-                    Sel::from_ptr(0 as *const _),
+                    Sel::from_ptr(std::ptr::null()),
                     *to_nsstring(""),
                 );
                 let () = msg_send![res, setTag: ITEM_TAG];
@@ -547,7 +546,7 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
     }
 }
 
-extern "C" fn on_action(this: &Object, _sel: Sel, sender: id) -> () {
+extern "C" fn on_action(this: &Object, _sel: Sel, sender: id) {
     let state_ptr = unsafe {
         let state_ptr: *mut c_void = *this.get_ivar("imState");
         &mut *(state_ptr as *mut Weak<PlatformMenu>)
@@ -558,6 +557,7 @@ extern "C" fn on_action(this: &Object, _sel: Sel, sender: id) -> () {
     }
 }
 
+#[allow(clippy::branches_sharing_code)]
 fn remove_mnemonics(title: &str) -> String {
     let mut res = String::new();
     let mut mnemonic = false;
@@ -574,5 +574,5 @@ fn remove_mnemonics(title: &str) -> String {
         }
         res.write_char(c).unwrap();
     }
-    return res;
+    res
 }

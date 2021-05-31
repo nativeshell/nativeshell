@@ -104,8 +104,8 @@ pub(super) trait IOResultExt<T> {
 impl<T> IOResultExt<T> for io::Result<T> {
     fn wrap_error(self, operation: FileOperation, path: PathBuf) -> BuildResult<T> {
         self.map_err(|e| BuildError::FileOperationError {
-            operation: operation,
-            path: path,
+            operation,
+            path,
             source_path: None,
             source: e,
         })
@@ -118,8 +118,8 @@ impl<T> IOResultExt<T> for io::Result<T> {
         source_path: PathBuf,
     ) -> Result<T, BuildError> {
         self.map_err(|e| BuildError::FileOperationError {
-            operation: operation,
-            path: path,
+            operation,
+            path,
             source_path: Some(source_path),
             source: e,
         })

@@ -281,7 +281,7 @@ pub struct MenuItem {
 
 impl PartialEq for MenuItem {
     fn eq(&self, other: &Self) -> bool {
-        return self.id == other.id;
+        self.id == other.id
     }
 }
 

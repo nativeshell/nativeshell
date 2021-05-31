@@ -12,7 +12,7 @@ fn is_running_bundled() -> bool {
     unsafe {
         let bundle: id = NSBundle::mainBundle();
         let identifier: id = msg_send![bundle, bundleIdentifier];
-        identifier != std::ptr::null_mut()
+        !identifier.is_null()
     }
 }
 
@@ -29,7 +29,7 @@ fn find_bundle_executable<P: AsRef<Path>>(executable_path: P) -> io::Result<Opti
                 let meta = fs::symlink_metadata(entry.path())?;
                 if meta.file_type().is_symlink() {
                     let resolved = canonicalize(entry.path())?;
-                    if &resolved == executable_path.as_ref() {
+                    if resolved == executable_path.as_ref() {
                         return Ok(Some(entry.path()));
                     }
                 }

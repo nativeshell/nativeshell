@@ -93,7 +93,7 @@ impl WindowMenu {
 
     pub fn show_popup<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         // We need hook for the tracking rect (if set), but also to forward mouse up
         // because popup menu eats the mouse up message

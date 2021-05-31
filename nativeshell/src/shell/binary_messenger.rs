@@ -3,13 +3,13 @@ use crate::Result;
 
 pub struct BinaryMessengerReply {
     sent: bool,
-    callback: Option<Box<dyn FnOnce(&[u8]) -> ()>>,
+    callback: Option<Box<dyn FnOnce(&[u8])>>,
 }
 
 impl BinaryMessengerReply {
     pub fn new<F>(callback: F) -> Self
     where
-        F: FnOnce(&[u8]) -> () + 'static,
+        F: FnOnce(&[u8]) + 'static,
     {
         BinaryMessengerReply {
             sent: false,
@@ -37,7 +37,7 @@ impl BinaryMessenger {
 
     pub fn register_channel_handler<F>(&self, channel: &str, callback: F)
     where
-        F: Fn(&[u8], BinaryMessengerReply) -> () + 'static,
+        F: Fn(&[u8], BinaryMessengerReply) + 'static,
     {
         self.messenger.register_channel_handler(channel, callback);
     }
@@ -48,7 +48,7 @@ impl BinaryMessenger {
 
     pub fn send_message<F>(&self, channel: &str, message: &[u8], reply_callback: F) -> Result<()>
     where
-        F: FnOnce(&[u8]) -> () + 'static,
+        F: FnOnce(&[u8]) + 'static,
     {
         self.messenger
             .send_message(channel, message, reply_callback)

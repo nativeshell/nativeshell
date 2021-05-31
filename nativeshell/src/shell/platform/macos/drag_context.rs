@@ -80,7 +80,7 @@ impl DragContext {
 
     fn with_delegate<F>(&self, callback: F)
     where
-        F: FnOnce(Rc<dyn PlatformWindowDelegate>) -> (),
+        F: FnOnce(Rc<dyn PlatformWindowDelegate>),
     {
         let win = self.window.upgrade();
         if let Some(win) = win {
@@ -102,7 +102,7 @@ impl DragContext {
         self.next_drag_operation.get()
     }
 
-    pub fn dragging_exited(&self, _dragging_info: id) -> () {
+    pub fn dragging_exited(&self, _dragging_info: id) {
         if let Some(window) = self.window.upgrade() {
             window.synthetize_mouse_move_if_needed();
         }
@@ -147,7 +147,7 @@ impl DragContext {
             let allowed_effects = convert_operation_mask(operation_mask);
 
             DraggingInfo {
-                location: location.into(),
+                location,
                 data,
                 allowed_effects,
             }
@@ -178,7 +178,7 @@ impl DragContext {
             let dragging_item =
                 StrongPtr::new(msg_send![dragging_item, initWithPasteboardWriter:*item]);
             let () = msg_send![*dragging_item,
-               setDraggingFrame:rect.clone()
+               setDraggingFrame:rect
                contents:if first {*snapshot } else {nil}
             ];
             first = false;

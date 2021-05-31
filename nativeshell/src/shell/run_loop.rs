@@ -43,7 +43,7 @@ impl RunLoop {
     #[must_use]
     pub fn schedule<F>(&self, callback: F, in_time: Duration) -> ScheduledCallback
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         ScheduledCallback {
             platform_run_loop: self.platform_run_loop.clone(),
@@ -55,7 +55,7 @@ impl RunLoop {
     #[must_use]
     pub fn schedule_now<F>(&self, callback: F) -> ScheduledCallback
     where
-        F: FnOnce() -> () + 'static,
+        F: FnOnce() + 'static,
     {
         self.schedule(callback, Duration::from_secs(0))
     }
@@ -83,7 +83,7 @@ pub struct RunLoopSender {
 impl RunLoopSender {
     pub fn send<F>(&self, callback: F)
     where
-        F: FnOnce() -> () + 'static + Send,
+        F: FnOnce() + 'static + Send,
     {
         self.platform_sender.send(callback)
     }

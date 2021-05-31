@@ -47,7 +47,7 @@ impl MenuManager {
         Self {
             context: context.clone(),
             platform_menu_map: HashMap::new(),
-            platform_menu_manager: PlatformMenuManager::new(context.clone()),
+            platform_menu_manager: PlatformMenuManager::new(context),
             next_handle: MenuHandle(1),
         }
     }
@@ -69,26 +69,26 @@ impl MenuManager {
         engine: EngineHandle,
     ) -> Result<MenuHandle> {
         let handle = request.handle.unwrap_or_else(|| {
-            let res = self.next_handle.clone();
+            let res = self.next_handle;
             self.next_handle.0 += 1;
             res
         });
-        let entry = self.platform_menu_map.entry(handle.clone());
+        let entry = self.platform_menu_map.entry(handle);
         let context = self.context.clone();
         let platform_menu = entry
             .or_insert_with(|| {
                 let platform_menu = Rc::new(PlatformMenu::new(context, handle));
                 platform_menu.assign_weak_self(Rc::downgrade(&platform_menu));
                 MenuEntry {
-                    engine: engine,
-                    platform_menu: platform_menu,
+                    engine,
+                    platform_menu,
                 }
             })
             .platform_menu
             .clone();
         platform_menu
             .update_from_menu(request.menu, self)
-            .map_err(|e| Error::from(e))?;
+            .map_err(Error::from)?;
 
         Ok(handle)
     }
@@ -109,7 +109,7 @@ impl MenuManager {
                     method::menu::ON_ACTION.into(),
                     to_value(&MenuAction {
                         handle: menu_handle,
-                        id: id,
+                        id,
                     })
                     .unwrap(),
                     |_| {},

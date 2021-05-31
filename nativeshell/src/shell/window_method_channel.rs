@@ -65,7 +65,7 @@ impl WindowMessageBroadcaster {
 impl WindowMethodInvoker {
     pub fn call_method<F>(&self, method: &str, arguments: Value, reply: F) -> Result<()>
     where
-        F: FnOnce(WindowMethodCallResult) -> () + 'static,
+        F: FnOnce(WindowMethodCallResult) + 'static,
     {
         self.sender.send_message(
             &encode_method_call(WindowMethodCall {
@@ -79,7 +79,7 @@ impl WindowMethodInvoker {
     }
 }
 
-type WindowMethodCallback = dyn Fn(WindowMethodCall, WindowMethodCallReply, EngineHandle) -> ();
+type WindowMethodCallback = dyn Fn(WindowMethodCall, WindowMethodCallReply, EngineHandle);
 
 impl WindowMethodChannel {
     pub(super) fn new(context: Rc<Context>) -> Self {
@@ -107,7 +107,7 @@ impl WindowMethodChannel {
 
     pub fn register_method_handler<F>(&mut self, channel: &str, callback: F)
     where
-        F: Fn(WindowMethodCall, WindowMethodCallReply, EngineHandle) -> () + 'static,
+        F: Fn(WindowMethodCall, WindowMethodCallReply, EngineHandle) + 'static,
     {
         self.handlers
             .as_ref()
@@ -128,7 +128,7 @@ impl WindowMethodChannel {
         window_manager
             .message_sender_for_window(window, channel::DISPATCHER)
             .map(|sender| WindowMethodInvoker {
-                sender: sender,
+                sender,
                 channel_name: channel_name.into(),
                 target_window_handle: window,
             })
@@ -218,9 +218,9 @@ fn decode_method_call(call: Value) -> WindowMethodCall {
                 Some(Value::String(channel)),
             ) => WindowMethodCall {
                 target_window_handle: WindowHandle(target_window_handle),
-                method: method,
-                channel: channel,
-                arguments: arguments.unwrap_or_else(|| Value::Null),
+                method,
+                channel,
+                arguments: arguments.unwrap_or(Value::Null),
             },
             _ => {
                 panic!("Invalid method call")
@@ -239,13 +239,13 @@ fn decode_result(result: Value) -> WindowMethodCallResult {
         let result = map.remove(&"result".into());
         match (code, message, details, result) {
             (Some(Value::String(code)), None, details, None) => Err(MethodCallError {
-                code: code,
+                code,
                 message: None,
                 details: details.unwrap_or(Value::Null),
             }),
             (Some(Value::String(code)), Some(Value::String(message)), details, None) => {
                 Err(MethodCallError {
-                    code: code,
+                    code,
                     message: Some(message),
                     details: details.unwrap_or(Value::Null),
                 })

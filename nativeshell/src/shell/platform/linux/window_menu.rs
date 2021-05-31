@@ -119,7 +119,7 @@ impl WindowMenu {
 
     pub fn show_popup_menu<F>(&self, menu: Rc<PlatformMenu>, request: PopupMenuRequest, on_done: F)
     where
-        F: FnOnce(PlatformResult<PopupMenuResponse>) -> () + 'static,
+        F: FnOnce(PlatformResult<PopupMenuResponse>) + 'static,
     {
         let current_menu = self.current_menu.borrow().clone();
         if let Some(current_menu) = current_menu {
