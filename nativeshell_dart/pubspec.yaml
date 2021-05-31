@@ -1,12 +1,12 @@
 name: nativeshell
-description: A new Flutter package project.
+description: NativeShell Dart API
 version: 0.1.0
-homepage: https://nativeshell.de
+homepage: https://nativeshell.dev
 repository: https://github.com/nativeshell/nativeshell
 
 environment:
   sdk: ">=2.13.0 <3.0.0"
-  flutter: ">=1.17.0"
+  flutter: ">=2.2.1"
 
 dependencies:
   flutter:
