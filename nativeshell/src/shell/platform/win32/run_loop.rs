@@ -73,7 +73,7 @@ impl State {
         r
     }
 
-    pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
+    pub fn schedule<F>(&self, in_time: Duration, callback: F) -> HandleType
     where
         F: FnOnce() + 'static,
     {
@@ -182,11 +182,11 @@ impl PlatformRunLoop {
     }
 
     #[must_use]
-    pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
+    pub fn schedule<F>(&self, in_time: Duration, callback: F) -> HandleType
     where
         F: FnOnce() + 'static,
     {
-        self.state.schedule(callback, in_time)
+        self.state.schedule(in_time, callback)
     }
 
     pub fn run(&self) {

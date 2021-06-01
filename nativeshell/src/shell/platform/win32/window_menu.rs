@@ -390,6 +390,10 @@ impl WindowMenu {
             .run_loop
             .borrow()
             .schedule(
+                // this needs to be delayed a bit, if we schedule it immediately after
+                // hiding popup menu windows will fire WM_MOUSELEAVE even if cursor
+                // is within child_hwnd.
+                Duration::from_millis(50),
                 move || {
                     let mut event = TRACKMOUSEEVENT {
                         cbSize: size_of::<TRACKMOUSEEVENT>() as u32,
@@ -399,10 +403,6 @@ impl WindowMenu {
                     };
                     TrackMouseEvent(&mut event as *mut _);
                 },
-                // this needs to be delayed a bit, if we schedule it immediately after
-                // hiding popup menu windows will fire WM_MOUSELEAVE even if cursor
-                // is within child_hwnd.
-                Duration::from_millis(50),
             )
             .detach();
     }

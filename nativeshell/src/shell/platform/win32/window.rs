@@ -453,12 +453,9 @@ impl PlatformWindow {
                 self.context
                     .run_loop
                     .borrow()
-                    .schedule(
-                        move || unsafe {
-                            SendMessageW(hwnd, WM_SHOWWINDOW as u32, WPARAM(1), LPARAM(1));
-                        },
-                        Duration::from_secs(1),
-                    )
+                    .schedule(Duration::from_secs(1), move || unsafe {
+                        SendMessageW(hwnd, WM_SHOWWINDOW as u32, WPARAM(1), LPARAM(1));
+                    })
                     .detach();
             }
             _ => {}

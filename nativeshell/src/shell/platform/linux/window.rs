@@ -269,14 +269,14 @@ impl PlatformWindow {
                                 .run_loop
                                 .borrow()
                                 .schedule(
+                                    // delay one frame, just in case
+                                    Duration::from_millis(1000 / 60 + 1),
                                     move || {
                                         let s = weak.upgrade();
                                         if let Some(s) = s {
                                             s.on_first_frame();
                                         }
                                     },
-                                    // delay one frame, just in case
-                                    Duration::from_millis(1000 / 60 + 1),
                                 )
                                 .detach();
                         }
@@ -407,13 +407,13 @@ impl PlatformWindow {
         // tasks. If that's the case, some calls to window.resize might get lost in the process
         // so to make sure that doesn't happen schedule another call on main loop;
         let handle = self.context.run_loop.borrow().schedule(
+            Duration::from_millis(1000 / 30 + 1),
             move || {
                 let s = weak.upgrade();
                 if let Some(s) = s {
                     s._set_geometry(geometry_clone);
                 }
             },
-            Duration::from_millis(1000 / 30 + 1),
         );
         self.resize_finish_handle.borrow_mut().replace(handle);
 

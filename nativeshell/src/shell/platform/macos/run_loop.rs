@@ -53,7 +53,7 @@ impl PlatformRunLoop {
         self.callbacks.borrow_mut().remove(&handle);
     }
 
-    pub fn schedule<F>(&self, callback: F, in_time: Duration) -> HandleType
+    pub fn schedule<F>(&self, in_time: Duration, callback: F) -> HandleType
     where
         F: FnOnce() + 'static,
     {

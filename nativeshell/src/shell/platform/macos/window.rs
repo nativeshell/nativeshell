@@ -457,10 +457,9 @@ impl PlatformWindow {
                 s.context
                     .run_loop
                     .borrow()
-                    .schedule(
-                        move || Self::show_when_ready(weak_self),
-                        Duration::from_secs_f64(1.0 / 60.0),
-                    )
+                    .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
+                        Self::show_when_ready(weak_self)
+                    })
                     .detach();
             })
         }
