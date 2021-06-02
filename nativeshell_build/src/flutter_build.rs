@@ -221,14 +221,13 @@ impl Flutter {
     }
 
     fn create_flutter_command(&self) -> Command {
-        let mut command: Command = if cfg!(target_os = "windows") {
+        if cfg!(target_os = "windows") {
             let mut c = Command::new("cmd");
             c.args(&["/C", "flutter"]);
             c
         } else {
             Command::new("flutter")
-        };
-        command
+        }
     }
 
     fn run_command(&self, mut command: Command) -> BuildResult<()> {
