@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{util::LateRefCell, Result};
+use crate::{util::LateRefCell, Error, Result};
 
 use super::{
     platform::{drag_data::DragDataAdapter, init::init_platform},
@@ -59,6 +59,23 @@ impl Context {
         self.window_manager.set(WindowManager::new(context.clone()));
         self.menu_manager.set(MenuManager::new(context.clone()));
 
-        init_platform(context).map_err(|e| e.into())
+        #[cfg(debug_assertions)]
+        {
+            self.sponsor_prompt();
+        }
+
+        init_platform(context).map_err(|e| Error::from(e))?;
+
+        Ok(())
+    }
+
+    #[cfg(debug_assertions)]
+    fn sponsor_prompt(&self) {
+        if std::env::var("NATIVESHELL_SPONSOR").ok().is_none() {
+            println!("");
+            println!("** Help me make NativeShell and Flutter on desktop better! 🤟");
+            println!("** We have a long way to go: https://nativeshell.dev/roadmap");
+            println!("");
+        }
     }
 }
