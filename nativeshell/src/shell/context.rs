@@ -73,7 +73,7 @@ impl Context {
     fn sponsor_prompt(&self) {
         if std::env::var("NATIVESHELL_SPONSOR").ok().is_none() {
             println!("");
-            println!("** Help me make NativeShell and Flutter on desktop better! 🤟");
+            println!("** Help me make NativeShell and Flutter on desktop better!");
             println!("** We have a long way to go: https://nativeshell.dev/roadmap");
             println!("");
         }
