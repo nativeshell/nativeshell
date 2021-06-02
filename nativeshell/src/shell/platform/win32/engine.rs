@@ -5,7 +5,7 @@ use crate::shell::platform::key_interceptor::override_key_event;
 use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::PlatformResult,
-    flutter_api::{
+    flutter_sys::{
         FlutterDesktopEngineCreate, FlutterDesktopEngineDestroy, FlutterDesktopEngineGetMessenger,
         FlutterDesktopEngineProperties, FlutterDesktopEngineRef,
     },

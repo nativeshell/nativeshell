@@ -17,7 +17,7 @@ use super::{
     all_bindings::*,
     display::Displays,
     error::PlatformResult,
-    flutter_api::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
+    flutter_sys::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
     util::{clamp, BoolResultExt, HRESULTExt, GET_X_LPARAM, GET_Y_LPARAM},
 };
 

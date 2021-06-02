@@ -10,7 +10,7 @@ use crate::shell::BinaryMessengerReply;
 
 use super::{
     error::{PlatformError, PlatformResult},
-    flutter_api::{
+    flutter_sys::{
         size_t, FlutterDesktopMessage, FlutterDesktopMessengerRef, FlutterDesktopMessengerSend,
         FlutterDesktopMessengerSendResponse, FlutterDesktopMessengerSendWithReply,
         FlutterDesktopMessengerSetCallback,

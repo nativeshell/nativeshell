@@ -5,7 +5,7 @@ use std::{
 
 use crate::shell::{IPoint, IRect, Point, Rect};
 
-use super::{all_bindings::*, flutter_api::FlutterDesktopGetDpiForMonitor};
+use super::{all_bindings::*, flutter_sys::FlutterDesktopGetDpiForMonitor};
 
 #[derive(Clone, Debug)]
 pub struct PhysicalDisplay {

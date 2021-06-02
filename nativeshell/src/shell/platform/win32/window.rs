@@ -23,7 +23,7 @@ use super::{
     dxgi_hook::{set_override_parent_hwnd, take_override_parent_hwnd},
     engine::PlatformEngine,
     error::{PlatformError, PlatformResult},
-    flutter_api::*,
+    flutter_sys::*,
     menu::PlatformMenu,
     window_adapter::{SetWindowLongPtrW, WindowAdapter},
     window_base::{WindowBaseState, WindowDelegate},
