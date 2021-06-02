@@ -1,20 +1,19 @@
 # NativeShell (Experimental embedder for Flutter)
 
-Video:<br/>
-[![](https://img.youtube.com/vi/2nzIkQvYnvM/hq1.jpg)](http://www.youtube.com/watch?v=2nzIkQvYnvM "")
+![](https://nativeshell.dev/screenshot-dev.png "Screenshot")
 
 ## Features
 
-- Leverages existing desktop embedders on each platform
-- Unlike regular desktop embedders, nativeshell provides consistent platform agnostic API
+- Leverages existing Flutter desktop embedder on each platform
+- Unlike Flutter desktop embedders, NativeShell provides consistent platform agnostic API
 - Multi-window support
 - Window management
     - Adjusting window styles and geometry
     - Modal dialogs
     - Windows can be set to track content size and resize automatically when content changes
-- Platform menus (popup menu at this point, menubar coming)
+- Platform menus (popup menu, menu bar)
 - Drag and Drop
-- Written in Rust, Flutter build integrated with cargo
+- Written in Rust, Flutter build transparently integrated with cargo
 
 ## Status
 
@@ -22,16 +21,20 @@ Video:<br/>
 
 ## Getting started
 
-In theory, it should be as easy as
+Prerequisites:
+
+1. [Install Rust](https://www.rust-lang.org/tools/install)
+2. [Install Flutter](https://flutter.dev/docs/get-started/install)
+3. [Enable Flutter desktop support](https://flutter.dev/desktop#set-up)
+4. Switch to Fluttter Master (`flutter channel master; flutter upgrade`)
+
+Clone and run examples:
 
 ```
-git clone https://github.com/iocave/nativeshell.git
-cd nativeshell/nativeshell_demo
+git clone https://github.com/nativeshell/examples.git
+cd examples
 cargo run
 ```
 
-Reality is a fair bit more complicated, as nativeshell requires latest Flutter master, on Windows with some pull requests applied that haven't been merged yet.
+For more information read the [introductory post](https://matejknopp.com/post/nativeshell-introduction/) or go to [nativeshell.dev](https://nativeshell.dev).
 
-Also `nativeshell_demo/build.rs` has local engine name hardcoded right now.
-
-There is not a whole lot of documentation at this point, example app within `nativeshell_demo` is probably the best place to start.
