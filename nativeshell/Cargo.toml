@@ -5,7 +5,6 @@ authors = ["Matej Knopp <matej.knopp@gmail.com>"]
 edition = "2018"
 description = "NativeShell Rust package"
 license = "MIT OR Apache-2.0"
-license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
