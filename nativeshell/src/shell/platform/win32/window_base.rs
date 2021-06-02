@@ -341,6 +341,7 @@ impl WindowBaseState {
         unsafe { FlutterDesktopGetDpiForHWND(self.hwnd) as f64 / 96.0 }
     }
 
+    #[allow(unused)]
     fn get_scaling_factor_for_monitor(&self, monitor: isize) -> f64 {
         unsafe { FlutterDesktopGetDpiForMonitor(monitor) as f64 / 96.0 }
     }
