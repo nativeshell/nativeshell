@@ -21,7 +21,7 @@ libc = "0.2.94"
 
 [build-dependencies]
 cargo-emit = "0.1"
-nativeshell_build = { path = "../nativeshell_build" }
+nativeshell_build = { version="0.1.0", path = "../nativeshell_build" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.24"
