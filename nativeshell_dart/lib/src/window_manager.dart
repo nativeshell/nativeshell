@@ -7,6 +7,8 @@ import 'event.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
 
+// Do not use directly. Access windows through Window.of(context) or through
+// WindowContext.window.
 class WindowManager {
   WindowManager._();
 

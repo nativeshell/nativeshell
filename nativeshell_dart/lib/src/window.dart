@@ -91,7 +91,7 @@ class Window {
       WindowContext.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
-      WindowContext.maybeoOf(context)?.window;
+      WindowContext.maybeOf(context)?.window;
 
   static Window? fromHandle(WindowHandle handle) {
     return WindowManager.instance.getWindow(handle);

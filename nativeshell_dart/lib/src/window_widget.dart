@@ -9,26 +9,48 @@ import 'api_model.dart';
 import 'window.dart';
 import 'window_manager.dart';
 
-abstract class WindowBuilder {
+// Class responsible for creating window contents and managing window properties.
+abstract class WindowContext {
+  // Build the contents within the window
   Widget build(BuildContext context);
 
+  // Returns the window associated with current hierarchy. You can also use
+  // 'Window.of(context)' instead.
   LocalWindow get window => WindowManager.instance.currentWindow;
 
+  // Called after window creation. By default resizes window to intrinsic
+  // content size and shows the window.
+  // You can override this to change window title, configure frame,
+  // buttons, or if you want the window to be initially hidden.
   Future<void> initializeWindow(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       contentSize: intrinsicContentSize,
     ));
+    // Disable user resizing for auto-sized windows
+    if (!autoSizeWindow) {
+      await window.setStyle(WindowStyle(
+        canResize: false,
+        canFullScreen: false,
+      ));
+    }
     await window.show();
   }
 
+  // Updates window constraints; Called for manually sized windows after creation
+  // or after requestUpdateConstraints() was called
   Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       minContentSize: intrinsicContentSize,
     ));
   }
 
+  // Windows is always sized to fit the content. This is useful for non-resizable
+  // windows. You must need to make sure that the content can properly layout itself
+  // with unbounded constraints. For example that means unconstrained Columns and Rows
+  // need to have mainAxisSize set to MainAxisSize.min.
   bool get autoSizeWindow => false;
 
+  // Called to update window size to new dimensions
   Future<void> updateWindowSize(Size contentSize) async {
     await window.setGeometry(Geometry(contentSize: contentSize));
   }
@@ -56,17 +78,60 @@ abstract class WindowBuilder {
 
     return Geometry(contentSize: contentSize);
   }
+
+  // Useful for resizable window. This will schedule a special layout pass that will let
+  // the content overflow windows dimensions. If it does overflow, window will be resized
+  // to new dimensions and minimum content size will be udpated accordingly.
+  // You can call this in setState() if you know that content size will change after
+  // rebuild.
+  void requestUpdateConstraints() {
+    assert(_requestUpdateConstraints != null,
+        'requestUpdateConstraints() may not be called in WindowContext constructor!');
+    _requestUpdateConstraints!();
+  }
+
+  // Returns the WindowContext of given type in the hierarchy. If not preset will fail with
+  // assertion (or exception in release build.)
+  static T of<T extends WindowContext>(BuildContext context) {
+    final res = context
+        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
+        ?.context;
+    assert(res is T, 'Window context of requested type not found in hierarchy');
+    return res as T;
+  }
+
+  // Returns the WindowContext of given type in the hierarchy or null if not present.
+  static T? maybeOf<T extends WindowContext>(BuildContext context) {
+    final res = context
+        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
+        ?.context;
+    res is T ? res : null;
+  }
+
+  void registerTapCallback(ValueChanged<PointerDownEvent> cb) {
+    _tapCallbacks.add(cb);
+  }
+
+  void unregisterTapCallback(ValueChanged<PointerDownEvent> cb) {
+    _tapCallbacks.remove(cb);
+  }
+
+  final _tapCallbacks = <ValueChanged<PointerDownEvent>>[];
+  VoidCallback? _requestUpdateConstraints;
 }
 
-typedef WindowBuilderProvider = WindowBuilder Function(dynamic initData);
+typedef WindowContextProvider = WindowContext Function(dynamic initData);
 
+// Every window must have WindowWidget in hierarchy. WindowWidget is responsible
+// for creating the WindowContext from initData and internally for handling window
+// contents layout and size (i.e. sizing window to match content size).
 class WindowWidget extends StatefulWidget {
   WindowWidget({
-    required this.builder,
+    required this.contextProvider,
     Key? key,
   }) : super(key: key);
 
-  final WindowBuilderProvider builder;
+  final WindowContextProvider contextProvider;
 
   @override
   State<StatefulWidget> createState() {
@@ -75,36 +140,37 @@ class WindowWidget extends StatefulWidget {
 }
 
 //
-//
+// WindowWidget internals
 //
 
 enum _Status { notInitialized, initializing, initialized }
 
-class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
-  WindowBuilder? _builder;
+class _WindowWidgetState extends State<WindowWidget> {
+  WindowContext? _windowContext;
 
   @override
   Widget build(BuildContext context) {
     _maybeInitialize();
     if (status == _Status.initialized) {
       final window = WindowManager.instance.currentWindow;
-      _builder ??= widget.builder(window.initData);
+      _windowContext ??= widget.contextProvider(window.initData);
+      _windowContext!._requestUpdateConstraints = requestUpdateConstraints;
 
       return Listener(
         onPointerDown: _onWindowTap,
         child: Container(
           color: Color(0x00000000),
           child: _WindowContextWidget(
-            context: this,
+            context: _windowContext!,
             child: _WindowLayout(
-              builtWindow: _builder!,
+              builtWindow: _windowContext!,
               updatingConstraints: updatingConstraints,
               updatingConstraintsDone: updatingConstraintsDone,
               child: _WindowLayoutInner(
-                builtWindow: _builder!,
+                builtWindow: _windowContext!,
                 child: Builder(
                   builder: (context) {
-                    return _builder!.build(context);
+                    return _windowContext!.build(context);
                   },
                 ),
               ),
@@ -126,15 +192,11 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
     }
   }
 
-  @override
-  WindowBuilder get windowState => _builder!;
-
   _Status status = _Status.notInitialized;
   dynamic initData;
   bool updatingConstraints = false;
   int constraintsUpdateCookie = 0;
 
-  @override
   void requestUpdateConstraints() {
     ++constraintsUpdateCookie;
     setState(() {
@@ -154,49 +216,13 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
     });
   }
 
-  @override
-  void registerTapCallback(ValueChanged<PointerDownEvent> cb) {
-    _tapCallbacks.add(cb);
-  }
-
-  @override
-  void unregisterTapCallback(ValueChanged<PointerDownEvent> cb) {
-    _tapCallbacks.remove(cb);
-  }
-
   void _onWindowTap(PointerDownEvent e) {
-    for (final cb in List<ValueChanged<PointerDownEvent>>.from(_tapCallbacks)) {
-      if (_tapCallbacks.contains(cb)) {
+    for (final cb in List<ValueChanged<PointerDownEvent>>.from(
+        _windowContext!._tapCallbacks)) {
+      if (_windowContext!._tapCallbacks.contains(cb)) {
         cb(e);
       }
     }
-  }
-
-  @override
-  LocalWindow get window => WindowManager.instance.currentWindow;
-  final _tapCallbacks = <ValueChanged<PointerDownEvent>>[];
-}
-
-abstract class WindowContext {
-  LocalWindow get window;
-  WindowBuilder get windowState;
-
-  void registerTapCallback(ValueChanged<PointerDownEvent> e);
-  void unregisterTapCallback(ValueChanged<PointerDownEvent> e);
-  void requestUpdateConstraints();
-
-  static WindowContext of(BuildContext context) {
-    final res = context
-        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
-        ?.context;
-    return res!;
-  }
-
-  static WindowContext? maybeoOf(BuildContext context) {
-    final res = context
-        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
-        ?.context;
-    return res;
   }
 }
 
@@ -216,7 +242,7 @@ class _WindowContextWidget extends InheritedWidget {
 }
 
 class _WindowLayoutInner extends SingleChildRenderObjectWidget {
-  final WindowBuilder builtWindow;
+  final WindowContext builtWindow;
 
   const _WindowLayoutInner({required Widget child, required this.builtWindow})
       : super(child: child);
@@ -236,7 +262,7 @@ class _WindowLayoutInner extends SingleChildRenderObjectWidget {
 class _RenderWindowLayoutInner extends RenderProxyBox {
   _RenderWindowLayoutInner(this.builtWindow);
 
-  WindowBuilder builtWindow;
+  WindowContext builtWindow;
 
   @override
   void performLayout() {
@@ -274,7 +300,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 }
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
-  final WindowBuilder builtWindow;
+  final WindowContext builtWindow;
   final bool updatingConstraints;
   final VoidCallback updatingConstraintsDone;
 
@@ -308,7 +334,7 @@ class _RenderWindowLayout extends RenderProxyBox {
   _RenderWindowLayout(
       this.builtWindow, this.updatingConstraints, this.updatingConstraintsDone);
 
-  WindowBuilder builtWindow;
+  WindowContext builtWindow;
   bool updatingConstraints;
   VoidCallback updatingConstraintsDone;
 
@@ -352,7 +378,9 @@ class _RenderWindowLayout extends RenderProxyBox {
 
           final size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
           await builtWindow.initializeWindow(size);
-          await builtWindow.updateWindowConstraints(size);
+          if (!builtWindow.autoSizeWindow) {
+            await builtWindow.updateWindowConstraints(size);
+          }
           await win.readyToShow();
         });
       });
