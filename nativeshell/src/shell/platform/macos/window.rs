@@ -425,9 +425,9 @@ impl PlatformWindow {
         if let Some(s) = weak_self.upgrade() {
             autoreleasepool(|| unsafe {
                 // FIXME(knopp)
-                // This code used to check surface dimensions but it no longer
-                // adding metal compositing in engine broke it; The patch was reverted
-                // on the meanwhile though. Update this once the dust settles
+                // This code used to check surface dimensions but it no longer works.
+                // Adding metal compositing in engine broke it; The patch was reverted
+                // in the meanwhile though. Update this once the dust settles.
 
                 // let layer = NSWindow::contentView(*s.platform_window).layer();
                 // let sublayers: id = msg_send![layer, sublayers];
