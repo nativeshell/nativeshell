@@ -134,6 +134,8 @@ impl PlatformWindow {
             let () =
                 msg_send![*self.platform_window, setContentViewController: *engine.view_controller];
 
+            let () = msg_send![*engine.view_controller, setMouseTrackingMode: 3]; // always track mouse
+
             // Temporarily set non empty window size so that flutter engine doesn't complain
             NSWindow::setContentSize_(*self.platform_window, Size::wh(1.0, 1.0).into());
         }
