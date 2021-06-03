@@ -36,5 +36,12 @@ cd examples
 cargo run
 ```
 
+For Apple Silicon Macs, you might need to run the example using the flag to force x86_64 architecture
+
+```
+rustup target add x86_64-apple-darwin
+cargo run --target=x86_64-apple-darwin
+```
+
 For more information read the [introductory post](http://localhost:8080/post/nativeshell-announcement/) or go to [nativeshell.dev](https://nativeshell.dev).
 
