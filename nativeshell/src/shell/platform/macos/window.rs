@@ -3,7 +3,6 @@ use std::{
     collections::HashMap,
     ffi::c_void,
     rc::{Rc, Weak},
-    time::Duration,
 };
 
 use cocoa::{
@@ -11,7 +10,7 @@ use cocoa::{
         NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
     },
     base::{id, nil, BOOL, NO, YES},
-    foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSString, NSUInteger},
+    foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSUInteger},
 };
 use cocoa::{
     appkit::{NSScreen, NSWindowTabbingMode},
@@ -461,13 +460,13 @@ impl PlatformWindow {
                 // }
                 // }
                 // wait until we have content generated (with proper size)
-                s.context
-                    .run_loop
-                    .borrow()
-                    .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
-                        Self::show_when_ready(weak_self)
-                    })
-                    .detach();
+                // s.context
+                //     .run_loop
+                //     .borrow()
+                //     .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
+                //         Self::show_when_ready(weak_self)
+                //     })
+                //     .detach();
             })
         }
     }
