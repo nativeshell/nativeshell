@@ -425,36 +425,41 @@ impl PlatformWindow {
     fn show_when_ready(weak_self: Weak<PlatformWindow>) {
         if let Some(s) = weak_self.upgrade() {
             autoreleasepool(|| unsafe {
-                let layer = NSWindow::contentView(*s.platform_window).layer();
-                let sublayers: id = msg_send![layer, sublayers];
-                let first = sublayers.objectAtIndex(0);
-                let contents: id = msg_send![first, contents];
-                if contents != nil {
-                    // This makes assumptions about FlutterView internals :-/
-                    let class: id = msg_send![contents, className];
-                    if !class.isEqualToString("IOSurface") {
-                        panic!("Expected IOSurface content");
-                    }
-                    let scale = NSWindow::backingScaleFactor(*s.platform_window);
-                    let content_size = NSView::frame(NSWindow::contentView(*s.platform_window));
+                // FIXME(knopp)
+                // This code used to check surface dimensions but it no longer
+                // adding metal compositing in engine broke it; The patch was reverted
+                // on the meanwhile though. Update this once the dust settles
 
-                    let expected_width = scale * content_size.size.width;
-                    let expected_height = scale * content_size.size.height;
-                    // IOSurface width/height
-                    let actual_width: NSInteger = msg_send![contents, width];
-                    let actual_height: NSInteger = msg_send![contents, height];
+                // let layer = NSWindow::contentView(*s.platform_window).layer();
+                // let sublayers: id = msg_send![layer, sublayers];
+                // let first = sublayers.objectAtIndex(0);
+                // let contents: id = msg_send![first, contents];
+                // if contents != nil {
+                //     // This makes assumptions about FlutterView internals :-/
+                //     let class: id = msg_send![contents, className];
+                //     if !class.isEqualToString("IOSurface") {
+                //         panic!("Expected IOSurface content");
+                //     }
+                //     let scale = NSWindow::backingScaleFactor(*s.platform_window);
+                //     let content_size = NSView::frame(NSWindow::contentView(*s.platform_window));
 
-                    // only show if size matches, otherwise we caught the view during resizing
-                    if actual_width == expected_width as NSInteger
-                        && actual_height == expected_height as NSInteger
-                    {
-                        s.actually_show();
-                        if let Some(delegate) = s.delegate.upgrade() {
-                            delegate.visibility_changed(true);
-                        };
-                        return;
-                    }
-                }
+                //     let expected_width = scale * content_size.size.width;
+                //     let expected_height = scale * content_size.size.height;
+                //     // IOSurface width/height
+                //     let actual_width: NSInteger = msg_send![contents, width];
+                //     let actual_height: NSInteger = msg_send![contents, height];
+
+                //     // only show if size matches, otherwise we caught the view during resizing
+                //     if actual_width == expected_width as NSInteger
+                //         && actual_height == expected_height as NSInteger
+                //     {
+                s.actually_show();
+                if let Some(delegate) = s.delegate.upgrade() {
+                    delegate.visibility_changed(true);
+                };
+                return;
+                // }
+                // }
                 // wait until we have content generated (with proper size)
                 s.context
                     .run_loop
