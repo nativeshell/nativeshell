@@ -12,25 +12,29 @@ import 'window_manager.dart';
 abstract class WindowBuilder {
   Widget build(BuildContext context);
 
-  Future<void> initializeWindow(
-      LocalWindow window, Size intrinsicContentSize) async {
+  LocalWindow get window => WindowManager.instance.currentWindow;
+
+  Future<void> initializeWindow(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       contentSize: intrinsicContentSize,
     ));
     await window.show();
   }
 
-  Future<void> updateWindowConstraints(
-      LocalWindow window, Size intrinsicContentSize) async {}
+  Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
+    await window.setGeometry(Geometry(
+      minContentSize: intrinsicContentSize,
+    ));
+  }
 
   bool get autoSizeWindow => false;
 
-  Future<void> updateWindowSize(LocalWindow window, Size contentSize) async {
+  Future<void> updateWindowSize(Size contentSize) async {
     await window.setGeometry(Geometry(contentSize: contentSize));
   }
 
   // Convenience function to calculate initial geometry for centered windows
-  Future<Geometry> centerInParent(LocalWindow window, Size contentSize) async {
+  Future<Geometry> centerInParent(Size contentSize) async {
     final parent = window.parentWindow;
     if (parent != null) {
       final parentGeometry = await parent.getGeometry();
@@ -122,6 +126,9 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
     }
   }
 
+  @override
+  WindowBuilder get windowState => _builder!;
+
   _Status status = _Status.notInitialized;
   dynamic initData;
   bool updatingConstraints = false;
@@ -172,6 +179,7 @@ class _WindowWidgetState extends State<WindowWidget> implements WindowContext {
 
 abstract class WindowContext {
   LocalWindow get window;
+  WindowBuilder get windowState;
 
   void registerTapCallback(ValueChanged<PointerDownEvent> e);
   void unregisterTapCallback(ValueChanged<PointerDownEvent> e);
@@ -255,8 +263,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
       _geometryPending = true;
     } else {
       _geometryInProgress = true;
-      await builtWindow.updateWindowSize(WindowManager.instance.currentWindow,
-          _sanitizeAndSnapToPixelBoundary(size));
+      await builtWindow.updateWindowSize(_sanitizeAndSnapToPixelBoundary(size));
       _geometryInProgress = false;
       if (_geometryPending) {
         _geometryPending = false;
@@ -316,14 +323,13 @@ class _RenderWindowLayout extends RenderProxyBox {
       var w = child!.getMaxIntrinsicWidth(double.infinity);
       var h = child!.getMinIntrinsicHeight(w);
       final intrinsicSize = _sanitizeAndSnapToPixelBoundary(Size(w, h));
-      final win = WindowManager.instance.currentWindow;
-      builtWindow.updateWindowConstraints(win, intrinsicSize);
+      builtWindow.updateWindowConstraints(intrinsicSize);
 
       final maxSize = Size(max(intrinsicSize.width, size.width),
           max(intrinsicSize.height, size.height));
 
       if (maxSize.width > size.width || maxSize.height > size.height) {
-        builtWindow.updateWindowSize(win, maxSize);
+        builtWindow.updateWindowSize(maxSize);
       } else {
         updatingConstraintsDone();
       }
@@ -345,8 +351,8 @@ class _RenderWindowLayout extends RenderProxyBox {
           var h = child!.getMinIntrinsicHeight(w);
 
           final size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
-          await builtWindow.initializeWindow(win, size);
-          await builtWindow.updateWindowConstraints(win, size);
+          await builtWindow.initializeWindow(size);
+          await builtWindow.updateWindowConstraints(size);
           await win.readyToShow();
         });
       });
