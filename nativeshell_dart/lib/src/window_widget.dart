@@ -27,7 +27,7 @@ abstract class WindowContext {
       contentSize: intrinsicContentSize,
     ));
     // Disable user resizing for auto-sized windows
-    if (!autoSizeWindow) {
+    if (autoSizeWindow) {
       await window.setStyle(WindowStyle(
         canResize: false,
         canFullScreen: false,
