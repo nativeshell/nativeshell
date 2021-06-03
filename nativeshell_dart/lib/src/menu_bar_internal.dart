@@ -51,7 +51,7 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   Widget build(BuildContext context) {
     if (_firstBuild) {
       // ...of(context) can't be called in initState
-      WindowContext.of(context).registerTapCallback(_onWindowTap);
+      WindowState.of(context).registerTapCallback(_onWindowTap);
       _firstBuild = false;
     }
 
@@ -442,7 +442,7 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // need to access this in dispose
-    windowContext = WindowContext.of(context);
+    windowContext = WindowState.of(context);
   }
 
   @override
@@ -523,7 +523,7 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   // this is not true when mnemonics key was pressed
   bool _ignoreNextAltKeyUp = false;
 
-  WindowContext? windowContext;
+  WindowState? windowContext;
 }
 
 class Mnemonics {

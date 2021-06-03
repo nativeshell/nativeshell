@@ -10,7 +10,7 @@ import 'window.dart';
 import 'window_manager.dart';
 
 // Class responsible for creating window contents and managing window properties.
-abstract class WindowContext {
+abstract class WindowState {
   // Build the contents within the window
   Widget build(BuildContext context);
 
@@ -86,24 +86,24 @@ abstract class WindowContext {
   // rebuild.
   void requestUpdateConstraints() {
     assert(_requestUpdateConstraints != null,
-        'requestUpdateConstraints() may not be called in WindowContext constructor!');
+        'requestUpdateConstraints() may not be called in WindowState constructor!');
     _requestUpdateConstraints!();
   }
 
-  // Returns the WindowContext of given type in the hierarchy. If not preset will fail with
+  // Returns the WindowState of given type in the hierarchy. If not preset will fail with
   // assertion (or exception in release build.)
-  static T of<T extends WindowContext>(BuildContext context) {
+  static T of<T extends WindowState>(BuildContext context) {
     final res = context
-        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
+        .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
         ?.context;
     assert(res is T, 'Window context of requested type not found in hierarchy');
     return res as T;
   }
 
-  // Returns the WindowContext of given type in the hierarchy or null if not present.
-  static T? maybeOf<T extends WindowContext>(BuildContext context) {
+  // Returns the WindowState of given type in the hierarchy or null if not present.
+  static T? maybeOf<T extends WindowState>(BuildContext context) {
     final res = context
-        .dependOnInheritedWidgetOfExactType<_WindowContextWidget>()
+        .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
         ?.context;
     res is T ? res : null;
   }
@@ -120,18 +120,19 @@ abstract class WindowContext {
   VoidCallback? _requestUpdateConstraints;
 }
 
-typedef WindowContextProvider = WindowContext Function(dynamic initData);
+typedef WindowStateFactory = WindowState Function(dynamic initData);
 
 // Every window must have WindowWidget in hierarchy. WindowWidget is responsible
-// for creating the WindowContext from initData and internally for handling window
+// for creating the WindowState from initData and internally for handling window
 // contents layout and size (i.e. sizing window to match content size).
 class WindowWidget extends StatefulWidget {
   WindowWidget({
-    required this.contextProvider,
+    required this.onCreateState,
     Key? key,
   }) : super(key: key);
 
-  final WindowContextProvider contextProvider;
+  // Factory responsible for creating state
+  final WindowStateFactory onCreateState;
 
   @override
   State<StatefulWidget> createState() {
@@ -146,21 +147,21 @@ class WindowWidget extends StatefulWidget {
 enum _Status { notInitialized, initializing, initialized }
 
 class _WindowWidgetState extends State<WindowWidget> {
-  WindowContext? _windowContext;
+  WindowState? _windowContext;
 
   @override
   Widget build(BuildContext context) {
     _maybeInitialize();
     if (status == _Status.initialized) {
       final window = WindowManager.instance.currentWindow;
-      _windowContext ??= widget.contextProvider(window.initData);
+      _windowContext ??= widget.onCreateState(window.initData);
       _windowContext!._requestUpdateConstraints = requestUpdateConstraints;
 
       return Listener(
         onPointerDown: _onWindowTap,
         child: Container(
           color: Color(0x00000000),
-          child: _WindowContextWidget(
+          child: _WindowStateWidget(
             context: _windowContext!,
             child: _WindowLayout(
               builtWindow: _windowContext!,
@@ -227,10 +228,10 @@ class _WindowWidgetState extends State<WindowWidget> {
 }
 
 // Used by Window.of(context)
-class _WindowContextWidget extends InheritedWidget {
-  final WindowContext context;
+class _WindowStateWidget extends InheritedWidget {
+  final WindowState context;
 
-  _WindowContextWidget({
+  _WindowStateWidget({
     required Widget child,
     required this.context,
   }) : super(child: child);
@@ -242,7 +243,7 @@ class _WindowContextWidget extends InheritedWidget {
 }
 
 class _WindowLayoutInner extends SingleChildRenderObjectWidget {
-  final WindowContext builtWindow;
+  final WindowState builtWindow;
 
   const _WindowLayoutInner({required Widget child, required this.builtWindow})
       : super(child: child);
@@ -262,7 +263,7 @@ class _WindowLayoutInner extends SingleChildRenderObjectWidget {
 class _RenderWindowLayoutInner extends RenderProxyBox {
   _RenderWindowLayoutInner(this.builtWindow);
 
-  WindowContext builtWindow;
+  WindowState builtWindow;
 
   @override
   void performLayout() {
@@ -300,7 +301,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 }
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
-  final WindowContext builtWindow;
+  final WindowState builtWindow;
   final bool updatingConstraints;
   final VoidCallback updatingConstraintsDone;
 
@@ -334,7 +335,7 @@ class _RenderWindowLayout extends RenderProxyBox {
   _RenderWindowLayout(
       this.builtWindow, this.updatingConstraints, this.updatingConstraintsDone);
 
-  WindowContext builtWindow;
+  WindowState builtWindow;
   bool updatingConstraints;
   VoidCallback updatingConstraintsDone;
 

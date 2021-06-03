@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.2] - 2021-06-03
+## [0.1.3] - 2021-06-03
 
-- Rename WindowBuilder to WindowContext.
+- Rename WindowBuilder to WindowState.
 
 ## [0.1.0] - 2021-05-29
 
