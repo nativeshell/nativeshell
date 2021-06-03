@@ -39,6 +39,7 @@ cargo run
 For Apple Silicon Macs, you might need to run the example using the flag to force x86_64 architecture
 
 ```
+rustup target add x86_64-apple-darwin
 cargo run --target=x86_64-apple-darwin
 ```
 
