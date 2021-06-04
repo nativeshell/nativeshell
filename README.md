@@ -43,5 +43,5 @@ rustup target add x86_64-apple-darwin
 cargo run --target=x86_64-apple-darwin
 ```
 
-For more information read the [introductory post](http://localhost:8080/post/nativeshell-announcement/) or go to [nativeshell.dev](https://nativeshell.dev).
+For more information read the [introductory post](https://matejknopp.com/post/nativeshell-announcement/) or go to [nativeshell.dev](https://nativeshell.dev).
 
