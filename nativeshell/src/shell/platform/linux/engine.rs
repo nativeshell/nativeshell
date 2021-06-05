@@ -29,8 +29,10 @@ struct _FlEngine {
     _engine: isize,
 }
 
+pub type PlatformPlugin = isize;
+
 impl PlatformEngine {
-    pub fn new() -> Self {
+    pub fn new(_plugins: &[PlatformPlugin]) -> Self {
         let project = flutter::DartProject::new();
         let view = flutter::View::new(&project);
         PlatformEngine { view }

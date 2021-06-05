@@ -16,8 +16,10 @@ pub struct PlatformEngine {
     pub(super) handle: FlutterDesktopEngineRef,
 }
 
+pub type PlatformPlugin = isize;
+
 impl PlatformEngine {
-    pub fn new() -> Self {
+    pub fn new(_plugins: &[PlatformPlugin]) -> Self {
         let assets = to_utf16("data\\flutter_assets");
         let icu = to_utf16("data\\icudtl.dat");
         let aot = to_utf16("data\\app.so");

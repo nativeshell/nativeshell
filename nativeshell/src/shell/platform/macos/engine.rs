@@ -1,9 +1,13 @@
 use std::ffi::c_void;
 
 use cocoa::base::{id, nil, BOOL, NO};
+use log::warn;
 use objc::rc::{autoreleasepool, StrongPtr};
 
-use crate::shell::platform::key_interceptor::override_key_event;
+use crate::shell::platform::{
+    key_interceptor::override_key_event,
+    platform_impl::utils::{class_from_string, to_nsstring},
+};
 
 use super::{
     binary_messenger::PlatformBinaryMessenger,
@@ -15,14 +19,35 @@ pub struct PlatformEngine {
     pub(super) view_controller: StrongPtr,
 }
 
+pub struct PlatformPlugin {
+    pub name: String,
+    pub class: String,
+}
+
 impl PlatformEngine {
-    pub fn new() -> Self {
+    pub fn new(plugins: &[PlatformPlugin]) -> Self {
         autoreleasepool(|| unsafe {
             let class = class!(FlutterViewController);
             let view_controller: id = msg_send![class, alloc];
             let view_controller = StrongPtr::new(msg_send![view_controller, initWithProject: nil]);
             let engine: id = msg_send![*view_controller, engine];
             let embedder_api: *mut c_void = msg_send![engine, embedderAPI];
+
+            // register plugins with this engine
+            for plugin in plugins {
+                let class = class_from_string(&plugin.class);
+                if class.is_null() {
+                    warn!(
+                        "Plugin {} for plugin {} not found",
+                        plugin.name, plugin.class
+                    );
+                } else {
+                    let registrar: id =
+                        msg_send![engine, registrarForPlugin: *to_nsstring(&plugin.name)];
+                    let () = msg_send![class, registerWithRegistrar: registrar];
+                }
+            }
+
             override_key_event(embedder_api);
             Self {
                 handle: StrongPtr::retain(engine),

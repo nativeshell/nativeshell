@@ -168,3 +168,9 @@ pub(super) fn class_decl_from_name(name: &str) -> ManuallyDrop<ClassDecl> {
     // class, and it's now worth replicating the entire functionality here
     ManuallyDrop::new(unsafe { std::mem::transmute(res) })
 }
+
+pub(super) fn class_from_string(name: &str) -> *mut Class {
+    let name = CString::new(name).unwrap();
+    let class = unsafe { objc_getClass(name.as_ptr() as *const _) as *mut _ };
+    return class;
+}

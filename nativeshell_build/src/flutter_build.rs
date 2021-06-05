@@ -9,8 +9,11 @@ use dunce::simplified;
 use path_slash::PathExt;
 
 use crate::{
-    artifacts_emitter::ArtifactEmitter, error::BuildError, plugins::Plugins,
-    util::get_artifacts_dir, BuildResult, FileOperation, IOResultExt,
+    artifacts_emitter::ArtifactEmitter,
+    error::BuildError,
+    plugins::Plugins,
+    util::{get_artifacts_dir, run_command},
+    BuildResult, FileOperation, IOResultExt,
 };
 
 // User configurable options during flutter build
@@ -72,7 +75,7 @@ impl Flutter {
     fn do_flutter_pub_get(&self) -> BuildResult<()> {
         let mut command = self.create_flutter_command();
         command.arg("pub").arg("get");
-        self.run_command(command)
+        self.run_flutter_command(command)
     }
 
     fn do_build(&self) -> BuildResult<()> {
@@ -159,6 +162,20 @@ impl Flutter {
         }
     }
 
+    pub(crate) fn macosx_deployment_target() -> String {
+        match Flutter::target_os() {
+            TargetOS::Mac => {
+                // FIXME: This needs better default
+                let arch =
+                    std::env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "10.13".into());
+                arch
+            }
+            _ => {
+                panic!("Deployment target can only be called on Mac")
+            }
+        }
+    }
+
     fn target_os() -> TargetOS {
         let target_os = std::env::var("CARGO_CFG_TARGET_OS");
         match target_os.as_deref() {
@@ -233,21 +250,8 @@ impl Flutter {
         }
     }
 
-    fn run_command(&self, mut command: Command) -> BuildResult<()> {
-        let output = command
-            .output()
-            .wrap_error(FileOperation::Command, || "flutter".into())?;
-
-        if !output.status.success() {
-            Err(BuildError::FlutterToolError {
-                command: format!("{:?}", command),
-                status: output.status,
-                stderr: String::from_utf8_lossy(&output.stderr).into(),
-                stdout: String::from_utf8_lossy(&output.stdout).into(),
-            })
-        } else {
-            Ok(())
-        }
+    fn run_flutter_command(&self, command: Command) -> BuildResult<()> {
+        run_command(command, "flutter")
     }
 
     fn run_flutter_assemble<PathRef: AsRef<Path>>(&self, working_dir: PathRef) -> BuildResult<()> {
@@ -303,7 +307,7 @@ impl Flutter {
             .arg("--suppress-analytics")
             .args(actions);
 
-        self.run_command(command)
+        self.run_flutter_command(command)
     }
 
     fn process_plugins(&self) -> BuildResult<()> {

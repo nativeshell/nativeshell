@@ -2,8 +2,10 @@ use super::{binary_messenger::PlatformBinaryMessenger, error::PlatformResult};
 
 pub struct PlatformEngine {}
 
+pub type PlatformPlugin = isize;
+
 impl PlatformEngine {
-    pub fn new() -> Self {
+    pub fn new(_plugins: &[PlatformPlugin]) -> Self {
         PlatformEngine {}
     }
 

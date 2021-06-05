@@ -6,7 +6,7 @@ use std::{
 use crate::{
     error::IOResultExt,
     util::{get_absolute_path, get_artifacts_dir, mkdir, symlink},
-    BuildResult, FileOperation, Resources,
+    BuildResult, FileOperation, Flutter, Resources,
 };
 
 #[derive(Debug, Clone)]
@@ -33,9 +33,7 @@ impl Default for AppBundleOptions {
             bundle_display_name: std::env::var("CARGO_PKG_NAME").unwrap(),
             bundle_version: std::env::var("CARGO_PKG_VERSION").unwrap(),
             bundle_short_version_string: std::env::var("CARGO_PKG_VERSION").unwrap(),
-            // TODO: This need better default
-            minimum_system_version: std::env::var("MACOSX_DEPLOYMENT_TARGET")
-                .unwrap_or_else(|_| "10.13".into()),
+            minimum_system_version: Flutter::macosx_deployment_target(),
             executable_path: std::env::var("CARGO_PKG_NAME").unwrap().into(),
             icon_file: "App.icns".into(),
             info_plist_template: None,

@@ -8,6 +8,7 @@ pub enum FileOperation {
     Remove,
     Read,
     Write,
+    Open,
     Create,
     SymLink,
     MetaData,
@@ -20,7 +21,7 @@ pub enum FileOperation {
 }
 #[derive(Debug)]
 pub enum BuildError {
-    FlutterToolError {
+    ToolError {
         command: String,
         status: ExitStatus,
         stderr: String,
@@ -47,7 +48,7 @@ pub type BuildResult<T> = Result<T, BuildError>;
 impl Display for BuildError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BuildError::FlutterToolError {
+            BuildError::ToolError {
                 command,
                 status,
                 stderr,
@@ -55,7 +56,7 @@ impl Display for BuildError {
             } => {
                 write!(
                     f,
-                    "Flutter Tool Failed!\nStatus: {:?}\nCommand: {:?}\nStderr:\n{}\nStdout:\n{}",
+                    "External Tool Failed!\nStatus: {:?}\nCommand: {:?}\nStderr:\n{}\nStdout:\n{}",
                     status, command, stderr, stdout
                 )
             }
