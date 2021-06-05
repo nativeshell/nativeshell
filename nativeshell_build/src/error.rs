@@ -92,35 +92,47 @@ impl Display for BuildError {
 impl std::error::Error for BuildError {}
 
 pub(super) trait IOResultExt<T> {
-    fn wrap_error(self, operation: FileOperation, path: PathBuf) -> BuildResult<T>;
-    fn wrap_error_with_src(
+    fn wrap_error<F>(self, operation: FileOperation, path: F) -> BuildResult<T>
+    where
+        F: FnOnce() -> PathBuf;
+    fn wrap_error_with_src<F, G>(
         self,
         operation: FileOperation,
-        path: PathBuf,
-        source_path: PathBuf,
-    ) -> Result<T, BuildError>;
+        path: F,
+        source_path: G,
+    ) -> BuildResult<T>
+    where
+        F: FnOnce() -> PathBuf,
+        G: FnOnce() -> PathBuf;
 }
 
 impl<T> IOResultExt<T> for io::Result<T> {
-    fn wrap_error(self, operation: FileOperation, path: PathBuf) -> BuildResult<T> {
+    fn wrap_error<F>(self, operation: FileOperation, path: F) -> BuildResult<T>
+    where
+        F: FnOnce() -> PathBuf,
+    {
         self.map_err(|e| BuildError::FileOperationError {
             operation,
-            path,
+            path: path(),
             source_path: None,
             source: e,
         })
     }
 
-    fn wrap_error_with_src(
+    fn wrap_error_with_src<F, G>(
         self,
         operation: FileOperation,
-        path: PathBuf,
-        source_path: PathBuf,
-    ) -> Result<T, BuildError> {
+        path: F,
+        source_path: G,
+    ) -> BuildResult<T>
+    where
+        F: FnOnce() -> PathBuf,
+        G: FnOnce() -> PathBuf,
+    {
         self.map_err(|e| BuildError::FileOperationError {
             operation,
-            path,
-            source_path: Some(source_path),
+            path: path(),
+            source_path: Some(source_path()),
             source: e,
         })
     }

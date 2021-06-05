@@ -10,7 +10,7 @@ pub(super) fn get_artifacts_dir() -> BuildResult<PathBuf> {
     let artifacts_dir = out_dir.join("../../../");
     let artifacts_dir = artifacts_dir
         .canonicalize()
-        .wrap_error(FileOperation::Canonicalize, artifacts_dir)?;
+        .wrap_error(FileOperation::Canonicalize, || artifacts_dir)?;
     Ok(artifacts_dir)
 }
 
@@ -28,7 +28,7 @@ pub(super) fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> BuildRe
     #[cfg(target_family = "windows")]
     {
         let src_meta = fs::metadata(src.as_ref())
-            .wrap_error(crate::FileOperation::MetaData, src.as_ref().into())?;
+            .wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
         let res = if src_meta.is_dir() {
             std::os::windows::fs::symlink_dir(&src, &dst)
         } else {
@@ -36,16 +36,16 @@ pub(super) fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> BuildRe
         };
         res.wrap_error_with_src(
             FileOperation::SymLink,
-            dst.as_ref().into(),
-            src.as_ref().into(),
+            || dst.as_ref().into(),
+            || src.as_ref().into(),
         )?;
     }
     #[cfg(target_family = "unix")]
     {
         std::os::unix::fs::symlink(&src, &dst).wrap_error_with_src(
             FileOperation::SymLink,
-            dst.as_ref().into(),
-            src.as_ref().into(),
+            || dst.as_ref().into(),
+            || src.as_ref().into(),
         )?;
     }
     Ok(())
@@ -60,6 +60,6 @@ where
         Some(sub_path) => target_path.as_ref().join(sub_path.as_ref()),
         None => target_path.as_ref().into(),
     };
-    fs::create_dir_all(&target).wrap_error(FileOperation::MkDir, target.clone())?;
+    fs::create_dir_all(&target).wrap_error(FileOperation::MkDir, || target.clone())?;
     Ok(target)
 }

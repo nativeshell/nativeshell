@@ -77,7 +77,7 @@ impl Flutter {
         let flutter_out_root = self.out_dir.join("flutter");
         let flutter_out_dart_tool = flutter_out_root.join(".dart_tool");
         fs::create_dir_all(&flutter_out_dart_tool)
-            .wrap_error(FileOperation::CreateDir, flutter_out_dart_tool.clone())?;
+            .wrap_error(FileOperation::CreateDir, || flutter_out_dart_tool.clone())?;
 
         let package_config = self.root_dir.join(".dart_tool").join("package_config.json");
         let package_config_out = flutter_out_dart_tool.join("package_config.json");
@@ -173,7 +173,7 @@ impl Flutter {
         local_roots: &mut HashSet<PathBuf>,
     ) -> BuildResult<()> {
         let string =
-            fs::read_to_string(&new).wrap_error(FileOperation::Read, new.as_ref().into())?;
+            fs::read_to_string(&new).wrap_error(FileOperation::Read, || new.as_ref().into())?;
 
         let mut package_config: PackageConfig =
             serde_json::from_str(&string).map_err(|e| BuildError::JsonError {
@@ -188,7 +188,7 @@ impl Flutter {
 
                 let absolute = absolute
                     .canonicalize()
-                    .wrap_error(FileOperation::Canonicalize, absolute)?;
+                    .wrap_error(FileOperation::Canonicalize, || absolute)?;
 
                 {
                     // joining posix path with windows path results in posix
@@ -215,7 +215,7 @@ impl Flutter {
                 source: e,
             })?;
 
-        fs::write(&new, &serialized).wrap_error(FileOperation::Write, new.as_ref().into())?;
+        fs::write(&new, &serialized).wrap_error(FileOperation::Write, || new.as_ref().into())?;
 
         Ok(())
     }
@@ -233,7 +233,7 @@ impl Flutter {
     fn run_command(&self, mut command: Command) -> BuildResult<()> {
         let output = command
             .output()
-            .wrap_error(FileOperation::Command, "flutter".into())?;
+            .wrap_error(FileOperation::Command, || "flutter".into())?;
 
         if !output.status.success() {
             Err(BuildError::FlutterToolError {
@@ -350,11 +350,11 @@ impl Flutter {
     }
 
     fn emit_checks_for_dir(&self, path: &Path) -> BuildResult<()> {
-        for entry in fs::read_dir(path).wrap_error(FileOperation::ReadDir, path.into())? {
-            let entry = entry.wrap_error(FileOperation::ReadDir, path.into())?;
+        for entry in fs::read_dir(path).wrap_error(FileOperation::ReadDir, || path.into())? {
+            let entry = entry.wrap_error(FileOperation::ReadDir, || path.into())?;
             let metadata = entry
                 .metadata()
-                .wrap_error(FileOperation::MetaData, entry.path())?;
+                .wrap_error(FileOperation::MetaData, || entry.path())?;
             if metadata.is_dir() {
                 self.emit_checks_for_dir(entry.path().as_path())?;
             } else {
@@ -369,8 +369,8 @@ impl Flutter {
     fn copy<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> Result<u64, BuildError> {
         fs::copy(&from, &to).wrap_error_with_src(
             FileOperation::Copy,
-            to.as_ref().into(),
-            from.as_ref().into(),
+            || to.as_ref().into(),
+            || from.as_ref().into(),
         )
     }
 }

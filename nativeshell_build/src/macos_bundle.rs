@@ -133,7 +133,7 @@ impl MacOSBundle {
         }
 
         let plist = contents.as_ref().join("Info.plist");
-        std::fs::write(&plist, template).wrap_error(FileOperation::Write, plist)?;
+        std::fs::write(&plist, template).wrap_error(FileOperation::Write, || plist)?;
 
         Ok(())
     }
@@ -147,7 +147,7 @@ impl MacOSBundle {
             Some(path) => {
                 let path = get_absolute_path(path);
                 let content = std::fs::read_to_string(&path);
-                content.wrap_error(FileOperation::Read, path)
+                content.wrap_error(FileOperation::Read, || path)
             }
             None => Ok(include_str!("Info.plist").into()),
         }

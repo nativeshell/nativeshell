@@ -48,9 +48,9 @@ impl<'a> ArtifactEmitter<'a> {
             }
         };
         for entry in fs::read_dir(&assets_src_dir)
-            .wrap_error(FileOperation::ReadDir, assets_src_dir.clone())?
+            .wrap_error(FileOperation::ReadDir, || assets_src_dir.clone())?
         {
-            let entry = entry.wrap_error(FileOperation::Read, assets_src_dir.clone())?;
+            let entry = entry.wrap_error(FileOperation::Read, || assets_src_dir.clone())?;
             Self::copy_to(entry.path(), &assets_dst_dir, false)?
         }
 
@@ -169,7 +169,7 @@ impl<'a> ArtifactEmitter<'a> {
     fn find_flutter_build_dir<P: AsRef<Path>>(flutter_out_dir: P) -> Result<PathBuf, BuildError> {
         let last_build_id = flutter_out_dir.as_ref().join(".last_build_id");
         let last_build_id = fs::read_to_string(&last_build_id)
-            .wrap_error(crate::FileOperation::Read, last_build_id)?;
+            .wrap_error(crate::FileOperation::Read, || last_build_id)?;
 
         let res = flutter_out_dir
             .as_ref()
@@ -193,7 +193,8 @@ impl<'a> ArtifactEmitter<'a> {
         Q: AsRef<Path>,
     {
         if dst.as_ref().exists() {
-            fs::remove_file(dst.as_ref()).wrap_error(FileOperation::Remove, dst.as_ref().into())?;
+            fs::remove_file(dst.as_ref())
+                .wrap_error(FileOperation::Remove, || dst.as_ref().into())?;
         }
         Self::copy_item(src, dst, allow_symlinks)
     }
@@ -213,20 +214,20 @@ impl<'a> ArtifactEmitter<'a> {
         Q: AsRef<Path>,
     {
         let src_meta = fs::metadata(src.as_ref())
-            .wrap_error(crate::FileOperation::MetaData, src.as_ref().into())?;
+            .wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
 
         if !allow_symlinks {
             if src_meta.is_dir() {
                 copy_dir::copy_dir(&src, &dst).wrap_error_with_src(
                     FileOperation::CopyDir,
-                    dst.as_ref().into(),
-                    src.as_ref().into(),
+                    || dst.as_ref().into(),
+                    || src.as_ref().into(),
                 )?;
             } else {
                 fs::copy(&src, &dst).wrap_error_with_src(
                     FileOperation::Copy,
-                    dst.as_ref().into(),
-                    src.as_ref().into(),
+                    || dst.as_ref().into(),
+                    || src.as_ref().into(),
                 )?;
             }
         } else {
