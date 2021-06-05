@@ -8,6 +8,7 @@ pub enum FileOperation {
     Remove,
     Read,
     Write,
+    Create,
     SymLink,
     MetaData,
     CopyDir,
@@ -15,6 +16,7 @@ pub enum FileOperation {
     ReadDir,
     Canonicalize,
     Command,
+    Unarchive,
 }
 #[derive(Debug)]
 pub enum BuildError {
@@ -33,6 +35,9 @@ pub enum BuildError {
     JsonError {
         text: Option<String>,
         source: serde_json::Error,
+    },
+    YamlError {
+        source: yaml_rust::ScanError,
     },
     OtherError(String),
 }
@@ -81,6 +86,9 @@ impl Display for BuildError {
                     write!(f, "Text:\n{}", text)?;
                 }
                 Ok(())
+            }
+            BuildError::YamlError { source } => {
+                write!(f, "{}", source)
             }
             BuildError::OtherError(err) => {
                 write!(f, "{}", err)

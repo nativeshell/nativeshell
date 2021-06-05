@@ -9,8 +9,8 @@ use dunce::simplified;
 use path_slash::PathExt;
 
 use crate::{
-    artifacts_emitter::ArtifactEmitter, error::BuildError, util::get_artifacts_dir, BuildResult,
-    FileOperation, IOResultExt,
+    artifacts_emitter::ArtifactEmitter, error::BuildError, plugins::Plugins,
+    util::get_artifacts_dir, BuildResult, FileOperation, IOResultExt,
 };
 
 // User configurable options during flutter build
@@ -33,12 +33,14 @@ impl Default for FlutterOptions {
     }
 }
 
+#[derive(Debug)]
 pub enum TargetOS {
     Mac,
     Windows,
     Linux,
 }
 
+#[derive(Debug)]
 pub struct Flutter {
     pub(super) root_dir: PathBuf,
     pub(super) out_dir: PathBuf,
@@ -107,6 +109,7 @@ impl Flutter {
         )?;
 
         self.run_flutter_assemble(&flutter_out_root)?;
+        self.process_plugins()?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
         self.emit_flutter_checks(&local_roots).unwrap();
 
@@ -301,6 +304,11 @@ impl Flutter {
             .args(actions);
 
         self.run_command(command)
+    }
+
+    fn process_plugins(&self) -> BuildResult<()> {
+        let plugins = Plugins::new(&self);
+        plugins.process()
     }
 
     fn emit_flutter_artifacts<PathRef: AsRef<Path>>(

@@ -2,8 +2,9 @@ mod artifacts_emitter;
 mod error;
 mod flutter_build;
 mod macos_bundle;
-mod util;
+mod plugins;
 mod resources;
+mod util;
 
 pub use error::*;
 pub use flutter_build::*;
