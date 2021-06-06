@@ -137,12 +137,16 @@ impl<'a> Plugins<'a> {
             if let Some(platform_info) = platform_info.remove(key) {
                 let path: PathBuf = item.1.into();
                 let platform_path = path.join(key);
-                res.push(Plugin {
-                    name: item.0,
-                    path,
-                    platform_path,
-                    platform_info,
-                });
+
+                // some plugins are FFI only, no need to build them
+                if platform_path.exists() {
+                    res.push(Plugin {
+                        name: item.0,
+                        path,
+                        platform_path,
+                        platform_info,
+                    });
+                }
             }
         }
         Ok(res)
