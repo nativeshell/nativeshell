@@ -73,15 +73,11 @@ impl<'a> ArtifactsEmitter<'a> {
 
         // linux AOT
         if cfg!(target_os = "linux") {
-            // on linux the lib path is hardcoded :-/
+            // on linux the lib path is hardcoded, but all libraries go to "lib"
+            // (RUNPATH being $ORIGIN/lib)
             let app_so = self.flutter_out_dir.join("lib").join("libapp.so");
             if app_so.exists() {
-                let lib_dir = self.artifacts_out_dir.join("lib");
-                if lib_dir.exists() {
-                    std::fs::remove_dir_all(&lib_dir)
-                        .unwrap_or_else(|_| panic!("Failed to remove {:?}", lib_dir));
-                }
-                mkdir(&lib_dir, None::<PathBuf>)?;
+                let lib_dir = mkdir(&self.artifacts_out_dir, Some("lib"))?;
                 copy_to(&app_so, &lib_dir, false)?;
             }
         }
@@ -115,6 +111,16 @@ impl<'a> ArtifactsEmitter<'a> {
                 panic!("Invalid target OS")
             }
         };
+
+        let artifacts_out_dir = {
+            if cfg!(target_os = "linux") {
+                // RUNPATH is set to $origin/lib
+                self.artifacts_out_dir.join("lib")
+            } else {
+                self.artifacts_out_dir.clone()
+            }
+        };
+
         let deps_out_dir = self.artifacts_out_dir.join("deps");
         let flutter_artifacts = self.find_artifacts_location(self.build.build_mode.as_str())?;
         let flutter_artifacts_debug = self.find_artifacts_location("debug")?;
@@ -126,7 +132,7 @@ impl<'a> ArtifactsEmitter<'a> {
                     src
                 )));
             }
-            copy_to(&src, &self.artifacts_out_dir, true)?;
+            copy_to(&src, &artifacts_out_dir, true)?;
             copy_to(&src, &deps_out_dir, true)?;
         }
 
@@ -159,7 +165,7 @@ impl<'a> ArtifactsEmitter<'a> {
                 "flutter_linux_gtk",
             };
             cargo_emit::rustc_link_search! {
-                self.artifacts_out_dir.to_string_lossy(),
+                self.artifacts_out_dir.join("lib").to_string_lossy(),
             };
         }
 

@@ -57,7 +57,7 @@ impl<'a> PluginsImpl<'a> {
             Config::new(plugins_dir).no_build_target(true).build();
         }
 
-        let artifacts_dir = get_artifacts_dir()?;
+        let artifacts_dir = mkdir(get_artifacts_dir()?, Some("lib"))?;
 
         for plugin in plugins {
             let plugin_artifacts_path = self

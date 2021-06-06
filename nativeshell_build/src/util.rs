@@ -95,7 +95,7 @@ where
                 .wrap_error(FileOperation::Canonicalize, || src.as_ref().into())?;
             if src_can == dst_can {
                 // nothing to do here
-                return Ok(())
+                return Ok(());
             }
         }
         fs::remove_file(dst.as_ref()).wrap_error(FileOperation::Remove, || dst.as_ref().into())?;
