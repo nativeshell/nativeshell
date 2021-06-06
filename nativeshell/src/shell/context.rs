@@ -3,13 +3,13 @@ use std::rc::Rc;
 use crate::{util::LateRefCell, Error, Result};
 
 use super::{
-    platform::{drag_data::DragDataAdapter, init::init_platform},
+    platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
     EngineManager, MenuManager, MessageManager, RunLoop, WindowManager, WindowMethodChannel,
 };
 
 pub struct ContextOptions {
     pub app_namespace: String,
-
+    pub flutter_plugins: Vec<PlatformPlugin>,
     pub on_last_engine_removed: Box<dyn Fn(Rc<Context>)>,
     pub custom_drag_data_adapters: Vec<Box<dyn DragDataAdapter>>,
 }
@@ -18,6 +18,7 @@ impl Default for ContextOptions {
     fn default() -> Self {
         Self {
             app_namespace: Default::default(),
+            flutter_plugins: Vec::new(),
             on_last_engine_removed: Box::new(|context| context.run_loop.borrow().stop()),
             custom_drag_data_adapters: Vec::new(),
         }

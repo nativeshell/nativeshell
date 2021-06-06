@@ -8,6 +8,8 @@ pub enum FileOperation {
     Remove,
     Read,
     Write,
+    Open,
+    Create,
     SymLink,
     MetaData,
     CopyDir,
@@ -15,10 +17,11 @@ pub enum FileOperation {
     ReadDir,
     Canonicalize,
     Command,
+    Unarchive,
 }
 #[derive(Debug)]
 pub enum BuildError {
-    FlutterToolError {
+    ToolError {
         command: String,
         status: ExitStatus,
         stderr: String,
@@ -34,6 +37,9 @@ pub enum BuildError {
         text: Option<String>,
         source: serde_json::Error,
     },
+    YamlError {
+        source: yaml_rust::ScanError,
+    },
     OtherError(String),
 }
 
@@ -42,7 +48,7 @@ pub type BuildResult<T> = Result<T, BuildError>;
 impl Display for BuildError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BuildError::FlutterToolError {
+            BuildError::ToolError {
                 command,
                 status,
                 stderr,
@@ -50,7 +56,7 @@ impl Display for BuildError {
             } => {
                 write!(
                     f,
-                    "Flutter Tool Failed!\nStatus: {:?}\nCommand: {:?}\nStderr:\n{}\nStdout:\n{}",
+                    "External Tool Failed!\nStatus: {:?}\nCommand: {:?}\nStderr:\n{}\nStdout:\n{}",
                     status, command, stderr, stdout
                 )
             }
@@ -81,6 +87,9 @@ impl Display for BuildError {
                     write!(f, "Text:\n{}", text)?;
                 }
                 Ok(())
+            }
+            BuildError::YamlError { source } => {
+                write!(f, "{}", source)
             }
             BuildError::OtherError(err) => {
                 write!(f, "{}", err)

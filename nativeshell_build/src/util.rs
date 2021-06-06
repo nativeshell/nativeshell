@@ -1,9 +1,10 @@
 use std::{
-    fs,
+    fs::{self, canonicalize},
     path::{Path, PathBuf},
+    process::Command,
 };
 
-use crate::{error::IOResultExt, BuildResult, FileOperation};
+use crate::{error::IOResultExt, BuildError, BuildResult, FileOperation};
 
 pub(super) fn get_artifacts_dir() -> BuildResult<PathBuf> {
     let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
@@ -62,4 +63,72 @@ where
     };
     fs::create_dir_all(&target).wrap_error(FileOperation::MkDir, || target.clone())?;
     Ok(target)
+}
+
+pub(super) fn run_command(mut command: Command, command_name: &str) -> BuildResult<()> {
+    let output = command
+        .output()
+        .wrap_error(FileOperation::Command, || command_name.into())?;
+
+    if !output.status.success() {
+        Err(BuildError::ToolError {
+            command: format!("{:?}", command),
+            status: output.status,
+            stderr: String::from_utf8_lossy(&output.stderr).into(),
+            stdout: String::from_utf8_lossy(&output.stdout).into(),
+        })
+    } else {
+        Ok(())
+    }
+}
+
+pub(super) fn copy<P, Q>(src: P, dst: Q, allow_symlinks: bool) -> BuildResult<()>
+where
+    P: AsRef<Path>,
+    Q: AsRef<Path>,
+{
+    if dst.as_ref().exists() {
+        if allow_symlinks {
+            let src_can = canonicalize(src.as_ref())
+                .wrap_error(FileOperation::Canonicalize, || src.as_ref().into())?;
+            let dst_can = canonicalize(src.as_ref())
+                .wrap_error(FileOperation::Canonicalize, || src.as_ref().into())?;
+            if src_can == dst_can {
+                // nothing to do here
+                return Ok(())
+            }
+        }
+        fs::remove_file(dst.as_ref()).wrap_error(FileOperation::Remove, || dst.as_ref().into())?;
+    }
+    let src_meta = fs::metadata(src.as_ref())
+        .wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
+
+    if !allow_symlinks {
+        if src_meta.is_dir() {
+            copy_dir::copy_dir(&src, &dst).wrap_error_with_src(
+                FileOperation::CopyDir,
+                || dst.as_ref().into(),
+                || src.as_ref().into(),
+            )?;
+        } else {
+            fs::copy(&src, &dst).wrap_error_with_src(
+                FileOperation::Copy,
+                || dst.as_ref().into(),
+                || src.as_ref().into(),
+            )?;
+        }
+    } else {
+        symlink(src, dst)?
+    }
+
+    Ok(())
+}
+
+pub(super) fn copy_to<P, Q>(src: P, dst: Q, allow_symlinks: bool) -> BuildResult<()>
+where
+    P: AsRef<Path>,
+    Q: AsRef<Path>,
+{
+    let file_name = src.as_ref().file_name().unwrap();
+    copy(&src, dst.as_ref().join(file_name), allow_symlinks)
 }

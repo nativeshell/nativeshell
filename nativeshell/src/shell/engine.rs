@@ -1,4 +1,7 @@
-use super::{platform::engine::PlatformEngine, BinaryMessenger};
+use super::{
+    platform::engine::{PlatformEngine, PlatformPlugin},
+    BinaryMessenger,
+};
 use crate::Result;
 
 pub struct FlutterEngine {
@@ -7,8 +10,8 @@ pub struct FlutterEngine {
 }
 
 impl FlutterEngine {
-    pub fn create() -> Self {
-        let platform_engine = PlatformEngine::new();
+    pub fn create(plugins: &[PlatformPlugin]) -> Self {
+        let platform_engine = PlatformEngine::new(plugins);
 
         let messenger = BinaryMessenger::new(platform_engine.new_binary_messenger());
         FlutterEngine {

@@ -26,7 +26,7 @@ impl EngineManager {
     }
 
     pub fn create_engine(&mut self) -> EngineHandle {
-        let engine = FlutterEngine::create();
+        let engine = FlutterEngine::create(&self.context.options.flutter_plugins);
         let handle = self.next_handle;
         self.next_handle.0 += 1;
         self.engines.insert(handle, Box::new(RefCell::new(engine)));
