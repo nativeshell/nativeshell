@@ -1,7 +1,7 @@
 extern crate gobject_sys;
 extern crate gtk_sys;
 
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_void};
 
 use gobject_sys::{GObject, GObjectClass};
 use gtk_sys::{GtkContainer, GtkContainerClass, GtkWidget};
@@ -113,4 +113,9 @@ extern "C" {
         result: *mut gio_sys::GAsyncResult,
         error: *mut *mut glib_sys::GError,
     ) -> *mut glib_sys::GBytes;
+
+    pub fn fl_plugin_registry_get_registrar_for_plugin(
+        registry: *mut FlView,
+        name: *const c_char,
+    ) -> *mut c_void;
 }

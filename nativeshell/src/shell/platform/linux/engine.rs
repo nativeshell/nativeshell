@@ -29,12 +29,23 @@ struct _FlEngine {
     _engine: isize,
 }
 
-pub type PlatformPlugin = isize;
+pub struct PlatformPlugin {
+    pub name: String,
+    pub register_func: Option<unsafe extern "C" fn(registrar: *mut std::os::raw::c_void)>,
+}
 
 impl PlatformEngine {
-    pub fn new(_plugins: &[PlatformPlugin]) -> Self {
+    pub fn new(plugins: &[PlatformPlugin]) -> Self {
         let project = flutter::DartProject::new();
         let view = flutter::View::new(&project);
+        for plugin in plugins {
+            let registrar = view.get_registrar_for_plugin(&plugin.name);
+            if let Some(func) = plugin.register_func {
+                unsafe {
+                    func(registrar);
+                }
+            }
+        }
         PlatformEngine { view }
     }
 

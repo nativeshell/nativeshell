@@ -19,6 +19,10 @@ mod plugins_impl;
 #[path = "plugins_windows.rs"]
 mod plugins_impl;
 
+#[cfg(target_os = "linux")]
+#[path = "plugins_linux.rs"]
+mod plugins_impl;
+
 #[derive(Debug)]
 pub(crate) struct PluginPlatformInfo {
     pub plugin_class: String,
@@ -96,12 +100,13 @@ impl<'a> Plugins<'a> {
         let pub_spec = &pub_spec["plugin"];
         let platforms = &pub_spec["platforms"];
 
-        for platform in platforms.as_hash() {
-            for p in platform {
-                let plugin_class: Option<String> = p.1["pluginClass"].as_str().map(|s| s.into());
+        if let Some(platforms) = platforms.as_hash() {
+            for platform in platforms {
+                let plugin_class: Option<String> =
+                    platform.1["pluginClass"].as_str().map(|s| s.into());
                 if let Some(plugin_class) = plugin_class {
                     res.insert(
-                        p.0.as_str().unwrap().into(),
+                        platform.0.as_str().unwrap().into(),
                         PluginPlatformInfo { plugin_class },
                     );
                 }

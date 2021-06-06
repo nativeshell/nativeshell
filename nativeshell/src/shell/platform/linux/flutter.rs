@@ -1,6 +1,9 @@
 #![allow(clippy::from_over_into)]
 
-use std::{mem::ManuallyDrop, os::raw::c_char};
+use std::{
+    mem::ManuallyDrop,
+    os::raw::{c_char, c_void},
+};
 
 use super::flutter_sys;
 use glib::{glib_wrapper, Object};
@@ -46,6 +49,7 @@ impl View {
 
 pub trait ViewExt: 'static {
     fn get_engine(&self) -> Engine;
+    fn get_registrar_for_plugin(&self, plugin: &str) -> *mut c_void;
 }
 
 impl<O: IsA<View>> ViewExt for O {
@@ -55,6 +59,15 @@ impl<O: IsA<View>> ViewExt for O {
                 self.as_ref().to_glib_none().0,
             ))
             .unsafe_cast()
+        }
+    }
+
+    fn get_registrar_for_plugin(&self, plugin: &str) -> *mut c_void {
+        unsafe {
+            flutter_sys::fl_plugin_registry_get_registrar_for_plugin(
+                self.as_ref().to_glib_none().0,
+                plugin.to_glib_none().0,
+            )
         }
     }
 }
