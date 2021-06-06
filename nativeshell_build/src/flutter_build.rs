@@ -9,7 +9,7 @@ use dunce::simplified;
 use path_slash::PathExt;
 
 use crate::{
-    artifacts_emitter::ArtifactEmitter,
+    artifacts_emitter::ArtifactsEmitter,
     error::BuildError,
     plugins::Plugins,
     util::{get_artifacts_dir, run_command},
@@ -112,7 +112,6 @@ impl Flutter {
         )?;
 
         self.run_flutter_assemble(&flutter_out_root)?;
-        self.process_plugins()?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
         self.emit_flutter_checks(&local_roots).unwrap();
 
@@ -310,18 +309,16 @@ impl Flutter {
         self.run_flutter_command(command)
     }
 
-    fn process_plugins(&self) -> BuildResult<()> {
-        let plugins = Plugins::new(&self);
-        plugins.process()
-    }
-
     fn emit_flutter_artifacts<PathRef: AsRef<Path>>(
         &self,
         working_dir: PathRef,
     ) -> BuildResult<()> {
         let artifacts_dir = get_artifacts_dir()?;
         let flutter_out_root = self.out_dir.join("flutter");
-        let emitter = ArtifactEmitter::new(&self, flutter_out_root, artifacts_dir)?;
+        let emitter = ArtifactsEmitter::new(&self, flutter_out_root, artifacts_dir)?;
+
+        let plugins = Plugins::new(&self, &emitter);
+        plugins.process()?;
 
         match self.target_os {
             TargetOS::Mac => {

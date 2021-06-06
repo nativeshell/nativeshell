@@ -7,6 +7,7 @@ use std::{
 };
 
 use crate::{
+    artifacts_emitter::ArtifactsEmitter,
     plugins::Plugin,
     util::{get_artifacts_dir, mkdir, run_command, symlink},
     BuildResult, FileOperation, Flutter, IOResultExt,
@@ -17,7 +18,7 @@ pub(super) struct PluginsImpl<'a> {
 }
 
 impl<'a> PluginsImpl<'a> {
-    pub fn new(build: &'a Flutter) -> Self {
+    pub fn new(build: &'a Flutter, _artifacts_emitter: &'a ArtifactsEmitter<'a>) -> Self {
         Self { build }
     }
 

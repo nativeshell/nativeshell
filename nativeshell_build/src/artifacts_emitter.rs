@@ -4,18 +4,18 @@ use std::{
 };
 
 use crate::{
-    util::{mkdir, symlink},
+    util::{copy, copy_to, mkdir},
     BuildError, BuildResult, FileOperation, Flutter, IOResultExt,
 };
 
-pub(super) struct ArtifactEmitter<'a> {
+pub(super) struct ArtifactsEmitter<'a> {
     build: &'a Flutter,
     flutter_out_dir: PathBuf,
     flutter_build_dir: PathBuf,
     artifacts_out_dir: PathBuf,
 }
 
-impl<'a> ArtifactEmitter<'a> {
+impl<'a> ArtifactsEmitter<'a> {
     pub fn new<P: AsRef<Path>>(
         build: &'a Flutter,
         flutter_out_dir: P,
@@ -51,12 +51,12 @@ impl<'a> ArtifactEmitter<'a> {
             .wrap_error(FileOperation::ReadDir, || assets_src_dir.clone())?
         {
             let entry = entry.wrap_error(FileOperation::Read, || assets_src_dir.clone())?;
-            Self::copy_to(entry.path(), &assets_dst_dir, false)?
+            copy_to(entry.path(), &assets_dst_dir, false)?
         }
 
         let app_dill = self.flutter_build_dir.join("app.dill");
         if app_dill.exists() {
-            Self::copy(
+            copy(
                 self.flutter_build_dir.join("app.dill"),
                 assets_dst_dir.join("kernel_blob.bin"),
                 false,
@@ -67,7 +67,7 @@ impl<'a> ArtifactEmitter<'a> {
         if cfg!(target_os = "windows") {
             let app_so = self.flutter_out_dir.join("windows").join("app.so");
             if app_so.exists() {
-                Self::copy_to(&app_so, &data_dir, false)?;
+                copy_to(&app_so, &data_dir, false)?;
             }
         }
 
@@ -82,7 +82,7 @@ impl<'a> ArtifactEmitter<'a> {
                         .unwrap_or_else(|_| panic!("Failed to remove {:?}", lib_dir));
                 }
                 mkdir(&lib_dir, None::<PathBuf>)?;
-                Self::copy_to(&app_so, &lib_dir, false)?;
+                copy_to(&app_so, &lib_dir, false)?;
             }
         }
 
@@ -91,7 +91,7 @@ impl<'a> ArtifactEmitter<'a> {
 
     // MacOS only
     pub fn emit_app_framework(&self) -> BuildResult<()> {
-        Self::copy_to(
+        copy_to(
             &self.flutter_out_dir.join("App.framework"),
             &self.artifacts_out_dir,
             true,
@@ -126,14 +126,14 @@ impl<'a> ArtifactEmitter<'a> {
                     src
                 )));
             }
-            Self::copy_to(&src, &self.artifacts_out_dir, true)?;
-            Self::copy_to(&src, &deps_out_dir, true)?;
+            copy_to(&src, &self.artifacts_out_dir, true)?;
+            copy_to(&src, &deps_out_dir, true)?;
         }
 
         let data_dir = self.artifacts_out_dir.join("data");
         let icu = flutter_artifacts_debug.join("icudtl.dat");
         if icu.exists() && data_dir.exists() {
-            Self::copy_to(icu, data_dir, false)?;
+            copy_to(icu, data_dir, false)?;
         }
         Ok(())
     }
@@ -187,56 +187,6 @@ impl<'a> ArtifactEmitter<'a> {
         }
     }
 
-    fn copy<P, Q>(src: P, dst: Q, allow_symlinks: bool) -> BuildResult<()>
-    where
-        P: AsRef<Path>,
-        Q: AsRef<Path>,
-    {
-        if dst.as_ref().exists() {
-            fs::remove_file(dst.as_ref())
-                .wrap_error(FileOperation::Remove, || dst.as_ref().into())?;
-        }
-        Self::copy_item(src, dst, allow_symlinks)
-    }
-
-    fn copy_to<P, Q>(src: P, dst: Q, allow_symlinks: bool) -> BuildResult<()>
-    where
-        P: AsRef<Path>,
-        Q: AsRef<Path>,
-    {
-        let file_name = src.as_ref().file_name().unwrap();
-        Self::copy(&src, dst.as_ref().join(file_name), allow_symlinks)
-    }
-
-    fn copy_item<P, Q>(src: P, dst: Q, allow_symlinks: bool) -> BuildResult<()>
-    where
-        P: AsRef<Path>,
-        Q: AsRef<Path>,
-    {
-        let src_meta = fs::metadata(src.as_ref())
-            .wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
-
-        if !allow_symlinks {
-            if src_meta.is_dir() {
-                copy_dir::copy_dir(&src, &dst).wrap_error_with_src(
-                    FileOperation::CopyDir,
-                    || dst.as_ref().into(),
-                    || src.as_ref().into(),
-                )?;
-            } else {
-                fs::copy(&src, &dst).wrap_error_with_src(
-                    FileOperation::Copy,
-                    || dst.as_ref().into(),
-                    || src.as_ref().into(),
-                )?;
-            }
-        } else {
-            symlink(src, dst)?
-        }
-
-        Ok(())
-    }
-
     fn find_executable<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
         env::var_os("PATH").and_then(|paths| {
             env::split_paths(&paths)
@@ -276,7 +226,7 @@ impl<'a> ArtifactEmitter<'a> {
             .map(|p| p.join("engine").join("src"))
     }
 
-    fn find_artifacts_location(&self, build_mode: &str) -> BuildResult<PathBuf> {
+    pub(super) fn find_artifacts_location(&self, build_mode: &str) -> BuildResult<PathBuf> {
         let path: Option<PathBuf> = match self.build.options.local_engine.as_ref() {
             Some(local_engine) => {
                 let engine_src_path = self

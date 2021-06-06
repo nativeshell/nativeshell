@@ -6,10 +6,17 @@ use std::{
 
 use yaml_rust::YamlLoader;
 
-use crate::{BuildError, BuildResult, FileOperation, Flutter, IOResultExt, TargetOS};
+use crate::{
+    artifacts_emitter::ArtifactsEmitter, BuildError, BuildResult, FileOperation, Flutter,
+    IOResultExt, TargetOS,
+};
 
 #[cfg(target_os = "macos")]
 #[path = "plugins_macos.rs"]
+mod plugins_impl;
+
+#[cfg(target_os = "windows")]
+#[path = "plugins_windows.rs"]
 mod plugins_impl;
 
 #[derive(Debug)]
@@ -27,16 +34,20 @@ pub(crate) struct Plugin {
 
 pub(super) struct Plugins<'a> {
     build: &'a Flutter,
+    artifacts_emitter: &'a ArtifactsEmitter<'a>, // need to get artifacts location
 }
 
 impl<'a> Plugins<'a> {
-    pub fn new(build: &'a Flutter) -> Self {
-        Self { build }
+    pub fn new(build: &'a Flutter, artifacts_emitter: &'a ArtifactsEmitter) -> Self {
+        Self {
+            build,
+            artifacts_emitter,
+        }
     }
 
     pub fn process(&self) -> BuildResult<()> {
         let plugins_path = self.build.root_dir.join(".flutter-plugins");
-        let platform = plugins_impl::PluginsImpl::new(self.build);
+        let platform = plugins_impl::PluginsImpl::new(self.build, self.artifacts_emitter);
         if plugins_path.exists() {
             let plugins_file_content = fs::read_to_string(&plugins_path)
                 .wrap_error(crate::FileOperation::Read, || plugins_path.clone())?;
