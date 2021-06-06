@@ -147,7 +147,7 @@ impl MacOSBundle {
                 let content = std::fs::read_to_string(&path);
                 content.wrap_error(FileOperation::Read, || path)
             }
-            None => Ok(include_str!("Info.plist").into()),
+            None => Ok(include_str!("res/macos/Info.plist").into()),
         }
     }
 }

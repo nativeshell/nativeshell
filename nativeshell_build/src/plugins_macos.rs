@@ -223,7 +223,7 @@ impl<'a> PluginsImpl<'a> {
     }
 
     fn write_dummy_xcode_project(&self, path: &Path) -> BuildResult<()> {
-        let project = include_bytes!("DummyProject.tar");
+        let project = include_bytes!("res/macos/DummyProject.tar");
         use tar::Archive;
         let mut archive = Archive::new(project as &[u8]);
         archive
