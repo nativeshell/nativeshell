@@ -52,9 +52,13 @@ impl<'a> Plugins<'a> {
             let plugins_file_content = fs::read_to_string(&plugins_path)
                 .wrap_error(crate::FileOperation::Read, || plugins_path.clone())?;
             let plugins = self.load_plugins(&plugins_file_content)?;
-            let skip_build = self.plugins_already_processed(&plugins_file_content)?;
-            platform.process(&plugins, skip_build)?;
-            self.mark_last_plugins(&plugins_file_content)?;
+            if !plugins.is_empty() {
+                let skip_build = self.plugins_already_processed(&plugins_file_content)?;
+                platform.process(&plugins, skip_build)?;
+                self.mark_last_plugins(&plugins_file_content)?;
+            } else {
+                platform.write_empty_registrar()?;
+            }
         } else {
             platform.write_empty_registrar()?;
         }
