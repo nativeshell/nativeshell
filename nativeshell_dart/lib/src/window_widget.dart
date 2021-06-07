@@ -9,6 +9,21 @@ import 'api_model.dart';
 import 'window.dart';
 import 'window_manager.dart';
 
+enum WindowSizingMode {
+  // Windows is always sized to match the content. This is useful for non-resizable
+  // windows. You must need to make sure that the content can properly layout itself
+  // with unbounded constraints. For example that means unconstrained Columns and Rows
+  // need to have mainAxisSize set to MainAxisSize.min.
+  sizeToContents,
+
+  // Minimum window size will always match intrinsic content size. If window is
+  // too small for intrinsic size, it will be resized.
+  atLeastIntrinsicSize,
+
+  // No automatic sizing is done.
+  manual,
+}
+
 // Class responsible for creating window contents and managing window properties.
 abstract class WindowState {
   // Build the contents within the window
@@ -27,7 +42,7 @@ abstract class WindowState {
       contentSize: intrinsicContentSize,
     ));
     // Disable user resizing for auto-sized windows
-    if (autoSizeWindow) {
+    if (windowSizingMode == WindowSizingMode.sizeToContents) {
       await window.setStyle(WindowStyle(
         canResize: false,
         canFullScreen: false,
@@ -36,19 +51,16 @@ abstract class WindowState {
     await window.show();
   }
 
-  // Updates window constraints; Called for manually sized windows after creation
-  // or after requestUpdateConstraints() was called
+  // Updates window constraints; Called for manually sized windows when intrinsic
+  // content size changes.
   Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       minContentSize: intrinsicContentSize,
     ));
   }
 
-  // Windows is always sized to fit the content. This is useful for non-resizable
-  // windows. You must need to make sure that the content can properly layout itself
-  // with unbounded constraints. For example that means unconstrained Columns and Rows
-  // need to have mainAxisSize set to MainAxisSize.min.
-  bool get autoSizeWindow => false;
+  WindowSizingMode get windowSizingMode =>
+      WindowSizingMode.atLeastIntrinsicSize;
 
   // Called to update window size to new dimensions
   Future<void> updateWindowSize(Size contentSize) async {
@@ -79,17 +91,6 @@ abstract class WindowState {
     return Geometry(contentSize: contentSize);
   }
 
-  // Useful for resizable window. This will schedule a special layout pass that will let
-  // the content overflow windows dimensions. If it does overflow, window will be resized
-  // to new dimensions and minimum content size will be udpated accordingly.
-  // You can call this in setState() if you know that content size will change after
-  // rebuild.
-  void requestUpdateConstraints() {
-    assert(_requestUpdateConstraints != null,
-        'requestUpdateConstraints() may not be called in WindowState constructor!');
-    _requestUpdateConstraints!();
-  }
-
   // Returns the WindowState of given type in the hierarchy. If not preset will fail with
   // assertion (or exception in release build.)
   static T of<T extends WindowState>(BuildContext context) {
@@ -117,7 +118,6 @@ abstract class WindowState {
   }
 
   final _tapCallbacks = <ValueChanged<PointerDownEvent>>[];
-  VoidCallback? _requestUpdateConstraints;
 }
 
 typedef WindowStateFactory = WindowState Function(dynamic initData);
@@ -155,7 +155,6 @@ class _WindowWidgetState extends State<WindowWidget> {
     if (status == _Status.initialized) {
       final window = WindowManager.instance.currentWindow;
       _windowContext ??= widget.onCreateState(window.initData);
-      _windowContext!._requestUpdateConstraints = requestUpdateConstraints;
 
       return Listener(
         onPointerDown: _onWindowTap,
@@ -165,8 +164,6 @@ class _WindowWidgetState extends State<WindowWidget> {
             context: _windowContext!,
             child: _WindowLayout(
               builtWindow: _windowContext!,
-              updatingConstraints: updatingConstraints,
-              updatingConstraintsDone: updatingConstraintsDone,
               child: _WindowLayoutInner(
                 builtWindow: _windowContext!,
                 child: Builder(
@@ -195,27 +192,6 @@ class _WindowWidgetState extends State<WindowWidget> {
 
   _Status status = _Status.notInitialized;
   dynamic initData;
-  bool updatingConstraints = false;
-  int constraintsUpdateCookie = 0;
-
-  void requestUpdateConstraints() {
-    ++constraintsUpdateCookie;
-    setState(() {
-      updatingConstraints = true;
-    });
-  }
-
-  void updatingConstraintsDone() {
-    final cookie = constraintsUpdateCookie;
-    SchedulerBinding.instance!.addPostFrameCallback((Duration _) {
-      if (constraintsUpdateCookie == cookie) {
-        // not changed in the meanwhile
-        setState(() {
-          updatingConstraints = false;
-        });
-      }
-    });
-  }
 
   void _onWindowTap(PointerDownEvent e) {
     for (final cb in List<ValueChanged<PointerDownEvent>>.from(
@@ -267,7 +243,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 
   @override
   void performLayout() {
-    if (!builtWindow.autoSizeWindow) {
+    if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
       super.performLayout();
     } else {
       final constraints = this.constraints.loosen();
@@ -302,75 +278,70 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
   final WindowState builtWindow;
-  final bool updatingConstraints;
-  final VoidCallback updatingConstraintsDone;
 
   const _WindowLayout({
     Key? key,
     required Widget child,
     required this.builtWindow,
-    required this.updatingConstraints,
-    required this.updatingConstraintsDone,
   }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return _RenderWindowLayout(
-        builtWindow, updatingConstraints, updatingConstraintsDone);
+      builtWindow,
+    );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayout renderObject) {
     renderObject.builtWindow = builtWindow;
-    renderObject.updatingConstraints = updatingConstraints;
-    renderObject.updatingConstraintsDone = updatingConstraintsDone;
-    if (updatingConstraints) {
-      renderObject.markNeedsLayout();
-    }
   }
 }
 
 class _RenderWindowLayout extends RenderProxyBox {
-  _RenderWindowLayout(
-      this.builtWindow, this.updatingConstraints, this.updatingConstraintsDone);
+  _RenderWindowLayout(this.builtWindow);
 
   WindowState builtWindow;
-  bool updatingConstraints;
-  VoidCallback updatingConstraintsDone;
+
+  Size? _lastConstraints;
 
   @override
   void performLayout() {
-    if (builtWindow.autoSizeWindow) {
+    if (builtWindow.windowSizingMode == WindowSizingMode.sizeToContents) {
       final constraints =
           BoxConstraints.loose(Size(double.infinity, double.infinity));
       child!.layout(constraints, parentUsesSize: true);
       size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
-    } else if (updatingConstraints) {
+    } else if (builtWindow.windowSizingMode ==
+        WindowSizingMode.atLeastIntrinsicSize) {
       var w = child!.getMaxIntrinsicWidth(double.infinity);
       var h = child!.getMinIntrinsicHeight(w);
+
       final intrinsicSize = _sanitizeAndSnapToPixelBoundary(Size(w, h));
-      builtWindow.updateWindowConstraints(intrinsicSize);
+
+      if (_lastConstraints != intrinsicSize) {
+        builtWindow.updateWindowConstraints(intrinsicSize);
+        _lastConstraints = intrinsicSize;
+      }
+
+      final size = hasSize ? this.size : intrinsicSize;
 
       final maxSize = Size(max(intrinsicSize.width, size.width),
           max(intrinsicSize.height, size.height));
 
       if (maxSize.width > size.width || maxSize.height > size.height) {
         builtWindow.updateWindowSize(maxSize);
-      } else {
-        updatingConstraintsDone();
       }
-
       final constraints = BoxConstraints.loose(maxSize);
       child!.layout(constraints, parentUsesSize: true);
-      size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
+      this.size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
     } else {
       super.performLayout();
     }
 
     if (!hasLayout) {
       hasLayout = true;
-
       // Can't really use WidgetsBinding.waitUntilFirstFrameRasterized here
       // since that seem to be fired before the layer tree is even sent to
       // rasterizer, which is way too early
@@ -382,7 +353,7 @@ class _RenderWindowLayout extends RenderProxyBox {
 
           final size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
           await builtWindow.initializeWindow(size);
-          if (!builtWindow.autoSizeWindow) {
+          if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
             await builtWindow.updateWindowConstraints(size);
           }
           await win.readyToShow();
