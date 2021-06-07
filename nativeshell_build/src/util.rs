@@ -35,6 +35,16 @@ pub(super) fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> BuildRe
         } else {
             std::os::windows::fs::symlink_file(&src, &dst)
         };
+        if let Err(error) = &res {
+            if error.raw_os_error() == Some(1314) {
+                return Err(BuildError::OtherError(
+                    "Unable to create a symlink. Please enable developer mode:\n\
+                    https://docs.microsoft.com/en-us/windows/apps/get-started/\
+                    enable-your-device-for-development"
+                        .into(),
+                ));
+            }
+        }
         res.wrap_error_with_src(
             FileOperation::SymLink,
             || dst.as_ref().into(),
