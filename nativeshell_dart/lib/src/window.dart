@@ -87,8 +87,7 @@ class Window {
     return _invokeMethod(Methods.windowSetStyle, style.serialize());
   }
 
-  static LocalWindow of(BuildContext context) =>
-      WindowState.of(context).window;
+  static LocalWindow of(BuildContext context) => WindowState.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
       WindowState.maybeOf(context)?.window;
