@@ -125,7 +125,14 @@ impl<'a> ArtifactsEmitter<'a> {
         let flutter_artifacts = self.find_artifacts_location(self.build.build_mode.as_str())?;
         let flutter_artifacts_debug = self.find_artifacts_location("debug")?;
         for file in files {
-            let src = flutter_artifacts.join(file);
+            // on linux the unstripped libraries in local engien build are in
+            // lib.unstripped folder; so if unstripped version exists we prefer that
+            let unstripped = flutter_artifacts.join("lib.unstripped").join(file);
+            let src = if unstripped.exists() {
+                unstripped
+            } else {
+                flutter_artifacts.join(file)
+            };
             if !src.exists() {
                 return Err(BuildError::OtherError(format!(
                     "File {:?} does not exist. Try running 'flutter precache'.",
