@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.4]
+## [0.1.5] - 2021-06-07
+
+- Fix window sizing regression.
+
+## [0.1.4] - 2021-06-07
 
 - Replaced `WindowState.autoSizeWindow` with `WindowState.windowSizingMode`.
 - Removed `WindowState.requestUpdateConstraints()`, as it is no longer necessary to call it with `WindowSizingMode.atLeastIntrinsicSize` (default value).

@@ -325,7 +325,7 @@ class _RenderWindowLayout extends RenderProxyBox {
         _lastConstraints = intrinsicSize;
       }
 
-      final size = hasSize ? this.size : intrinsicSize;
+      final size = this.constraints.biggest;
 
       final maxSize = Size(max(intrinsicSize.width, size.width),
           max(intrinsicSize.height, size.height));
@@ -333,9 +333,9 @@ class _RenderWindowLayout extends RenderProxyBox {
       if (maxSize.width > size.width || maxSize.height > size.height) {
         builtWindow.updateWindowSize(maxSize);
       }
-      final constraints = BoxConstraints.loose(maxSize);
+      final constraints = BoxConstraints.tight(maxSize);
       child!.layout(constraints, parentUsesSize: true);
-      this.size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
+      this.size = size;
     } else {
       super.performLayout();
     }
