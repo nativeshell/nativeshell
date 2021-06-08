@@ -115,7 +115,7 @@ impl<'a> ArtifactsEmitter<'a> {
         let artifacts_out_dir = {
             if cfg!(target_os = "linux") {
                 // RUNPATH is set to $origin/lib
-                self.artifacts_out_dir.join("lib")
+                mkdir(&self.artifacts_out_dir, Some("lib"))?
             } else {
                 self.artifacts_out_dir.clone()
             }
