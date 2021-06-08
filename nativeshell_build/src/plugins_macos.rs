@@ -10,7 +10,7 @@ use crate::{
     artifacts_emitter::ArtifactsEmitter,
     plugins::Plugin,
     util::{get_artifacts_dir, mkdir, run_command, symlink},
-    BuildResult, FileOperation, Flutter, IOResultExt,
+    BuildError, BuildResult, FileOperation, Flutter, IOResultExt,
 };
 
 pub(super) struct PluginsImpl<'a> {
@@ -69,7 +69,25 @@ impl<'a> PluginsImpl<'a> {
     fn install_cocoa_pods(&self, path: &Path) -> BuildResult<()> {
         let mut command = Command::new("pod");
         command.arg("install").current_dir(path);
-        run_command(command, "pod")
+        let res = run_command(command, "pod");
+
+        if let Err(BuildError::FileOperationError {
+            operation: FileOperation::Command,
+            path: _,
+            source_path: _,
+            source,
+        }) = &res
+        {
+            if source.raw_os_error() == Some(2) {
+                return Err(BuildError::OtherError(
+                    "CocoaPods is not installed. \
+                    Please install cocoa pods: https://cocoapods.org"
+                        .into(),
+                ));
+            }
+        }
+
+        res
     }
 
     // Returns (path to frameworks, path to products)
