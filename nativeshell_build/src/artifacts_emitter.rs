@@ -221,7 +221,7 @@ impl<'a> ArtifactsEmitter<'a> {
         } else {
             "flutter"
         };
-        let exe_path = Self::find_executable(executable);
+        let exe_path = Self::find_executable(executable).and_then(|p| p.canonicalize().ok());
         exe_path.and_then(|p| p.parent().map(Path::to_owned))
     }
 
