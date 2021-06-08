@@ -19,7 +19,7 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
-        Context, ISize, PlatformWindowDelegate, Point, ScheduledCallback, Size,
+        Context, PlatformWindowDelegate, Point, ScheduledCallback, Size,
     },
     util::{LateRefCell, OkLog},
 };
@@ -445,16 +445,13 @@ impl PlatformWindow {
         }
 
         if self.window.get_resizable() {
-            let min_content_size: ISize = geometry
-                .min_content_size
-                .unwrap_or_else(|| Size::wh(0.0, 0.0))
-                .into();
-
-            size_widget_set_min_size(
-                &self.size_widget,
-                min_content_size.width,
-                min_content_size.height,
-            );
+            if let Some(min_content_size) = geometry.min_content_size {
+                size_widget_set_min_size(
+                    &self.size_widget,
+                    min_content_size.width as i32,
+                    min_content_size.height as i32,
+                );
+            }
         }
     }
 
