@@ -27,16 +27,14 @@ mod bindings {
 // This bit of a lie, it doesn't have dxgi
 mod all_bindings {
     pub use super::bindings::Windows::Win32::{
-        Graphics::{Dwm::*, Gdi::*},
+        Foundation::*,
+        Graphics::{DirectDraw::*, Dwm::*, Gdi::*},
         Storage::StructuredStorage::*,
         System::{
-            Com::*, DataExchange::*, Diagnostics::Debug::*, Memory::*, SystemServices::*,
-            Threading::*,
+            Com::*, DataExchange::*, Diagnostics::Debug::*, LibraryLoader::*, Memory::*,
+            SystemServices::*, Threading::*,
         },
-        UI::{
-            Controls::*, DisplayDevices::*, KeyboardAndMouseInput::*, MenusAndResources::*,
-            Shell::*, WindowsAndMessaging::*,
-        },
+        UI::{Controls::*, KeyboardAndMouseInput::*, Shell::*, WindowsAndMessaging::*},
     };
     pub use windows::*;
 }

@@ -140,7 +140,7 @@ impl State {
     fn run(&self) {
         unsafe {
             let mut message = MSG::default();
-            while GetMessageW(&mut message, HWND(0), 0, 0) == TRUE {
+            while GetMessageW(&mut message, HWND(0), 0, 0).as_bool() {
                 TranslateMessage(&message);
                 DispatchMessageW(&message);
             }

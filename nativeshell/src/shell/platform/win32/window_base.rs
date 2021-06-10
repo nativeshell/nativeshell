@@ -238,7 +238,7 @@ impl WindowBaseState {
             SendMessageW(
                 self.hwnd,
                 WM_NCCALCSIZE as u32,
-                WPARAM(FALSE.0 as usize),
+                WPARAM(0),
                 LPARAM(&rect as *const _ as isize),
             );
         }

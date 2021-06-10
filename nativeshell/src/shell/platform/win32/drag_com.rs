@@ -587,7 +587,7 @@ impl DataObject {
         _pformatect_in: *mut FORMATETC,
         _pformatetc_out: *mut FORMATETC,
     ) -> ::windows::HRESULT {
-        E_NOTIMPL
+        HRESULT(E_NOTIMPL as u32)
     }
 
     fn set_data(
@@ -612,7 +612,7 @@ impl DataObject {
                         GlobalUnlock(medium.Anonymous.hGlobal);
                         data.insert(format.cfFormat as u32, global_data);
 
-                        if f_release == TRUE {
+                        if f_release.as_bool() {
                             ReleaseStgMedium(pmedium);
                         }
                     }
@@ -649,7 +649,7 @@ impl DataObject {
 
                         data.insert(format.cfFormat as u32, stream_data);
 
-                        if f_release == TRUE {
+                        if f_release.as_bool() {
                             ReleaseStgMedium(pmedium);
                         }
                     }
@@ -695,18 +695,18 @@ impl DataObject {
         _p_adv_sink: ::std::option::Option<IAdviseSink>,
         _pdw_connection: *mut u32,
     ) -> ::windows::HRESULT {
-        E_NOTIMPL
+        HRESULT(E_NOTIMPL as u32)
     }
 
     fn d_unadvise(&self, _dw_connection: u32) -> ::windows::HRESULT {
-        E_NOTIMPL
+        HRESULT(E_NOTIMPL as u32)
     }
 
     fn enum_d_advise(
         &self,
         _ppenum_advise: *mut ::std::option::Option<IEnumSTATDATA>,
     ) -> ::windows::HRESULT {
-        E_NOTIMPL
+        HRESULT(E_NOTIMPL as u32)
     }
 
     unsafe extern "system" fn _query_interface(
@@ -874,7 +874,7 @@ impl DropSource {
         f_escape_pressed: BOOL,
         grf_key_state: u32,
     ) -> ::windows::HRESULT {
-        if f_escape_pressed == TRUE {
+        if f_escape_pressed.as_bool() {
             DRAGDROP_S_CANCEL
         } else if grf_key_state & MK_LBUTTON as u32 == 0 {
             DRAGDROP_S_DROP

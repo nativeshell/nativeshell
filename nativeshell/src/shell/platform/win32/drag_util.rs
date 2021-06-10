@@ -165,7 +165,7 @@ impl DataUtil {
         let files: &DROPFILES = unsafe { &*(buffer.as_ptr() as *const DROPFILES) };
 
         let mut res = Vec::new();
-        if { files.fWide } == TRUE {
+        if { files.fWide }.as_bool() {
             let data = buffer.as_slice()[files.pFiles as usize..]
                 .as_slice_of::<u16>()
                 .unwrap();
@@ -211,8 +211,8 @@ impl DataUtil {
         let drop_files = DROPFILES {
             pFiles: size_of::<DROPFILES>() as u32,
             pt: POINT { x: 0, y: 0 },
-            fNC: FALSE,
-            fWide: TRUE,
+            fNC: false.into(),
+            fWide: true.into(),
         };
 
         let drop_files = unsafe { as_u8_slice(&drop_files) };

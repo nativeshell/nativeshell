@@ -33,7 +33,7 @@ exec = "0.3.1"
 process_path = "0.1.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = "0.10.0"
+windows = "0.11.0"
 utf16_lit = "2.0.1"
 const-cstr = "0.3.0"
 widestring = "0.4.3"
@@ -41,7 +41,7 @@ byte-slice-cast = "1.0.0"
 detour = {version = "0.8.0", default-features = false }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
-windows = "0.10.0"
+windows = "0.11.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 glib = "0.10.3"

@@ -142,7 +142,7 @@ extern "system" fn enum_monitors(
             handle: hmonitor.0,
         });
     }
-    TRUE
+    true.into()
 }
 
 fn displays_from_system() -> Vec<PhysicalDisplay> {

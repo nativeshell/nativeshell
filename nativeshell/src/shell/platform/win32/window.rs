@@ -297,7 +297,7 @@ impl PlatformWindow {
     }
 
     pub fn is_enabled(&self) -> bool {
-        unsafe { IsWindowEnabled(self.hwnd()) == TRUE }
+        unsafe { IsWindowEnabled(self.hwnd()).as_bool() }
     }
 
     pub fn show_modal<F>(&self, done_callback: F)
