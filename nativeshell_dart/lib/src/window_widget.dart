@@ -348,10 +348,7 @@ class _RenderWindowLayout extends RenderProxyBox {
       final win = WindowManager.instance.currentWindow;
       SchedulerBinding.instance!.scheduleFrameCallback((timeStamp) {
         SchedulerBinding.instance!.addPostFrameCallback((timeStamp) async {
-          var w = child!.getMaxIntrinsicWidth(double.infinity);
-          var h = child!.getMinIntrinsicHeight(w);
-
-          final size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+          final size = _sanitizeAndSnapToPixelBoundary(this.size);
           await builtWindow.initializeWindow(size);
           if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
             await builtWindow.updateWindowConstraints(size);
