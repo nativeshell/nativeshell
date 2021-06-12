@@ -489,7 +489,7 @@ impl DataObject {
 
         // println!(
         //     "GET: {}, {}",
-        //     clipboard_format_to_string(format.cf_format as u32),
+        //     clipboard_format_to_string(format.cfFormat as u32),
         //     format.tymed
         // );
 

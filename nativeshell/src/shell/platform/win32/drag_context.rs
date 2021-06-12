@@ -135,7 +135,7 @@ impl DragContext {
                 y: cursor_pos.y - image_start.y,
             },
             hbmpDragImage: hbitmap,
-            crColorKey: 0,
+            crColorKey: 0xFFFFFFFF,
         };
         helper
             .InitializeFromBitmap(&mut image as *mut _, data.clone())
