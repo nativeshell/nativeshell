@@ -18,9 +18,12 @@ enum WindowSizingMode {
 
   // Minimum window size will always match intrinsic content size. If window is
   // too small for intrinsic size, it will be resized.
+  //
+  // This mode requires content to be able to provide intrinsic content size.
   atLeastIntrinsicSize,
 
-  // No automatic sizing is done.
+  // No automatic sizing is done. You may need to override initializeWindow to
+  // provide initial content size.
   manual,
 }
 
@@ -33,13 +36,13 @@ abstract class WindowState {
   // 'Window.of(context)' instead.
   LocalWindow get window => WindowManager.instance.currentWindow;
 
-  // Called after window creation. By default resizes window to intrinsic
-  // content size and shows the window.
+  // Called after window creation. By default resizes window to content size
+  // (if known) and shows the window.
   // You can override this to change window title, configure frame,
   // buttons, or if you want the window to be initially hidden.
-  Future<void> initializeWindow(Size intrinsicContentSize) async {
+  Future<void> initializeWindow(Size contentSize) async {
     await window.setGeometry(Geometry(
-      contentSize: intrinsicContentSize,
+      contentSize: contentSize,
     ));
     // Disable user resizing for auto-sized windows
     if (windowSizingMode == WindowSizingMode.sizeToContents) {
