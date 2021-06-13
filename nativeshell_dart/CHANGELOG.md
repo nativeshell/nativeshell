@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2021-06-13
+
+- Made `WindowState.windowSizingMode` abstract so that it must be specified explicitely.
+- All `DragDataKey` constructuctor arguments are now named.
+- `DragDataDecode` returns nullable result.
+- Added `IntrinsicSizedBox` widget.
+
 ## [0.1.5] - 2021-06-07
 
 - Fix window sizing regression.
