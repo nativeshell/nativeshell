@@ -39,7 +39,6 @@ pub trait MethodCallHandler {
 pub struct Plugin {
     context: Rc<Context>,
     channel: String,
-    _method_call_handler: Rc<RefCell<Box<dyn MethodCallHandler>>>,
 }
 
 impl Plugin {
@@ -47,29 +46,26 @@ impl Plugin {
     where
         H: MethodCallHandler + 'static,
     {
+        let handler = Rc::new(RefCell::new(Box::new(handler)));
         let res = Self {
             context: context.clone(),
             channel: channel.into(),
-            _method_call_handler: Rc::new(RefCell::new(Box::new(handler))),
         };
-        res._method_call_handler
+        handler
             .as_ref()
             .borrow_mut()
             .set_method_invoker_provider(MethodInvokerProvider {
                 context: context.clone(),
                 channel: channel.into(),
             });
-        let weak_handler = Rc::downgrade(&res._method_call_handler);
         context
             .message_manager
             .borrow_mut()
             .register_method_handler(channel, move |call, reply, engine| {
-                if let Some(handler) = weak_handler.upgrade() {
-                    handler
-                        .as_ref()
-                        .borrow_mut()
-                        .on_method_call(call, reply, engine);
-                }
+                handler
+                    .as_ref()
+                    .borrow_mut()
+                    .on_method_call(call, reply, engine);
             });
         res
     }
