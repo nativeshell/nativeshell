@@ -76,6 +76,7 @@ impl RunLoop {
 }
 
 // Can be used to send callbacks from other threads to be executed on run loop thread
+#[derive(Clone)]
 pub struct RunLoopSender {
     platform_sender: PlatformRunLoopSender,
 }

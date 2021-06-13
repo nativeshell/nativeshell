@@ -30,6 +30,7 @@ impl PlatformRunLoop {
     }
 }
 
+#[derive(Clone)]
 pub struct PlatformRunLoopSender {}
 
 #[allow(unused_variables)]

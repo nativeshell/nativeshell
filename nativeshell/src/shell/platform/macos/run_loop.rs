@@ -138,6 +138,7 @@ impl PlatformRunLoop {
     }
 }
 
+#[derive(Clone)]
 pub struct PlatformRunLoopSender {}
 
 struct SenderCallbackData {

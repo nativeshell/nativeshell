@@ -202,6 +202,7 @@ impl PlatformRunLoop {
     }
 }
 
+#[derive(Clone)]
 pub struct PlatformRunLoopSender {
     hwnd: HWND,
     callbacks: Arc<Mutex<Vec<SenderCallback>>>,
