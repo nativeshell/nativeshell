@@ -19,15 +19,17 @@ enum DragEffect {
 }
 
 typedef DragDataEncode<T> = dynamic Function(T value);
-typedef DragDataDecode<T> = T Function(dynamic value);
+typedef DragDataDecode<T> = T? Function(dynamic value);
 
 dynamic _defaultEncode<T>(T t) => t;
 T _defaultDecode<T>(dynamic t) => t;
 
 class DragDataKey<T> {
-  DragDataKey(String name,
-      [DragDataEncode<T>? encode, DragDataDecode<T>? decode])
-      : _name = name,
+  DragDataKey(
+    String name, {
+    DragDataEncode<T>? encode,
+    DragDataDecode<T>? decode,
+  })  : _name = name,
         _encode = encode ?? _defaultEncode,
         _decode = decode ?? _defaultDecode;
 
@@ -69,12 +71,12 @@ dynamic _encodeFiles(List<String> files) {
 
 class DragData {
   // Predefined keys
-  static final files =
-      DragDataKey<List<String>>(Keys.dragDataFiles, _encodeFiles, _decodeFiles);
+  static final files = DragDataKey<List<String>>(Keys.dragDataFiles,
+      encode: _encodeFiles, decode: _decodeFiles);
 
   // While this is defined as List, only one URI is supported on Windows
-  static final uris =
-      DragDataKey<List<Uri>>(Keys.dragDataURLs, _encodeURLs, _decodeURLs);
+  static final uris = DragDataKey<List<Uri>>(Keys.dragDataURLs,
+      encode: _encodeURLs, decode: _decodeURLs);
 
   // Usage
   //
