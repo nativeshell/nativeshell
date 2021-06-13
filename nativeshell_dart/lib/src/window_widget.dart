@@ -10,8 +10,10 @@ import 'window.dart';
 import 'window_manager.dart';
 
 enum WindowSizingMode {
-  // Windows is always sized to match the content. This is useful for non-resizable
-  // windows. You must need to make sure that the content can properly layout itself
+  // Window is always sized to match the content. This is useful for non-resizable
+  // windows.
+  //
+  // You must need to make sure that the content can properly layout itself
   // with unbounded constraints. For example that means unconstrained Columns and Rows
   // need to have mainAxisSize set to MainAxisSize.min.
   sizeToContents,
@@ -20,10 +22,14 @@ enum WindowSizingMode {
   // too small for intrinsic size, it will be resized.
   //
   // This mode requires content to be able to provide intrinsic content size.
+  //
+  // If you have widgets in your hierarchy that don't have intrinsic size you
+  // can either wrap them in widgets that impose tight constraints on them, or
+  // wrap them in IntrinsicSizedBox.
   atLeastIntrinsicSize,
 
   // No automatic sizing is done. You may need to override initializeWindow to
-  // provide initial content size.
+  // resize window to initial content size.
   manual,
 }
 
@@ -31,6 +37,9 @@ enum WindowSizingMode {
 abstract class WindowState {
   // Build the contents within the window
   Widget build(BuildContext context);
+
+  // Specify the sizing mode for the window. See WindowSizing mode values.
+  WindowSizingMode get windowSizingMode;
 
   // Returns the window associated with current hierarchy. You can also use
   // 'Window.of(context)' instead.
@@ -61,9 +70,6 @@ abstract class WindowState {
       minContentSize: intrinsicContentSize,
     ));
   }
-
-  WindowSizingMode get windowSizingMode =>
-      WindowSizingMode.atLeastIntrinsicSize;
 
   // Called to update window size to new dimensions
   Future<void> updateWindowSize(Size contentSize) async {
