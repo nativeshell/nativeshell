@@ -54,13 +54,15 @@ impl<'a> ArtifactsEmitter<'a> {
             copy_to(entry.path(), &assets_dst_dir, false)?
         }
 
-        let app_dill = self.flutter_build_dir.join("app.dill");
-        if app_dill.exists() {
-            copy(
-                self.flutter_build_dir.join("app.dill"),
-                assets_dst_dir.join("kernel_blob.bin"),
-                false,
-            )?;
+        if self.build.build_mode == "debug" {
+            let app_dill = self.flutter_build_dir.join("app.dill");
+            if app_dill.exists() {
+                copy(
+                    self.flutter_build_dir.join("app.dill"),
+                    assets_dst_dir.join("kernel_blob.bin"),
+                    false,
+                )?;
+            }
         }
 
         // windows AOT
