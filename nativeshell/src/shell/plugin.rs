@@ -38,7 +38,7 @@ pub trait MethodCallHandler {
     fn on_engine_destroyed(&mut self, _engine: EngineHandle) {}
 }
 
-// Convenience interface for implementing custom method call chandlers
+// Convenience interface for registering custom method call handlers
 pub struct Plugin {
     context: Rc<Context>,
     channel: String,
