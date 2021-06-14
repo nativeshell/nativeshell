@@ -19,7 +19,7 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
-        Context, PlatformWindowDelegate, Point, ScheduledCallback, Size,
+        Context, Handle, PlatformWindowDelegate, Point, Size,
     },
     util::{LateRefCell, OkLog},
 };
@@ -64,7 +64,7 @@ pub struct PlatformWindow {
     last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
-    resize_finish_handle: RefCell<Option<ScheduledCallback>>,
+    resize_finish_handle: RefCell<Option<Handle>>,
     deleting: Cell<bool>,
     pub(super) window_menu: LateRefCell<WindowMenu>,
     pub(super) drop_context: LateRefCell<DropContext>,
