@@ -671,7 +671,8 @@ impl PlatformWindow {
             // cocoa eats mouse up on popup menu
             self.synthetize_mouse_up_event();
 
-            let position: NSPoint = request.position.into();
+            let mut position: NSPoint = request.position.into();
+            flip_position(self.platform_window.contentView(), &mut position);
 
             let view = StrongPtr::retain(self.platform_window.contentView());
             let menu = menu.menu.clone();

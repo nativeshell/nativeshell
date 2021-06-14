@@ -1,7 +1,7 @@
 use std::{ffi::CString, mem::ManuallyDrop, os::raw::c_char, slice, sync::Arc};
 
 use cocoa::{
-    appkit::{CGFloat, NSImage},
+    appkit::{CGFloat, NSImage, NSView},
     base::{id, nil},
     foundation::{NSArray, NSPoint, NSRect, NSSize, NSString},
 };
@@ -173,4 +173,19 @@ pub(super) fn class_from_string(name: &str) -> *mut Class {
     let name = CString::new(name).unwrap();
     let class = unsafe { objc_getClass(name.as_ptr() as *const _) as *mut _ };
     return class;
+}
+
+pub(super) fn flip_position(view: id, position: &mut NSPoint) {
+    let flipped: bool = unsafe { msg_send![view, isFlipped] };
+    if !flipped {
+        position.y = unsafe { NSView::bounds(view) }.size.height - position.y;
+    }
+}
+
+pub(super) fn flip_rect(view: id, rect: &mut NSRect) {
+    let flipped: bool = unsafe { msg_send![view, isFlipped] };
+    if !flipped {
+        rect.origin.y =
+            unsafe { NSView::bounds(view) }.size.height - rect.size.height - rect.origin.y;
+    }
 }

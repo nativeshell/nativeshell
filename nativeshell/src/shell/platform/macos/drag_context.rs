@@ -20,7 +20,7 @@ use super::{
         DragDataAdapter, FallThroughDragDataAdapter, FilesDragDataAdapter, PasteboardItems,
         UrlsDragDataAdapter,
     },
-    utils::{array_with_objects, ns_image_from},
+    utils::{array_with_objects, flip_rect, ns_image_from},
     window::PlatformWindow,
 };
 
@@ -171,7 +171,8 @@ impl DragContext {
         let mut first = true;
         let mut dragging_items = Vec::<StrongPtr>::new();
         let snapshot = ns_image_from(request.image);
-        let rect: NSRect = request.rect.into();
+        let mut rect: NSRect = request.rect.into();
+        flip_rect(view, &mut rect);
 
         for item in pasteboard_items.get_items() {
             let dragging_item: id = msg_send![class!(NSDraggingItem), alloc];
