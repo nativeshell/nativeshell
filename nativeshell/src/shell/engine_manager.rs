@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use super::{Context, FlutterEngine};
+use super::{Context, FlutterEngine, Handle};
 use crate::{Error, Result};
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -14,6 +14,8 @@ pub struct EngineManager {
     context: Rc<Context>,
     engines: HashMap<EngineHandle, Box<RefCell<FlutterEngine>>>,
     next_handle: EngineHandle,
+    next_destroy_notification: i64,
+    destroy_notifications: HashMap<i64, Box<dyn Fn(EngineHandle)>>,
 }
 
 impl EngineManager {
@@ -22,6 +24,8 @@ impl EngineManager {
             context,
             engines: HashMap::new(),
             next_handle: EngineHandle(1),
+            next_destroy_notification: 1,
+            destroy_notifications: HashMap::new(),
         }
     }
 
@@ -49,7 +53,32 @@ impl EngineManager {
         self.engines.get(&handle).map(|a| a.borrow())
     }
 
+    #[must_use]
+    pub fn register_destroy_engine_notification<F>(&mut self, notification: F) -> Handle
+    where
+        F: Fn(EngineHandle) + 'static,
+    {
+        let handle = self.next_destroy_notification;
+        self.next_destroy_notification += 1;
+
+        self.destroy_notifications
+            .insert(handle, Box::new(notification));
+
+        let context = self.context.clone();
+        Handle::new(move || {
+            context
+                .engine_manager
+                .borrow_mut()
+                .destroy_notifications
+                .remove(&handle);
+        })
+    }
+
     pub fn remove_engine(&mut self, handle: EngineHandle) -> Result<()> {
+        for (_, n) in &self.destroy_notifications {
+            n(handle);
+        }
+
         let entry = self.engines.remove(&handle);
         if let Some(entry) = entry {
             let mut engine = entry.borrow_mut();

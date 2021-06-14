@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::codec::{
-    MessageChannel, MessageReply, MessageSender, MethodCall, MethodCallReply, MethodChannel,
+    EngineMethodChannel, MessageChannel, MessageReply, MessageSender, MethodCall, MethodCallReply,
     MethodInvoker, StandardMethodCodec, Value,
 };
 
@@ -16,7 +16,7 @@ pub struct MessageManager {
     message_channels: HashMap<EngineHandle, HashMap<String, MessageChannel<Value>>>,
     message_handlers: Rc<RefCell<HashMap<String, Box<MessageCallback>>>>,
 
-    method_channels: HashMap<EngineHandle, HashMap<String, MethodChannel<Value>>>,
+    method_channels: HashMap<EngineHandle, HashMap<String, EngineMethodChannel<Value>>>,
     method_handlers: Rc<RefCell<HashMap<String, Box<MethodCallback>>>>,
 }
 
@@ -196,7 +196,7 @@ impl MessageManager {
     ) {
         let channel_str = String::from(channel);
         let handlers = self.method_handlers.clone();
-        let method_channel = MethodChannel::new_with_engine_manager(
+        let method_channel = EngineMethodChannel::new_with_engine_manager(
             self.context.clone(),
             engine,
             channel,

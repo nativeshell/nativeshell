@@ -23,7 +23,7 @@ use crate::{
     shell::api_model::{Menu, MenuItem, MenuItemRole},
     shell::{
         api_model::{Accelerator, CheckStatus, MenuRole},
-        Context, MenuHandle, MenuManager, ScheduledCallback,
+        Context, Handle, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},
 };
@@ -53,7 +53,7 @@ pub struct PlatformMenuManager {
     context: Rc<Context>,
     app_menu: RefCell<Option<Rc<PlatformMenu>>>,
     window_menus: RefCell<HashMap<StrongPtrWrapper, Rc<PlatformMenu>>>,
-    update_handle: RefCell<Option<ScheduledCallback>>,
+    update_handle: RefCell<Option<Handle>>,
 }
 
 impl PlatformMenuManager {
