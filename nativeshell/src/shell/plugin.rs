@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::codec::{MethodCall, MethodCallReply, MethodInvoker, Value};
 
-use super::{Context, EngineHandle};
+use super::{Context, EngineHandle, Handle};
 
 #[derive(Clone)]
 pub struct MethodInvokerProvider {
@@ -33,12 +33,16 @@ pub trait MethodCallHandler {
 
     // keep the method invoker provider if you want to call methods on engines
     fn set_method_invoker_provider(&mut self, _provider: MethodInvokerProvider) {}
+
+    // called when engine is about to be destroyed
+    fn on_engine_destroyed(&mut self, _engine: EngineHandle) {}
 }
 
 // Convenience interface for implementing custom method call chandlers
 pub struct Plugin {
     context: Rc<Context>,
     channel: String,
+    _destroy_engine_handle: Handle,
 }
 
 impl Plugin {
@@ -47,9 +51,19 @@ impl Plugin {
         H: MethodCallHandler + 'static,
     {
         let handler = Rc::new(RefCell::new(Box::new(handler)));
+
+        let handler_clone = handler.clone();
+        let destroy_engine_handle = context
+            .engine_manager
+            .borrow_mut()
+            .register_destroy_engine_notification(move |handle| {
+                handler_clone.borrow_mut().on_engine_destroyed(handle);
+            });
+
         let res = Self {
             context: context.clone(),
             channel: channel.into(),
+            _destroy_engine_handle: destroy_engine_handle,
         };
         handler
             .as_ref()
