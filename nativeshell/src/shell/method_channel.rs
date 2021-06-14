@@ -39,13 +39,13 @@ pub trait MethodCallHandler {
 }
 
 // Convenience interface for registering custom method call handlers
-pub struct Plugin {
+pub struct MethodChannel {
     context: Rc<Context>,
     channel: String,
     _destroy_engine_handle: Handle,
 }
 
-impl Plugin {
+impl MethodChannel {
     pub fn new<H>(context: Rc<Context>, channel: &str, handler: H) -> Self
     where
         H: MethodCallHandler + 'static,
@@ -85,7 +85,7 @@ impl Plugin {
     }
 }
 
-impl Drop for Plugin {
+impl Drop for MethodChannel {
     fn drop(&mut self) {
         self.context
             .message_manager
