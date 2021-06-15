@@ -7,7 +7,7 @@ use std::{
 
 use crate::shell::{
     api_model::{PopupMenuRequest, PopupMenuResponse},
-    Context, IPoint, IRect,
+    Context, IPoint, IRect, MenuHandle,
 };
 
 use super::{
@@ -425,6 +425,21 @@ impl WindowMenu {
             flags & MF_POPUP.0 == 0 || flags & MF_MOUSESELECT.0 == MF_MOUSESELECT.0;
     }
 
+    fn on_init_menu(&self, menu: HMENU) {
+        let mut info = MENUINFO {
+            cbSize: std::mem::size_of::<MENUINFO>() as u32,
+            fMask: MIM_MENUDATA,
+            ..Default::default()
+        };
+        unsafe {
+            if !GetMenuInfo(menu, &mut info as *mut _).as_bool() {
+                return;
+            }
+        }
+        let handle = MenuHandle(info.dwMenuData as i64);
+        self.context.menu_manager.borrow_mut().on_menu_open(handle);
+    }
+
     pub fn handle_message(
         &self,
         _h_wnd: HWND,
@@ -433,6 +448,9 @@ impl WindowMenu {
         l_param: LPARAM,
     ) -> Option<LRESULT> {
         match msg {
+            WM_INITMENUPOPUP => {
+                self.on_init_menu(HMENU(w_param.0 as isize));
+            }
             WM_MENUSELECT => {
                 self.on_menu_select(msg, w_param, l_param);
             }

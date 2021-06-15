@@ -477,9 +477,6 @@ impl PlatformWindow {
         }
 
         match msg {
-            WM_KEYDOWN => {
-                println!("KD");
-            }
             WM_SETFOCUS => unsafe {
                 SetFocus(self.child_hwnd());
             },
