@@ -310,6 +310,12 @@ pub struct MenuAction {
     pub id: i64,
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MenuOpen {
+    pub handle: MenuHandle,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SetMenuRequest {

@@ -170,6 +170,9 @@ impl PlatformMenu {
 
             let target: id = msg_send![MENU_ITEM_TARGET_CLASS.0, new];
             let target = StrongPtr::new(target);
+
+            let () = msg_send![menu, setDelegate:*target];
+
             Self {
                 context,
                 handle,
@@ -494,6 +497,10 @@ impl PlatformMenu {
             .on_menu_action(self.handle, item_id);
     }
 
+    fn on_menu_will_open(&self) {
+        self.context.menu_manager.borrow().on_menu_open(self.handle);
+    }
+
     fn create_menu_item(&self, menu_item: &MenuItem, menu_manager: &MenuManager) -> StrongPtr {
         unsafe {
             if menu_item.separator {
@@ -529,6 +536,11 @@ lazy_static! {
             on_action as extern "C" fn(&Object, Sel, id),
         );
 
+        decl.add_method(
+            sel!(menuWillOpen:),
+            menu_will_open as extern "C" fn(&Object, Sel, id),
+        );
+
         MenuItemTargetClass(decl.register())
     };
 }
@@ -554,6 +566,17 @@ extern "C" fn on_action(this: &Object, _sel: Sel, sender: id) {
     let upgraded = state_ptr.upgrade();
     if let Some(upgraded) = upgraded {
         upgraded.menu_item_action(sender);
+    }
+}
+
+extern "C" fn menu_will_open(this: &Object, _: Sel, _menu: id) {
+    let state_ptr = unsafe {
+        let state_ptr: *mut c_void = *this.get_ivar("imState");
+        &mut *(state_ptr as *mut Weak<PlatformMenu>)
+    };
+    let upgraded = state_ptr.upgrade();
+    if let Some(upgraded) = upgraded {
+        upgraded.on_menu_will_open();
     }
 }
 
