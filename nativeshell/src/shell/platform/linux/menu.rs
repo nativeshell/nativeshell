@@ -79,6 +79,13 @@ impl PlatformMenu {
                 s.on_move_current(dir);
             }
         });
+
+        let weak = self.weak_self.borrow().clone();
+        self.menu.connect_show(move |_| {
+            if let Some(s) = weak.upgrade() {
+                s.context.menu_manager.borrow().on_menu_open(s.handle);
+            }
+        });
     }
 
     // Callback will be fired if item in this menu or any submenu is selected
