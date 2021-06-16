@@ -153,12 +153,14 @@ class Menu {
   Menu(
     this.builder, {
     this.role,
+    this.onOpen,
   }) {
     state = MenuState(this);
   }
 
   final MenuBuilder builder;
   final MenuRole? role;
+  final VoidCallback? onOpen;
 
   // Internal state of the menu
   late final MenuState state;

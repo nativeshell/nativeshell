@@ -83,6 +83,7 @@ pub(crate) mod method {
         pub const CREATE_OR_UPDATE: &str = "Menu.createOrUpdate";
         pub const DESTROY: &str = "Menu.destroy";
         pub const ON_ACTION: &str = "Menu.onAction";
+        pub const ON_OPEN: &str = "Menu.onOpen";
         pub const SET_APP_MENU: &str = "Menu.setAppMenu";
     }
 

@@ -245,10 +245,12 @@ class MenuState {
       }
       if (existing != null) {
         res.add(MenuElement(id: existing.id, item: i));
+        currentByItem.remove(i);
 
-        if (existing.item.submenu != null &&
-            !identical(existing.item.submenu, i.submenu)) {
-          i.submenu!.state._transferFrom(existing.item.submenu!.state);
+        if (existing.item.submenu != null) {
+          if (!identical(existing.item.submenu, i.submenu)) {
+            i.submenu!.state._transferFrom(existing.item.submenu!.state);
+          }
           outPreserved.add(i.submenu!.state);
         }
       } else {
@@ -413,6 +415,14 @@ class MenuManager {
       final menu = _activeMenus[handle];
       if (menu != null) {
         menu.onAction(id);
+      }
+    } else if (call.method == Methods.menuOnOpen) {
+      final handle = MenuHandle(call.arguments['handle'] as int);
+      final menu = _activeMenus[handle];
+      if (menu != null) {
+        if (menu.menu.onOpen != null) {
+          menu.menu.onOpen!();
+        }
       }
     } else if (call.method == Methods.menubarMoveToPreviousMenu) {
       for (final d in _delegates) {

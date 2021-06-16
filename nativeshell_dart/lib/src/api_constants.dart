@@ -58,6 +58,7 @@ class Methods {
   static final menuCreateOrUpdate = 'Menu.createOrUpdate';
   static final menuDestroy = 'Menu.destroy';
   static final menuOnAction = 'Menu.onAction';
+  static final menuOnOpen = 'Menu.onOpen';
   static final menuSetAppMenu = 'Menu.setAppMenu';
 
   // Menubar

@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     api_constants::*,
-    api_model::{MenuAction, MenuCreateRequest, MenuDestroyRequest, SetMenuRequest},
+    api_model::{MenuAction, MenuCreateRequest, MenuDestroyRequest, MenuOpen, SetMenuRequest},
     platform::menu::{PlatformMenu, PlatformMenuManager},
     Context, EngineHandle, WindowMethodCallResult,
 };
@@ -110,6 +110,21 @@ impl MenuManager {
                     to_value(&MenuAction {
                         handle: menu_handle,
                         id,
+                    })
+                    .unwrap(),
+                    |_| {},
+                )
+                .ok_log();
+        }
+    }
+
+    pub(crate) fn on_menu_open(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu::ON_OPEN.into(),
+                    to_value(&MenuOpen {
+                        handle: menu_handle,
                     })
                     .unwrap(),
                     |_| {},
