@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2021-06-16
+
+- Added Menu.onOpen callback.
+
 ## [0.1.6] - 2021-06-13
 
 - Made `WindowState.windowSizingMode` abstract so that it must be specified explicitely.
