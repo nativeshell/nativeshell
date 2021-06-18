@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt};
+use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt, WindowTypeHint};
 use glib::{Cast, ObjectExt};
 use gtk::{
     propagate_event, ContainerExt, EventBox, GtkWindowExt, Inhibit, Overlay, OverlayExt, Widget,
@@ -19,6 +19,7 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
+        platform::utils::get_gl_vendor,
         Context, Handle, PlatformWindowDelegate, Point, Size,
     },
     util::{LateRefCell, OkLog},
@@ -61,6 +62,8 @@ pub struct PlatformWindow {
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     pending_first_frame: Cell<bool>,
+    pending_window_hide: Cell<bool>,
+    pending_ready_to_show: Cell<bool>,
     last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
@@ -91,6 +94,8 @@ impl PlatformWindow {
             ready_to_show: Cell::new(false),
             show_when_ready: Cell::new(false),
             pending_first_frame: Cell::new(true),
+            pending_window_hide: Cell::new(false),
+            pending_ready_to_show: Cell::new(false),
             last_geometry_request: RefCell::new(None),
             last_window_style: RefCell::new(None),
             last_event: RefCell::new(HashMap::new()),
@@ -103,7 +108,12 @@ impl PlatformWindow {
     }
 
     pub fn on_first_frame(&self) {
+        println!("First frame");
         self.window.set_opacity(1.0);
+    }
+
+    pub fn engine_launched(&self) {
+        self.window.hide();
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformWindow>, engine: &PlatformEngine) {
@@ -134,8 +144,6 @@ impl PlatformWindow {
         // specified
         self.window.set_resizable(true);
 
-        self.schedule_first_frame_notification();
-
         let weak = self.weak_self.borrow().clone();
         let weak_clone = weak.clone();
         self.window.connect_delete_event(move |_, _| {
@@ -152,6 +160,29 @@ impl PlatformWindow {
         self.drag_context
             .set(DragContext::new(self.context.clone(), weak));
         self.connect_drag_drop_events();
+
+        if self.need_nvidia_workaround() {
+            // NVIDIA driver is a steaming pile of manure. Creating framebuffer less than 400x400
+            // pixels with hidden window corrupts parent context;
+            // as a  workaround, while creating framebuffer window must be visible; so we create it
+            // with 1x1 pixel size, opacity 0, and hide it after first rendered
+            self.window.resize(1, 1);
+            self.window.set_type_hint(WindowTypeHint::Toolbar); // don't steal focus, no frame
+            self.window.show();
+            self.window.set_opacity(0.0);
+            self.window.show_all();
+            self.pending_window_hide.set(true);
+            self.pending_first_frame.set(false);
+        }
+        self.schedule_first_frame_notification();
+    }
+
+    fn need_nvidia_workaround(&self) -> bool {
+        return self.parent.is_some()
+            && get_session_type() == SessionType::X11
+            && get_gl_vendor(&self.window.get_window().unwrap())
+                .map(|v| v == "NVIDIA Corporation")
+                .unwrap_or(false);
     }
 
     fn connect_drag_drop_events(&self) {
@@ -254,34 +285,73 @@ impl PlatformWindow {
         res
     }
 
+    fn get_gl_area(&self) -> Option<Widget> {
+        let mut res: Option<Widget> = None;
+        self.view.borrow().forall(|w| {
+            if w.get_type().name() == "FlGLArea" {
+                res = Some(w.clone());
+            }
+        });
+        res
+    }
+
+    fn on_draw(&self) {
+        if self.pending_window_hide.get() {
+            // don't start until there is FlGLArea widget
+            if self.get_gl_area().is_some() {
+                let weak = self.weak_self.borrow().clone();
+                // let the child widget draw itself
+                self.context
+                    .run_loop
+                    .borrow()
+                    .schedule_now(move || {
+                        let s = weak.upgrade();
+                        if let Some(s) = s {
+                            s.pending_first_frame.set(true);
+                            s.pending_window_hide.set(false);
+                            s.window.set_type_hint(WindowTypeHint::Normal);
+
+                            s.window.hide();
+                            s.window.set_opacity(1.0);
+
+                            if s.pending_ready_to_show.get() {
+                                s.ready_to_show().ok();
+                            }
+                        }
+                    })
+                    .detach();
+            }
+        } else if self.pending_first_frame.get()
+            && !self.pending_window_hide.get()
+            && self.ready_to_show.get()
+        {
+            if self.get_gl_area().is_some() {
+                self.pending_first_frame.replace(false);
+                let weak = self.weak_self.borrow().clone();
+                self.context
+                    .run_loop
+                    .borrow()
+                    .schedule(
+                        // delay one frame, just in case
+                        Duration::from_millis(1000 / 60 + 1),
+                        move || {
+                            let s = weak.upgrade();
+                            if let Some(s) = s {
+                                s.on_first_frame();
+                            }
+                        },
+                    )
+                    .detach();
+            };
+        }
+    }
+
     fn schedule_first_frame_notification(&self) {
         let weak = self.weak_self.borrow().clone();
         self.view.borrow().connect_draw(move |_, _| {
             let s = weak.upgrade();
             if let Some(s) = s {
-                if s.pending_first_frame.get() {
-                    s.view.borrow().forall(|w| {
-                        // don't start until there is FlGLArea widget
-                        if w.get_type().name() == "FlGLArea" {
-                            s.pending_first_frame.replace(false);
-                            let weak = weak.clone();
-                            s.context
-                                .run_loop
-                                .borrow()
-                                .schedule(
-                                    // delay one frame, just in case
-                                    Duration::from_millis(1000 / 60 + 1),
-                                    move || {
-                                        let s = weak.upgrade();
-                                        if let Some(s) = s {
-                                            s.on_first_frame();
-                                        }
-                                    },
-                                )
-                                .detach();
-                        }
-                    });
-                }
+                s.on_draw();
             }
             Inhibit(false)
         });
@@ -314,11 +384,23 @@ impl PlatformWindow {
     }
 
     pub fn ready_to_show(&self) -> PlatformResult<()> {
+        // we still wait for nvidia workaround window hide; so just mark that
+        // ready_to_show() was called and return
+        if self.pending_window_hide.get() {
+            self.pending_ready_to_show.set(true);
+            return Ok(());
+        }
+
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
             self.window.show(); // otherwise complains about size allocation in show_all
             self.window.set_opacity(0.0);
             self.window.show_all();
+
+            if let Some(area) = self.get_gl_area() {
+                area.queue_draw();
+            }
+
             // The rest is done in on_first_frame
             Ok(())
         } else {
@@ -411,7 +493,7 @@ impl PlatformWindow {
             move || {
                 let s = weak.upgrade();
                 if let Some(s) = s {
-                    s._set_geometry(geometry_clone);
+                    // s._set_geometry(geometry_clone);
                 }
             },
         );
@@ -426,6 +508,8 @@ impl PlatformWindow {
     }
 
     fn _set_geometry(&self, geometry: WindowGeometry) {
+        println!("SET GEOM {:?}", geometry);
+
         if let Some(frame_origin) = &geometry.frame_origin {
             self.window
                 .move_(frame_origin.x as i32, frame_origin.y as i32);
@@ -516,7 +600,13 @@ impl PlatformWindow {
             }
         }
 
+        let prev_resizable = self.window.get_resizable();
         self.window.set_resizable(style.can_resize);
+
+        let last_request = self.last_geometry_request.borrow().as_ref().cloned();
+        if prev_resizable != style.can_resize && last_request.is_some() {
+            self.set_geometry(last_request.unwrap()).ok();
+        }
 
         let mut func = WMFunction::MOVE;
         if style.can_resize {
