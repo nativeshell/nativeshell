@@ -20,7 +20,7 @@ use crate::{
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
         platform::utils::get_gl_vendor,
-        Context, Handle, PlatformWindowDelegate, Point, Size,
+        Context, PlatformWindowDelegate, Point, Size,
     },
     util::{LateRefCell, OkLog},
 };
@@ -38,18 +38,6 @@ use super::{
 
 pub type PlatformWindowType = gtk::Window;
 
-struct Global {
-    window_count: Cell<i32>,
-}
-
-unsafe impl Sync for Global {}
-
-lazy_static! {
-    static ref GLOBAL: Global = Global {
-        window_count: Cell::new(0),
-    };
-}
-
 pub struct PlatformWindow {
     context: Rc<Context>,
     pub(super) window: gtk::Window,
@@ -65,9 +53,10 @@ pub struct PlatformWindow {
     pending_window_hide: Cell<bool>,   // nvidia workaround
     pending_ready_to_show: Cell<bool>, // nvidia workaround
     last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
+    update_geometry_on_size_allocate: Cell<bool>,
+    window_size_in_progress: Cell<bool>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
-    resize_finish_handle: RefCell<Option<Handle>>,
     deleting: Cell<bool>,
     pub(super) window_menu: LateRefCell<WindowMenu>,
     pub(super) drop_context: LateRefCell<DropContext>,
@@ -80,8 +69,6 @@ impl PlatformWindow {
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
-        GLOBAL.window_count.replace(GLOBAL.window_count.get() + 1);
-
         Self {
             context,
             window: gtk::Window::new(gtk::WindowType::Toplevel),
@@ -97,9 +84,10 @@ impl PlatformWindow {
             pending_window_hide: Cell::new(false),
             pending_ready_to_show: Cell::new(false),
             last_geometry_request: RefCell::new(None),
+            update_geometry_on_size_allocate: Cell::new(false),
+            window_size_in_progress: Cell::new(false),
             last_window_style: RefCell::new(None),
             last_event: RefCell::new(HashMap::new()),
-            resize_finish_handle: RefCell::new(None),
             deleting: Cell::new(false),
             window_menu: LateRefCell::new(),
             drop_context: LateRefCell::new(),
@@ -130,6 +118,30 @@ impl PlatformWindow {
         overlay.add_overlay(&self.view.borrow().clone());
 
         self.view.borrow().grab_focus();
+
+        let weak_clone = weak.clone();
+        self.window.connect_size_allocate(move |_, _| {
+            if let Some(s) = weak_clone.upgrade() {
+                s.window_size_in_progress.set(false);
+                if s.update_geometry_on_size_allocate.take() {
+                    // This must be done after Gtk allocation is done, so schedule it on next
+                    // run loop turn
+                    let req = s.last_geometry_request.borrow().clone();
+                    if let Some(req) = req {
+                        let weak_clone = weak_clone.clone();
+                        s.context
+                            .run_loop
+                            .borrow()
+                            .schedule_now(move || {
+                                if let Some(s) = weak_clone.upgrade() {
+                                    s.set_geometry(req).ok();
+                                }
+                            })
+                            .detach();
+                    }
+                }
+            }
+        });
 
         self.window.realize();
         unsafe {
@@ -479,34 +491,41 @@ impl PlatformWindow {
         self.show().ok_log();
     }
 
+    fn resizing(&self, geometry: &WindowGeometryRequest) -> bool {
+        let content_size = &geometry.geometry.content_size;
+        let frame_size = &geometry.geometry.content_size;
+
+        let last_geometry = self.last_geometry_request.borrow();
+        let last_content_size = last_geometry
+            .as_ref()
+            .and_then(|a| a.geometry.content_size.clone());
+        let last_frame_size = last_geometry
+            .as_ref()
+            .and_then(|a| a.geometry.frame_size.clone());
+
+        let same = content_size == &last_content_size && frame_size == &last_frame_size;
+        !same
+    }
+
     pub fn set_geometry(
         &self,
         geometry: WindowGeometryRequest,
     ) -> PlatformResult<WindowGeometryFlags> {
+        let resizing = self.resizing(&geometry);
+
         self.last_geometry_request
             .borrow_mut()
             .replace(geometry.clone());
 
         let geometry = &geometry.geometry;
 
-        self._set_geometry(geometry.clone());
-        let weak = self.weak_self.borrow().clone();
-        let geometry_clone = geometry.clone();
-
-        // It is possible that set_geometry is invoked while window.resize is in progress;
-        // that can happen because during synchronized resizing we are processing platform thread
-        // tasks. If that's the case, some calls to window.resize might get lost in the process
-        // so to make sure that doesn't happen schedule another call on main loop;
-        let handle = self.context.run_loop.borrow().schedule(
-            Duration::from_millis(1000 / 30 + 1),
-            move || {
-                let s = weak.upgrade();
-                if let Some(s) = s {
-                    // s._set_geometry(geometry_clone);
-                }
-            },
-        );
-        self.resize_finish_handle.borrow_mut().replace(handle);
+        if resizing && self.window_size_in_progress.get() {
+            self.update_geometry_on_size_allocate.set(true);
+        } else {
+            self.update_geometry_on_size_allocate.set(false);
+            self.window_size_in_progress.set(resizing);
+            self._set_geometry(&geometry, resizing);
+        }
 
         Ok(WindowGeometryFlags {
             frame_origin: geometry.frame_origin.is_some() && get_session_type() == SessionType::X11,
@@ -516,29 +535,30 @@ impl PlatformWindow {
         })
     }
 
-    fn _set_geometry(&self, geometry: WindowGeometry) {
-        println!("SET GEOM {:?}", geometry);
-
+    fn _set_geometry(&self, geometry: &WindowGeometry, resizing: bool) {
         if let Some(frame_origin) = &geometry.frame_origin {
             self.window
                 .move_(frame_origin.x as i32, frame_origin.y as i32);
         }
-        if let Some(content_size) = &geometry.content_size {
-            if !self.window.get_resizable() {
-                size_widget_set_min_size(
-                    &self.size_widget,
-                    content_size.width as i32,
-                    content_size.height as i32,
-                );
-                self.window.queue_resize();
-            } else {
-                self.window
-                    .resize(content_size.width as i32, content_size.height as i32);
+
+        if resizing {
+            if let Some(content_size) = &geometry.content_size {
+                if !self.window.get_resizable() {
+                    size_widget_set_min_size(
+                        &self.size_widget,
+                        content_size.width as i32,
+                        content_size.height as i32,
+                    );
+                    self.window.queue_resize();
+                } else {
+                    self.window
+                        .resize(content_size.width as i32, content_size.height as i32);
+                }
             }
         }
 
         if self.window.get_resizable() {
-            if let Some(min_content_size) = geometry.min_content_size {
+            if let Some(min_content_size) = &geometry.min_content_size {
                 size_widget_set_min_size(
                     &self.size_widget,
                     min_content_size.width as i32,
