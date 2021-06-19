@@ -62,8 +62,8 @@ pub struct PlatformWindow {
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     pending_first_frame: Cell<bool>,
-    pending_window_hide: Cell<bool>,
-    pending_ready_to_show: Cell<bool>,
+    pending_window_hide: Cell<bool>,   // nvidia workaround
+    pending_ready_to_show: Cell<bool>, // nvidia workaround
     last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
@@ -108,7 +108,6 @@ impl PlatformWindow {
     }
 
     pub fn on_first_frame(&self) {
-        println!("First frame");
         self.window.set_opacity(1.0);
     }
 
@@ -165,7 +164,10 @@ impl PlatformWindow {
             // NVIDIA driver is a steaming pile of manure. Creating framebuffer less than 400x400
             // pixels with hidden window corrupts parent context;
             // as a  workaround, while creating framebuffer window must be visible; so we create it
-            // with 1x1 pixel size, opacity 0, and hide it after first rendered
+            // with 1x1 pixel size, opacity 0, and hide it after first rendered.
+            // The 1x1 size minimizes mouse interaction, but it also seems to affect the driver bug.
+            // Going later to bigger surface size seems fine, while the other way around still causes
+            // context corruption.
             self.window.resize(1, 1);
             self.window.set_type_hint(WindowTypeHint::Toolbar); // don't steal focus, no frame
             self.window.show();
@@ -305,12 +307,19 @@ impl PlatformWindow {
                     .run_loop
                     .borrow()
                     .schedule_now(move || {
+                        // this has been empirically determined: It seems that this a good
+                        // place to undo nvidia workaround; At this point  we can hide the
+                        // window without driver corrupting parent context
                         let s = weak.upgrade();
                         if let Some(s) = s {
                             s.pending_first_frame.set(true);
                             s.pending_window_hide.set(false);
-                            s.window.set_type_hint(WindowTypeHint::Normal);
-
+                            s.window
+                                .set_type_hint(if s.modal_close_callback.borrow().is_some() {
+                                    WindowTypeHint::Dialog
+                                } else {
+                                    WindowTypeHint::Normal
+                                });
                             s.window.hide();
                             s.window.set_opacity(1.0);
 
@@ -605,6 +614,7 @@ impl PlatformWindow {
 
         let last_request = self.last_geometry_request.borrow().as_ref().cloned();
         if prev_resizable != style.can_resize && last_request.is_some() {
+            // content size is set differently for resizable / non-resizable windows
             self.set_geometry(last_request.unwrap()).ok();
         }
 
