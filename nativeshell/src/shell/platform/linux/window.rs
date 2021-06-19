@@ -42,7 +42,7 @@ pub struct PlatformWindow {
     context: Rc<Context>,
     pub(super) window: gtk::Window,
     weak_self: LateRefCell<Weak<PlatformWindow>>,
-    parent: Option<Rc<PlatformWindow>>,
+    parent: Option<Weak<PlatformWindow>>,
     pub(super) delegate: Weak<dyn PlatformWindowDelegate>,
     modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>)>>>,
     size_widget: Widget,
@@ -75,7 +75,7 @@ impl PlatformWindow {
             weak_self: LateRefCell::new(),
             delegate,
             modal_close_callback: RefCell::new(None),
-            parent,
+            parent: parent.map(|p| Rc::downgrade(&p)),
             size_widget: create_size_widget(),
             view: LateRefCell::new(),
             ready_to_show: Cell::new(false),
@@ -477,7 +477,7 @@ impl PlatformWindow {
             .borrow_mut()
             .replace(Box::new(done_callback));
 
-        if let Some(parent) = self.parent.as_ref() {
+        if let Some(parent) = self.parent.as_ref().and_then(|p| p.upgrade()) {
             let parent_window = parent.window.clone();
             self.window.set_transient_for(Some(&parent_window));
         }
@@ -521,6 +521,7 @@ impl PlatformWindow {
 
         if resizing && self.window_size_in_progress.get() {
             self.update_geometry_on_size_allocate.set(true);
+            self._set_geometry(&geometry, false);
         } else {
             self.update_geometry_on_size_allocate.set(false);
             self.window_size_in_progress.set(resizing);
