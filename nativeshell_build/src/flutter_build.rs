@@ -111,6 +111,7 @@ impl Flutter {
             flutter_out_root.join("pubspec.yaml"),
         )?;
 
+        self.precache()?;
         self.run_flutter_assemble(&flutter_out_root)?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
         self.emit_flutter_checks(&local_roots).unwrap();
@@ -379,6 +380,47 @@ impl Flutter {
             || to.as_ref().into(),
             || from.as_ref().into(),
         )
+    }
+
+    pub fn precache(&self) -> BuildResult<()> {
+        // no precaching necessary for local engines
+        if self.options.local_engine.is_some() {
+            return Ok(());
+        }
+        let engine_version = ArtifactsEmitter::find_flutter_bin()
+            .ok_or_else(|| BuildError::OtherError("Couldn't find Flutter installation".into()))?
+            .join("internal")
+            .join("engine.version");
+
+        let engine_version = fs::read_to_string(&engine_version)
+            .wrap_error(FileOperation::Read, || engine_version)?;
+
+        let last_engine_version_path = self.out_dir.join("last_precached_engine_version");
+        if last_engine_version_path.exists() {
+            let last_engine_version = fs::read_to_string(&last_engine_version_path)
+                .wrap_error(FileOperation::Read, || last_engine_version_path.clone())?;
+            if last_engine_version == engine_version {
+                return Ok(());
+            }
+        }
+
+        // need to run flutter precache
+        let mut command = self.create_flutter_command();
+        command
+            .arg("precache")
+            .arg("-v")
+            .arg("--suppress-analytics")
+            .arg(match self.target_os {
+                TargetOS::Mac => "--macos",
+                TargetOS::Windows => "--windows",
+                TargetOS::Linux => "--linux",
+            });
+        self.run_flutter_command(command)?;
+
+        fs::write(&last_engine_version_path, &engine_version)
+            .wrap_error(FileOperation::Write, || last_engine_version_path)?;
+
+        Ok(())
     }
 }
 

@@ -217,7 +217,7 @@ impl<'a> ArtifactsEmitter<'a> {
         })
     }
 
-    fn find_flutter_bin() -> Option<PathBuf> {
+    pub(super) fn find_flutter_bin() -> Option<PathBuf> {
         let executable = if cfg!(target_os = "windows") {
             "flutter.bat"
         } else {
