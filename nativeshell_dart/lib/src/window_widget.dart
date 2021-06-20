@@ -364,7 +364,7 @@ class _RenderWindowLayout extends RenderProxyBox {
             var h = child!.getMinIntrinsicHeight(w);
             size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
           } else {
-            size = _sanitizeAndSnapToPixelBoundary(this.size);
+            size = _sanitizeAndSnapToPixelBoundary(child!.size);
           }
           await builtWindow.initializeWindow(size);
           if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {

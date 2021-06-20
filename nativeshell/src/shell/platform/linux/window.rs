@@ -19,7 +19,7 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
-        Context, Handle, PlatformWindowDelegate, Point, Size,
+        Context, PlatformWindowDelegate, Point, Size,
     },
     util::{LateRefCell, OkLog},
 };
@@ -37,23 +37,11 @@ use super::{
 
 pub type PlatformWindowType = gtk::Window;
 
-struct Global {
-    window_count: Cell<i32>,
-}
-
-unsafe impl Sync for Global {}
-
-lazy_static! {
-    static ref GLOBAL: Global = Global {
-        window_count: Cell::new(0),
-    };
-}
-
 pub struct PlatformWindow {
     context: Rc<Context>,
     pub(super) window: gtk::Window,
     weak_self: LateRefCell<Weak<PlatformWindow>>,
-    parent: Option<Rc<PlatformWindow>>,
+    parent: Option<Weak<PlatformWindow>>,
     pub(super) delegate: Weak<dyn PlatformWindowDelegate>,
     modal_close_callback: RefCell<Option<Box<dyn FnOnce(PlatformResult<Value>)>>>,
     size_widget: Widget,
@@ -61,10 +49,11 @@ pub struct PlatformWindow {
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     pending_first_frame: Cell<bool>,
-    last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
+    last_geometry_request: RefCell<GeometryRequest>,
+    pending_geometry_request: RefCell<Option<GeometryRequest>>,
+    window_size_in_progress: Cell<bool>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
-    resize_finish_handle: RefCell<Option<Handle>>,
     deleting: Cell<bool>,
     pub(super) window_menu: LateRefCell<WindowMenu>,
     pub(super) drop_context: LateRefCell<DropContext>,
@@ -77,24 +66,23 @@ impl PlatformWindow {
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
-        GLOBAL.window_count.replace(GLOBAL.window_count.get() + 1);
-
         Self {
             context,
             window: gtk::Window::new(gtk::WindowType::Toplevel),
             weak_self: LateRefCell::new(),
             delegate,
             modal_close_callback: RefCell::new(None),
-            parent,
+            parent: parent.map(|p| Rc::downgrade(&p)),
             size_widget: create_size_widget(),
             view: LateRefCell::new(),
             ready_to_show: Cell::new(false),
             show_when_ready: Cell::new(false),
             pending_first_frame: Cell::new(true),
-            last_geometry_request: RefCell::new(None),
+            last_geometry_request: RefCell::new(Default::default()),
+            pending_geometry_request: RefCell::new(None),
+            window_size_in_progress: Cell::new(false),
             last_window_style: RefCell::new(None),
             last_event: RefCell::new(HashMap::new()),
-            resize_finish_handle: RefCell::new(None),
             deleting: Cell::new(false),
             window_menu: LateRefCell::new(),
             drop_context: LateRefCell::new(),
@@ -104,6 +92,10 @@ impl PlatformWindow {
 
     pub fn on_first_frame(&self) {
         self.window.set_opacity(1.0);
+    }
+
+    pub fn engine_launched(&self) {
+        self.window.hide();
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformWindow>, engine: &PlatformEngine) {
@@ -122,6 +114,29 @@ impl PlatformWindow {
 
         self.view.borrow().grab_focus();
 
+        let weak_clone = weak.clone();
+        self.window.connect_size_allocate(move |_, _| {
+            if let Some(s) = weak_clone.upgrade() {
+                s.window_size_in_progress.set(false);
+                if s.pending_geometry_request.borrow().is_some() {
+                    // This must be done after Gtk allocation is done, so schedule it on next
+                    // run loop turn
+                    let weak_clone = weak_clone.clone();
+                    s.context
+                        .run_loop
+                        .borrow()
+                        .schedule_now(move || {
+                            if let Some(s) = weak_clone.upgrade() {
+                                if let Some(req) = s.pending_geometry_request.borrow_mut().take() {
+                                    s._set_geometry(req, false);
+                                }
+                            }
+                        })
+                        .detach();
+                }
+            }
+        });
+
         self.window.realize();
         unsafe {
             self.window
@@ -133,8 +148,6 @@ impl PlatformWindow {
         // by default make window resizable, non resizable window need size
         // specified
         self.window.set_resizable(true);
-
-        self.schedule_first_frame_notification();
 
         let weak = self.weak_self.borrow().clone();
         let weak_clone = weak.clone();
@@ -152,6 +165,8 @@ impl PlatformWindow {
         self.drag_context
             .set(DragContext::new(self.context.clone(), weak));
         self.connect_drag_drop_events();
+
+        self.schedule_first_frame_notification();
     }
 
     fn connect_drag_drop_events(&self) {
@@ -254,34 +269,45 @@ impl PlatformWindow {
         res
     }
 
+    fn get_gl_area(&self) -> Option<Widget> {
+        let mut res: Option<Widget> = None;
+        self.view.borrow().forall(|w| {
+            if w.get_type().name() == "FlGLArea" {
+                res = Some(w.clone());
+            }
+        });
+        res
+    }
+
+    fn on_draw(&self) {
+        if self.pending_first_frame.get() && self.ready_to_show.get() {
+            if self.get_gl_area().is_some() {
+                self.pending_first_frame.replace(false);
+                let weak = self.weak_self.borrow().clone();
+                self.context
+                    .run_loop
+                    .borrow()
+                    .schedule(
+                        // delay one frame, just in case
+                        Duration::from_millis(1000 / 60 + 1),
+                        move || {
+                            let s = weak.upgrade();
+                            if let Some(s) = s {
+                                s.on_first_frame();
+                            }
+                        },
+                    )
+                    .detach();
+            };
+        }
+    }
+
     fn schedule_first_frame_notification(&self) {
         let weak = self.weak_self.borrow().clone();
         self.view.borrow().connect_draw(move |_, _| {
             let s = weak.upgrade();
             if let Some(s) = s {
-                if s.pending_first_frame.get() {
-                    s.view.borrow().forall(|w| {
-                        // don't start until there is FlGLArea widget
-                        if w.get_type().name() == "FlGLArea" {
-                            s.pending_first_frame.replace(false);
-                            let weak = weak.clone();
-                            s.context
-                                .run_loop
-                                .borrow()
-                                .schedule(
-                                    // delay one frame, just in case
-                                    Duration::from_millis(1000 / 60 + 1),
-                                    move || {
-                                        let s = weak.upgrade();
-                                        if let Some(s) = s {
-                                            s.on_first_frame();
-                                        }
-                                    },
-                                )
-                                .detach();
-                        }
-                    });
-                }
+                s.on_draw();
             }
             Inhibit(false)
         });
@@ -319,6 +345,7 @@ impl PlatformWindow {
             self.window.show(); // otherwise complains about size allocation in show_all
             self.window.set_opacity(0.0);
             self.window.show_all();
+
             // The rest is done in on_first_frame
             Ok(())
         } else {
@@ -374,7 +401,7 @@ impl PlatformWindow {
             .borrow_mut()
             .replace(Box::new(done_callback));
 
-        if let Some(parent) = self.parent.as_ref() {
+        if let Some(parent) = self.parent.as_ref().and_then(|p| p.upgrade()) {
             let parent_window = parent.window.clone();
             self.window.set_transient_for(Some(&parent_window));
         }
@@ -392,30 +419,21 @@ impl PlatformWindow {
         &self,
         geometry: WindowGeometryRequest,
     ) -> PlatformResult<WindowGeometryFlags> {
-        self.last_geometry_request
-            .borrow_mut()
-            .replace(geometry.clone());
-
         let geometry = &geometry.geometry;
 
-        self._set_geometry(geometry.clone());
-        let weak = self.weak_self.borrow().clone();
-        let geometry_clone = geometry.clone();
+        let request = self.last_geometry_request.borrow().update(GeometryRequest {
+            frame_origin: geometry.frame_origin.clone(),
+            content_size: geometry.content_size.clone(),
+            min_content_size: geometry.min_content_size.clone(),
+        });
 
-        // It is possible that set_geometry is invoked while window.resize is in progress;
-        // that can happen because during synchronized resizing we are processing platform thread
-        // tasks. If that's the case, some calls to window.resize might get lost in the process
-        // so to make sure that doesn't happen schedule another call on main loop;
-        let handle = self.context.run_loop.borrow().schedule(
-            Duration::from_millis(1000 / 30 + 1),
-            move || {
-                let s = weak.upgrade();
-                if let Some(s) = s {
-                    s._set_geometry(geometry_clone);
-                }
-            },
-        );
-        self.resize_finish_handle.borrow_mut().replace(handle);
+        if self.window_size_in_progress.get() {
+            self.pending_geometry_request.borrow_mut().replace(request);
+        } else {
+            self.pending_geometry_request.borrow_mut().take();
+            let in_progress = self._set_geometry(request, false);
+            self.window_size_in_progress.set(in_progress);
+        }
 
         Ok(WindowGeometryFlags {
             frame_origin: geometry.frame_origin.is_some() && get_session_type() == SessionType::X11,
@@ -425,27 +443,35 @@ impl PlatformWindow {
         })
     }
 
-    fn _set_geometry(&self, geometry: WindowGeometry) {
-        if let Some(frame_origin) = &geometry.frame_origin {
-            self.window
-                .move_(frame_origin.x as i32, frame_origin.y as i32);
-        }
-        if let Some(content_size) = &geometry.content_size {
-            if !self.window.get_resizable() {
-                size_widget_set_min_size(
-                    &self.size_widget,
-                    content_size.width as i32,
-                    content_size.height as i32,
-                );
-                self.window.queue_resize();
-            } else {
+    fn _set_geometry(&self, geometry: GeometryRequest, force: bool) -> bool {
+        let moving = self.last_geometry_request.borrow().frame_origin != geometry.frame_origin;
+        let resizing = self.last_geometry_request.borrow().content_size != geometry.content_size;
+
+        if moving || force {
+            if let Some(frame_origin) = &geometry.frame_origin {
                 self.window
-                    .resize(content_size.width as i32, content_size.height as i32);
+                    .move_(frame_origin.x as i32, frame_origin.y as i32);
+            }
+        }
+
+        if resizing || force {
+            if let Some(content_size) = &geometry.content_size {
+                if !self.window.get_resizable() {
+                    size_widget_set_min_size(
+                        &self.size_widget,
+                        content_size.width as i32,
+                        content_size.height as i32,
+                    );
+                    self.window.queue_resize();
+                } else {
+                    self.window
+                        .resize(content_size.width as i32, content_size.height as i32);
+                }
             }
         }
 
         if self.window.get_resizable() {
-            if let Some(min_content_size) = geometry.min_content_size {
+            if let Some(min_content_size) = &geometry.min_content_size {
                 size_widget_set_min_size(
                     &self.size_widget,
                     min_content_size.width as i32,
@@ -453,14 +479,14 @@ impl PlatformWindow {
                 );
             }
         }
+
+        *self.last_geometry_request.borrow_mut() = geometry;
+
+        resizing
     }
 
     pub fn get_geometry(&self) -> PlatformResult<WindowGeometry> {
         let last_request = self.last_geometry_request.borrow();
-        let last_request = last_request
-            .as_ref()
-            .map(|r| r.geometry.clone())
-            .unwrap_or_default();
 
         let frame_origin = if get_session_type() == SessionType::X11 {
             let origin = self.window.get_position();
@@ -479,7 +505,7 @@ impl PlatformWindow {
             content_size: Some(content_size),
             min_frame_size: None,
             max_frame_size: None,
-            min_content_size: last_request.min_content_size,
+            min_content_size: last_request.min_content_size.clone(),
             max_content_size: None,
         })
     }
@@ -516,7 +542,14 @@ impl PlatformWindow {
             }
         }
 
+        let prev_resizable = self.window.get_resizable();
         self.window.set_resizable(style.can_resize);
+
+        let last_request = self.last_geometry_request.borrow().clone();
+        if prev_resizable != style.can_resize && last_request.content_size.is_some() {
+            // content size is set differently for resizable / non-resizable windows
+            self._set_geometry(last_request, true);
+        }
 
         let mut func = WMFunction::MOVE;
         if style.can_resize {
@@ -592,5 +625,24 @@ impl PlatformWindow {
 
     pub fn set_window_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+struct GeometryRequest {
+    pub frame_origin: Option<Point>,
+    pub content_size: Option<Size>,
+    pub min_content_size: Option<Size>,
+}
+
+impl GeometryRequest {
+    fn update(&self, req: GeometryRequest) -> Self {
+        GeometryRequest {
+            frame_origin: req.frame_origin.or_else(|| self.frame_origin.clone()),
+            content_size: req.content_size.or_else(|| self.content_size.clone()),
+            min_content_size: req
+                .min_content_size
+                .or_else(|| self.min_content_size.clone()),
+        }
     }
 }
