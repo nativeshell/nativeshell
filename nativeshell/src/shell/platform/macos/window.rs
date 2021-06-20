@@ -3,6 +3,7 @@ use std::{
     collections::HashMap,
     ffi::c_void,
     rc::{Rc, Weak},
+    time::Duration,
 };
 
 use cocoa::{
@@ -10,7 +11,7 @@ use cocoa::{
         NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
     },
     base::{id, nil, BOOL, NO, YES},
-    foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSUInteger},
+    foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSString, NSUInteger},
 };
 use cocoa::{
     appkit::{NSScreen, NSWindowTabbingMode},
@@ -421,67 +422,82 @@ impl PlatformWindow {
         }
     }
 
-    fn show_when_ready(weak_self: Weak<PlatformWindow>) {
+    fn show_when_ready(weak_self: Weak<PlatformWindow>, attempt: i32) {
         if let Some(s) = weak_self.upgrade() {
             autoreleasepool(|| unsafe {
-                // FIXME(knopp)
-                // This code used to check surface dimensions but it no longer works.
-                // Adding metal compositing in engine broke it; The patch was reverted
-                // in the meanwhile though. Update this once the dust settles.
-
-                // let layer = NSWindow::contentView(*s.platform_window).layer();
-                // let sublayers: id = msg_send![layer, sublayers];
-                // let first = sublayers.objectAtIndex(0);
-                // let contents: id = msg_send![first, contents];
-                // if contents != nil {
-                //     // This makes assumptions about FlutterView internals :-/
-                //     let class: id = msg_send![contents, className];
-                //     if !class.isEqualToString("IOSurface") {
-                //         panic!("Expected IOSurface content");
-                //     }
-                //     let scale = NSWindow::backingScaleFactor(*s.platform_window);
-                //     let content_size = NSView::frame(NSWindow::contentView(*s.platform_window));
-
-                //     let expected_width = scale * content_size.size.width;
-                //     let expected_height = scale * content_size.size.height;
-                //     // IOSurface width/height
-                //     let actual_width: NSInteger = msg_send![contents, width];
-                //     let actual_height: NSInteger = msg_send![contents, height];
-
-                //     // only show if size matches, otherwise we caught the view during resizing
-                //     if actual_width == expected_width as NSInteger
-                //         && actual_height == expected_height as NSInteger
-                //     {
-                s.actually_show();
-                if let Some(delegate) = s.delegate.upgrade() {
-                    delegate.visibility_changed(true);
+                let view = NSWindow::contentView(*s.platform_window);
+                let subviews: id = msg_send![view, subviews];
+                let view = {
+                    if subviews.count() > 0 {
+                        subviews.objectAtIndex(0)
+                    } else {
+                        view
+                    }
                 };
-                // return;
-                // }
-                // }
-                // wait until we have content generated (with proper size)
-                // s.context
-                //     .run_loop
-                //     .borrow()
-                //     .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
-                //         Self::show_when_ready(weak_self)
-                //     })
-                //     .detach();
-            })
+
+                // If our assumptions about the layout below are wrong, don't keep
+                // waiting indefinitely.
+                let mut show = attempt == 5;
+
+                if !show {
+                    let layer = view.layer();
+                    let sublayers: id = msg_send![layer, sublayers];
+                    let first = sublayers.objectAtIndex(0);
+                    let contents: id = msg_send![first, contents];
+                    if contents != nil {
+                        // This makes assumptions about FlutterView internals :-/
+                        let class: id = msg_send![contents, className];
+                        if !class.isEqualToString("IOSurface") {
+                            panic!("Expected IOSurface content");
+                        }
+                        let scale = NSWindow::backingScaleFactor(*s.platform_window);
+                        let content_size = NSView::frame(NSWindow::contentView(*s.platform_window));
+
+                        let expected_width = scale * content_size.size.width;
+                        let expected_height = scale * content_size.size.height;
+                        // IOSurface width/height
+                        let actual_width: NSInteger = msg_send![contents, width];
+                        let actual_height: NSInteger = msg_send![contents, height];
+
+                        // only show if size matches, otherwise we caught the view during resizing
+                        if actual_width == expected_width as NSInteger
+                            && actual_height == expected_height as NSInteger
+                        {
+                            show = true;
+                        }
+                    }
+                }
+
+                if show {
+                    s.actually_show();
+                    if let Some(delegate) = s.delegate.upgrade() {
+                        delegate.visibility_changed(true);
+                    };
+                } else {
+                    // wait until we have content generated (with proper size)
+                    s.context
+                        .run_loop
+                        .borrow()
+                        .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
+                            Self::show_when_ready(weak_self, attempt + 1)
+                        })
+                        .detach();
+                }
+            });
         }
     }
 
     pub fn ready_to_show(&self) -> PlatformResult<()> {
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
-            Self::show_when_ready(self.weak_self.clone_value());
+            Self::show_when_ready(self.weak_self.clone_value(), 0);
         }
         Ok(())
     }
 
     pub fn show(&self) -> PlatformResult<()> {
         if self.ready_to_show.get() {
-            Self::show_when_ready(self.weak_self.clone_value());
+            Self::show_when_ready(self.weak_self.clone_value(), 0);
         } else {
             self.show_when_ready.set(true);
         }
