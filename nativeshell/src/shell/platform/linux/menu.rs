@@ -269,6 +269,7 @@ impl PlatformMenu {
     }
 
     // Convert & mnemonics to _
+    #[allow(clippy::branches_sharing_code)]
     fn convert_mnemonics(title: &str) -> String {
         let mut res = String::new();
         let mut mnemonic = false;

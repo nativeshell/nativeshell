@@ -280,25 +280,26 @@ impl PlatformWindow {
     }
 
     fn on_draw(&self) {
-        if self.pending_first_frame.get() && self.ready_to_show.get() {
-            if self.get_gl_area().is_some() {
-                self.pending_first_frame.replace(false);
-                let weak = self.weak_self.borrow().clone();
-                self.context
-                    .run_loop
-                    .borrow()
-                    .schedule(
-                        // delay one frame, just in case
-                        Duration::from_millis(1000 / 60 + 1),
-                        move || {
-                            let s = weak.upgrade();
-                            if let Some(s) = s {
-                                s.on_first_frame();
-                            }
-                        },
-                    )
-                    .detach();
-            };
+        if self.pending_first_frame.get()
+            && self.ready_to_show.get()
+            && self.get_gl_area().is_some()
+        {
+            self.pending_first_frame.replace(false);
+            let weak = self.weak_self.borrow().clone();
+            self.context
+                .run_loop
+                .borrow()
+                .schedule(
+                    // delay one frame, just in case
+                    Duration::from_millis(1000 / 60 + 1),
+                    move || {
+                        let s = weak.upgrade();
+                        if let Some(s) = s {
+                            s.on_first_frame();
+                        }
+                    },
+                )
+                .detach();
         }
     }
 

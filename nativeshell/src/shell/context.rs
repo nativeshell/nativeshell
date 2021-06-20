@@ -65,7 +65,7 @@ impl Context {
             self.sponsor_prompt();
         }
 
-        init_platform(context).map_err(|e| Error::from(e))?;
+        init_platform(context).map_err(Error::from)?;
 
         Ok(())
     }
@@ -73,10 +73,10 @@ impl Context {
     #[cfg(debug_assertions)]
     fn sponsor_prompt(&self) {
         if std::env::var("NATIVESHELL_SPONSOR").ok().is_none() {
-            println!("");
+            println!();
             println!("** Help me make NativeShell and Flutter on desktop better!");
             println!("** We have a long way to go: https://nativeshell.dev/roadmap");
-            println!("");
+            println!();
         }
     }
 }

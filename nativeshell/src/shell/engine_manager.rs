@@ -75,7 +75,7 @@ impl EngineManager {
     }
 
     pub fn remove_engine(&mut self, handle: EngineHandle) -> Result<()> {
-        for (_, n) in &self.destroy_notifications {
+        for n in self.destroy_notifications.values() {
             n(handle);
         }
 

@@ -119,11 +119,8 @@ impl<'a> Plugins<'a> {
         let lines = file.split('\n');
         let lines: Vec<(String, String)> = lines
             .filter_map(|line| {
-                if let Some(sep) = line.find('=') {
-                    Some((line[..sep].into(), line[sep + 1..].into()))
-                } else {
-                    None
-                }
+                line.find('=')
+                    .map(|sep| (line[..sep].into(), line[sep + 1..].into()))
             })
             .collect();
         let mut res = Vec::<Plugin>::new();
