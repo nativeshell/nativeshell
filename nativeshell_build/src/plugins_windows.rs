@@ -66,15 +66,12 @@ impl<'a> PluginsImpl<'a> {
         std::fs::write(&cmakelist_path, &cmakelist)
             .wrap_error(FileOperation::Write, || cmakelist_path)?;
 
+        let mut cmake = Config::new(plugins_dir);
         if !skip_build {
-            Config::new(plugins_dir).no_build_target(true).build();
+            cmake.no_build_target(true).build();
         }
 
-        let configuration = if self.build.build_mode == "debug" {
-            "Debug"
-        } else {
-            "Release"
-        };
+        let configuration = cmake.get_profile();
 
         let artifacts_dir = get_artifacts_dir()?;
 
