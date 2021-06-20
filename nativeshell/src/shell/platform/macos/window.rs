@@ -456,7 +456,7 @@ impl PlatformWindow {
                 if let Some(delegate) = s.delegate.upgrade() {
                     delegate.visibility_changed(true);
                 };
-                return;
+                // return;
                 // }
                 // }
                 // wait until we have content generated (with proper size)

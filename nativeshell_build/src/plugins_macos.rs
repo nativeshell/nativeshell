@@ -52,16 +52,16 @@ impl<'a> PluginsImpl<'a> {
         .wrap_error(FileOperation::Write, || path.into())?;
 
         for plugin in plugins {
-            write!(
+            writeln!(
                 file,
-                "  pod '{}', :path => '{}', :binary => true\n",
+                "  pod '{}', :path => '{}', :binary => true",
                 plugin.name,
                 plugin.platform_path.to_string_lossy()
             )
             .wrap_error(FileOperation::Write, || path.into())?;
         }
 
-        write!(file, "end\n").wrap_error(FileOperation::Write, || path.into())?;
+        writeln!(file, "end").wrap_error(FileOperation::Write, || path.into())?;
 
         Ok(())
     }
