@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt, WindowTypeHint};
+use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt};
 use glib::{Cast, ObjectExt};
 use gtk::{
     propagate_event, ContainerExt, EventBox, GtkWindowExt, Inhibit, Overlay, OverlayExt, Widget,
@@ -19,7 +19,6 @@ use crate::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
             WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
-        platform::utils::get_gl_vendor,
         Context, PlatformWindowDelegate, Point, Size,
     },
     util::{LateRefCell, OkLog},
@@ -50,10 +49,8 @@ pub struct PlatformWindow {
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     pending_first_frame: Cell<bool>,
-    pending_window_hide: Cell<bool>,   // nvidia workaround
-    pending_ready_to_show: Cell<bool>, // nvidia workaround
-    last_geometry_request: RefCell<Option<WindowGeometryRequest>>,
-    update_geometry_on_size_allocate: Cell<bool>,
+    last_geometry_request: RefCell<GeometryRequest>,
+    pending_geometry_request: RefCell<Option<GeometryRequest>>,
     window_size_in_progress: Cell<bool>,
     last_window_style: RefCell<Option<WindowStyle>>,
     pub(super) last_event: RefCell<HashMap<EventType, Event>>,
@@ -81,10 +78,8 @@ impl PlatformWindow {
             ready_to_show: Cell::new(false),
             show_when_ready: Cell::new(false),
             pending_first_frame: Cell::new(true),
-            pending_window_hide: Cell::new(false),
-            pending_ready_to_show: Cell::new(false),
-            last_geometry_request: RefCell::new(None),
-            update_geometry_on_size_allocate: Cell::new(false),
+            last_geometry_request: RefCell::new(Default::default()),
+            pending_geometry_request: RefCell::new(None),
             window_size_in_progress: Cell::new(false),
             last_window_style: RefCell::new(None),
             last_event: RefCell::new(HashMap::new()),
@@ -123,22 +118,21 @@ impl PlatformWindow {
         self.window.connect_size_allocate(move |_, _| {
             if let Some(s) = weak_clone.upgrade() {
                 s.window_size_in_progress.set(false);
-                if s.update_geometry_on_size_allocate.take() {
+                if s.pending_geometry_request.borrow().is_some() {
                     // This must be done after Gtk allocation is done, so schedule it on next
                     // run loop turn
-                    let req = s.last_geometry_request.borrow().clone();
-                    if let Some(req) = req {
-                        let weak_clone = weak_clone.clone();
-                        s.context
-                            .run_loop
-                            .borrow()
-                            .schedule_now(move || {
-                                if let Some(s) = weak_clone.upgrade() {
-                                    s.set_geometry(req).ok();
+                    let weak_clone = weak_clone.clone();
+                    s.context
+                        .run_loop
+                        .borrow()
+                        .schedule_now(move || {
+                            if let Some(s) = weak_clone.upgrade() {
+                                if let Some(req) = s.pending_geometry_request.borrow_mut().take() {
+                                    s._set_geometry(req, false);
                                 }
-                            })
-                            .detach();
-                    }
+                            }
+                        })
+                        .detach();
                 }
             }
         });
@@ -172,31 +166,7 @@ impl PlatformWindow {
             .set(DragContext::new(self.context.clone(), weak));
         self.connect_drag_drop_events();
 
-        if self.need_nvidia_workaround() {
-            // NVIDIA driver is a steaming pile of manure. Creating framebuffer less than 400x400
-            // pixels with hidden window corrupts parent context;
-            // as a  workaround, while creating framebuffer window must be visible; so we create it
-            // with 1x1 pixel size, opacity 0, and hide it after first rendered.
-            // The 1x1 size minimizes mouse interaction, but it also seems to affect the driver bug.
-            // Going later to bigger surface size seems fine, while the other way around still causes
-            // context corruption.
-            self.window.resize(1, 1);
-            self.window.set_type_hint(WindowTypeHint::Toolbar); // don't steal focus, no frame
-            self.window.show();
-            self.window.set_opacity(0.0);
-            self.window.show_all();
-            self.pending_window_hide.set(true);
-            self.pending_first_frame.set(false);
-        }
         self.schedule_first_frame_notification();
-    }
-
-    fn need_nvidia_workaround(&self) -> bool {
-        return self.parent.is_some()
-            && get_session_type() == SessionType::X11
-            && get_gl_vendor(&self.window.get_window().unwrap())
-                .map(|v| v == "NVIDIA Corporation")
-                .unwrap_or(false);
     }
 
     fn connect_drag_drop_events(&self) {
@@ -310,42 +280,7 @@ impl PlatformWindow {
     }
 
     fn on_draw(&self) {
-        if self.pending_window_hide.get() {
-            // don't start until there is FlGLArea widget
-            if self.get_gl_area().is_some() {
-                let weak = self.weak_self.borrow().clone();
-                // let the child widget draw itself
-                self.context
-                    .run_loop
-                    .borrow()
-                    .schedule_now(move || {
-                        // this has been empirically determined: It seems that this a good
-                        // place to undo nvidia workaround; At this point  we can hide the
-                        // window without driver corrupting parent context
-                        let s = weak.upgrade();
-                        if let Some(s) = s {
-                            s.pending_first_frame.set(true);
-                            s.pending_window_hide.set(false);
-                            s.window
-                                .set_type_hint(if s.modal_close_callback.borrow().is_some() {
-                                    WindowTypeHint::Dialog
-                                } else {
-                                    WindowTypeHint::Normal
-                                });
-                            s.window.hide();
-                            s.window.set_opacity(1.0);
-
-                            if s.pending_ready_to_show.get() {
-                                s.ready_to_show().ok();
-                            }
-                        }
-                    })
-                    .detach();
-            }
-        } else if self.pending_first_frame.get()
-            && !self.pending_window_hide.get()
-            && self.ready_to_show.get()
-        {
+        if self.pending_first_frame.get() && self.ready_to_show.get() {
             if self.get_gl_area().is_some() {
                 self.pending_first_frame.replace(false);
                 let weak = self.weak_self.borrow().clone();
@@ -405,22 +340,11 @@ impl PlatformWindow {
     }
 
     pub fn ready_to_show(&self) -> PlatformResult<()> {
-        // we still wait for nvidia workaround window hide; so just mark that
-        // ready_to_show() was called and return
-        if self.pending_window_hide.get() {
-            self.pending_ready_to_show.set(true);
-            return Ok(());
-        }
-
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
             self.window.show(); // otherwise complains about size allocation in show_all
             self.window.set_opacity(0.0);
             self.window.show_all();
-
-            if let Some(area) = self.get_gl_area() {
-                area.queue_draw();
-            }
 
             // The rest is done in on_first_frame
             Ok(())
@@ -491,41 +415,24 @@ impl PlatformWindow {
         self.show().ok_log();
     }
 
-    fn resizing(&self, geometry: &WindowGeometryRequest) -> bool {
-        let content_size = &geometry.geometry.content_size;
-        let frame_size = &geometry.geometry.content_size;
-
-        let last_geometry = self.last_geometry_request.borrow();
-        let last_content_size = last_geometry
-            .as_ref()
-            .and_then(|a| a.geometry.content_size.clone());
-        let last_frame_size = last_geometry
-            .as_ref()
-            .and_then(|a| a.geometry.frame_size.clone());
-
-        let same = content_size == &last_content_size && frame_size == &last_frame_size;
-        !same
-    }
-
     pub fn set_geometry(
         &self,
         geometry: WindowGeometryRequest,
     ) -> PlatformResult<WindowGeometryFlags> {
-        let resizing = self.resizing(&geometry);
-
-        self.last_geometry_request
-            .borrow_mut()
-            .replace(geometry.clone());
-
         let geometry = &geometry.geometry;
 
-        if resizing && self.window_size_in_progress.get() {
-            self.update_geometry_on_size_allocate.set(true);
-            self._set_geometry(&geometry, false);
+        let request = self.last_geometry_request.borrow().update(GeometryRequest {
+            frame_origin: geometry.frame_origin.clone(),
+            content_size: geometry.content_size.clone(),
+            min_content_size: geometry.min_content_size.clone(),
+        });
+
+        if self.window_size_in_progress.get() {
+            self.pending_geometry_request.borrow_mut().replace(request);
         } else {
-            self.update_geometry_on_size_allocate.set(false);
-            self.window_size_in_progress.set(resizing);
-            self._set_geometry(&geometry, resizing);
+            self.pending_geometry_request.borrow_mut().take();
+            let in_progress = self._set_geometry(request, false);
+            self.window_size_in_progress.set(in_progress);
         }
 
         Ok(WindowGeometryFlags {
@@ -536,13 +443,18 @@ impl PlatformWindow {
         })
     }
 
-    fn _set_geometry(&self, geometry: &WindowGeometry, resizing: bool) {
-        if let Some(frame_origin) = &geometry.frame_origin {
-            self.window
-                .move_(frame_origin.x as i32, frame_origin.y as i32);
+    fn _set_geometry(&self, geometry: GeometryRequest, force: bool) -> bool {
+        let moving = self.last_geometry_request.borrow().frame_origin != geometry.frame_origin;
+        let resizing = self.last_geometry_request.borrow().content_size != geometry.content_size;
+
+        if moving || force {
+            if let Some(frame_origin) = &geometry.frame_origin {
+                self.window
+                    .move_(frame_origin.x as i32, frame_origin.y as i32);
+            }
         }
 
-        if resizing {
+        if resizing || force {
             if let Some(content_size) = &geometry.content_size {
                 if !self.window.get_resizable() {
                     size_widget_set_min_size(
@@ -567,14 +479,14 @@ impl PlatformWindow {
                 );
             }
         }
+
+        *self.last_geometry_request.borrow_mut() = geometry;
+
+        resizing
     }
 
     pub fn get_geometry(&self) -> PlatformResult<WindowGeometry> {
         let last_request = self.last_geometry_request.borrow();
-        let last_request = last_request
-            .as_ref()
-            .map(|r| r.geometry.clone())
-            .unwrap_or_default();
 
         let frame_origin = if get_session_type() == SessionType::X11 {
             let origin = self.window.get_position();
@@ -593,7 +505,7 @@ impl PlatformWindow {
             content_size: Some(content_size),
             min_frame_size: None,
             max_frame_size: None,
-            min_content_size: last_request.min_content_size,
+            min_content_size: last_request.min_content_size.clone(),
             max_content_size: None,
         })
     }
@@ -633,10 +545,10 @@ impl PlatformWindow {
         let prev_resizable = self.window.get_resizable();
         self.window.set_resizable(style.can_resize);
 
-        let last_request = self.last_geometry_request.borrow().as_ref().cloned();
-        if prev_resizable != style.can_resize && last_request.is_some() {
+        let last_request = self.last_geometry_request.borrow().clone();
+        if prev_resizable != style.can_resize && last_request.content_size.is_some() {
             // content size is set differently for resizable / non-resizable windows
-            self.set_geometry(last_request.unwrap()).ok();
+            self._set_geometry(last_request, true);
         }
 
         let mut func = WMFunction::MOVE;
@@ -713,5 +625,24 @@ impl PlatformWindow {
 
     pub fn set_window_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+struct GeometryRequest {
+    pub frame_origin: Option<Point>,
+    pub content_size: Option<Size>,
+    pub min_content_size: Option<Size>,
+}
+
+impl GeometryRequest {
+    fn update(&self, req: GeometryRequest) -> Self {
+        GeometryRequest {
+            frame_origin: req.frame_origin.or_else(|| self.frame_origin.clone()),
+            content_size: req.content_size.or_else(|| self.content_size.clone()),
+            min_content_size: req
+                .min_content_size
+                .or_else(|| self.min_content_size.clone()),
+        }
     }
 }

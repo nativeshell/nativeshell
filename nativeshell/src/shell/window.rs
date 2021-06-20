@@ -328,6 +328,8 @@ pub trait PlatformWindowDelegate {
     fn perform_drop(&self, info: &DraggingInfo);
 
     fn drag_ended(&self, effect: DragEffect);
+
+    fn get_engine_handle(&self) -> EngineHandle;
 }
 
 impl PlatformWindowDelegate for Window {
@@ -388,5 +390,9 @@ impl PlatformWindowDelegate for Window {
                 |_| {},
             )
             .ok_log();
+    }
+
+    fn get_engine_handle(&self) -> EngineHandle {
+        self.engine_handle
     }
 }
