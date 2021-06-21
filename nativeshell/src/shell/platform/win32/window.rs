@@ -118,7 +118,7 @@ impl PlatformWindow {
             set_override_parent_hwnd(win);
 
             self.flutter_controller
-                .set(FlutterDesktopViewControllerCreate(100, 100, engine.handle));
+                .set(FlutterDesktopViewControllerCreate(0, 0, engine.handle));
 
             let view = FlutterDesktopViewControllerGetView(*self.flutter_controller.borrow());
             self.child_hwnd.set(FlutterDesktopViewGetHWND(view));
