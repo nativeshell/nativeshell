@@ -6,6 +6,7 @@ import 'drag_drop.dart';
 import 'event.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
+import 'dart:io';
 
 // Do not use directly. Access windows through Window.of(context) or through
 // WindowState.window.
@@ -64,6 +65,7 @@ class WindowManager {
   }
 
   Future<Window> createWindow(dynamic initData) async {
+    _maybePause();
     final dispatcher = WindowMethodDispatcher.instance;
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
@@ -76,6 +78,7 @@ class WindowManager {
     final handle = WindowHandle(result['windowHandle'] as int);
     final res = _windows.putIfAbsent(handle, () => Window(handle));
     await res.waitUntilInitialized();
+    _maybeResume();
     return res;
   }
 
@@ -118,4 +121,43 @@ class _LocalWindow extends LocalWindow {
       : super(handle, parentWindow: parentWindow, initData: initData);
 
   final _dropTarget = DropTarget();
+}
+
+int _pauseCount = 0;
+
+void _pushPause() {
+  ++_pauseCount;
+  if (_pauseCount > 0) {
+    WidgetsBinding.instance!
+        .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+  }
+}
+
+void _popPause() {
+  assert(_pauseCount > 0);
+  --_pauseCount;
+  if (_pauseCount == 0) {
+    WidgetsBinding.instance!
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  }
+}
+
+// On Windows Angle has a big global lock which can get congested and causes
+// large delays when creating new window. As a workaround, we briefly pause
+// current isolate rasterization when creating window.
+bool _needPauseWhenCreatingWindow() {
+  return Platform.isWindows;
+}
+
+void _maybePause() {
+  if (_needPauseWhenCreatingWindow()) {
+    _pushPause();
+  }
+}
+
+void _maybeResume() async {
+  if (_needPauseWhenCreatingWindow()) {
+    await Future.delayed(Duration(milliseconds: 100));
+    _popPause();
+  }
 }

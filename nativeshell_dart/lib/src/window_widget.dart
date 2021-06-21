@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'api_model.dart';
@@ -351,29 +350,25 @@ class _RenderWindowLayout extends RenderProxyBox {
 
     if (!hasLayout) {
       hasLayout = true;
-      // Can't really use WidgetsBinding.waitUntilFirstFrameRasterized here
-      // since that seem to be fired before the layer tree is even sent to
-      // rasterizer, which is way too early
-      final win = WindowManager.instance.currentWindow;
-      SchedulerBinding.instance!.scheduleFrameCallback((timeStamp) {
-        SchedulerBinding.instance!.addPostFrameCallback((timeStamp) async {
-          final Size size;
-          if (builtWindow.windowSizingMode ==
-              WindowSizingMode.atLeastIntrinsicSize) {
-            var w = child!.getMaxIntrinsicWidth(double.infinity);
-            var h = child!.getMinIntrinsicHeight(w);
-            size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
-          } else {
-            size = _sanitizeAndSnapToPixelBoundary(child!.size);
-          }
-          await builtWindow.initializeWindow(size);
-          if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
-            await builtWindow.updateWindowConstraints(size);
-          }
-          await win.readyToShow();
-        });
-      });
+      _prepareAndShow();
     }
+  }
+
+  void _prepareAndShow() async {
+    final win = WindowManager.instance.currentWindow;
+    final Size size;
+    if (builtWindow.windowSizingMode == WindowSizingMode.atLeastIntrinsicSize) {
+      var w = child!.getMaxIntrinsicWidth(double.infinity);
+      var h = child!.getMinIntrinsicHeight(w);
+      size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+    } else {
+      size = _sanitizeAndSnapToPixelBoundary(child!.size);
+    }
+    await builtWindow.initializeWindow(size);
+    if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
+      await builtWindow.updateWindowConstraints(size);
+    }
+    await win.readyToShow();
   }
 
   bool hasLayout = false;

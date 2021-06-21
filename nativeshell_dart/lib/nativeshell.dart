@@ -8,3 +8,4 @@ export 'src/menu_bar.dart';
 export 'src/window_widget.dart';
 export 'src/window.dart';
 export 'src/intrinsic_sized_box.dart';
+export 'src/shader_warmup.dart';
