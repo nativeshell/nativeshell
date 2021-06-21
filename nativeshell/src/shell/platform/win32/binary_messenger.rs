@@ -1,5 +1,5 @@
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     collections::{HashMap, HashSet},
     ffi::{c_void, CStr, CString},
     rc::Rc,
@@ -20,7 +20,7 @@ use super::{
 type Callback = Box<dyn Fn(&[u8], BinaryMessengerReply)>;
 
 pub struct PlatformBinaryMessenger {
-    handle: Cell<FlutterDesktopMessengerRef>,
+    handle: Rc<FlutterDesktopMessengerRef>,
     callbacks: RefCell<HashMap<String, Rc<Callback>>>,
     active_callbacks: RefCell<HashSet<String>>,
 }
@@ -28,14 +28,14 @@ pub struct PlatformBinaryMessenger {
 impl PlatformBinaryMessenger {
     pub fn from_handle(handle: FlutterDesktopMessengerRef) -> Self {
         Self {
-            handle: Cell::new(handle),
+            handle: Rc::new(handle),
             callbacks: RefCell::new(HashMap::new()),
             active_callbacks: RefCell::new(HashSet::new()),
         }
     }
 
     unsafe extern "C" fn message_callback(
-        messenger: FlutterDesktopMessengerRef,
+        _messenger: FlutterDesktopMessengerRef,
         message: *const FlutterDesktopMessage,
         user_data: *mut ::std::os::raw::c_void,
     ) {
@@ -52,19 +52,23 @@ impl PlatformBinaryMessenger {
                 .cloned()
         };
 
+        let messenger_weak = Rc::downgrade(&messenger_impl.handle);
+
         if let Some(callback) = callback {
             let data = slice::from_raw_parts(message.message, message.message_size);
 
-            let handle = message.response_handle;
+            let response_handle = message.response_handle;
             callback(
                 data,
                 BinaryMessengerReply::new(move |data| {
-                    FlutterDesktopMessengerSendResponse(
-                        messenger,
-                        handle,
-                        data.as_ptr(),
-                        data.len(),
-                    );
+                    if let Some(messenger) = messenger_weak.upgrade() {
+                        FlutterDesktopMessengerSendResponse(
+                            *messenger,
+                            response_handle,
+                            data.as_ptr(),
+                            data.len(),
+                        );
+                    }
                 }),
             );
         }
@@ -83,7 +87,7 @@ impl PlatformBinaryMessenger {
         unsafe {
             let self_ptr = self as *const Self as *mut c_void;
             FlutterDesktopMessengerSetCallback(
-                self.handle.get(),
+                *self.handle,
                 channel.as_ptr(),
                 Some(Self::message_callback),
                 self_ptr,
@@ -98,7 +102,7 @@ impl PlatformBinaryMessenger {
         let channel = CString::new(channel).unwrap();
         unsafe {
             FlutterDesktopMessengerSetCallback(
-                self.handle.get(),
+                *self.handle,
                 channel.as_ptr(),
                 None,
                 std::ptr::null_mut(),
@@ -125,7 +129,7 @@ impl PlatformBinaryMessenger {
         let c_channel = CString::new(channel).unwrap();
         if !unsafe {
             FlutterDesktopMessengerSendWithReply(
-                self.handle.get(),
+                *self.handle,
                 c_channel.as_ptr(),
                 message.as_ptr(),
                 message.len(),
@@ -145,7 +149,7 @@ impl PlatformBinaryMessenger {
         let c_channel = CString::new(channel).unwrap();
         if !unsafe {
             FlutterDesktopMessengerSend(
-                self.handle.get(),
+                *self.handle,
                 c_channel.as_ptr(),
                 message.as_ptr(),
                 message.len(),
