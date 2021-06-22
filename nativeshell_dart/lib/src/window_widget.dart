@@ -261,7 +261,15 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
               child!.size.height != constraints.maxHeight,
           "Child failed to constraint itself! If you're using Row or Column, "
           "don't forget to set mainAxisSize to MainAxisSize.min");
-      size = child!.size;
+      size = _sanitizeAndSnapToPixelBoundary(child!.size);
+      if (size != child!.size) {
+        // This can happen for fractional scaling when child didn't land exactly
+        // on physical fixel boundaries. Hopefully in future Flutter will do better
+        // job with fractional scaling. For now force child to fill available space.
+        child!.layout(
+            BoxConstraints(minWidth: size.width, minHeight: size.height),
+            parentUsesSize: true);
+      }
       _updateGeometry();
     }
   }
@@ -339,7 +347,7 @@ class _RenderWindowLayout extends RenderProxyBox {
           max(intrinsicSize.height, size.height));
 
       if (maxSize.width > size.width || maxSize.height > size.height) {
-        builtWindow.updateWindowSize(maxSize);
+        builtWindow.updateWindowSize(_sanitizeAndSnapToPixelBoundary(maxSize));
       }
       final constraints = BoxConstraints.tight(maxSize);
       child!.layout(constraints, parentUsesSize: true);
