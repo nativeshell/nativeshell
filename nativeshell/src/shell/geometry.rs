@@ -261,9 +261,14 @@ impl From<IPoint> for Point {
     }
 }
 
+// account of rounding errors that happen with fraction scaling
+fn round_epsilon(v: f64) -> f64 {
+    (v + 0.000001).floor()
+}
+
 impl From<Point> for IPoint {
     fn from(point: Point) -> Self {
-        Self::xy(point.x as i32, point.y as i32)
+        Self::xy(round_epsilon(point.x) as i32, round_epsilon(point.y) as i32)
     }
 }
 
@@ -275,7 +280,10 @@ impl From<ISize> for Size {
 
 impl From<Size> for ISize {
     fn from(size: Size) -> Self {
-        Self::wh(size.width as i32, size.height as i32)
+        Self::wh(
+            round_epsilon(size.width) as i32,
+            round_epsilon(size.height) as i32,
+        )
     }
 }
 
@@ -293,10 +301,10 @@ impl From<IRect> for Rect {
 impl From<Rect> for IRect {
     fn from(rect: Rect) -> Self {
         IRect::xywh(
-            rect.x as i32,
-            rect.y as i32,
-            rect.width as i32,
-            rect.height as i32,
+            round_epsilon(rect.x) as i32,
+            round_epsilon(rect.y) as i32,
+            round_epsilon(rect.width) as i32,
+            round_epsilon(rect.height) as i32,
         )
     }
 }
