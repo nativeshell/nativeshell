@@ -64,8 +64,13 @@ class WindowManager {
     dispatcher.registerMethodHandler(Channels.dropTarget, _onDropTargetCall);
   }
 
-  Future<Window> createWindow(dynamic initData) async {
-    _maybePause();
+  Future<Window> createWindow(
+    dynamic initData, {
+    required bool invisibleWindowHint,
+  }) async {
+    if (!invisibleWindowHint) {
+      _maybePause();
+    }
     final dispatcher = WindowMethodDispatcher.instance;
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
@@ -78,7 +83,9 @@ class WindowManager {
     final handle = WindowHandle(result['windowHandle'] as int);
     final res = _windows.putIfAbsent(handle, () => Window(handle));
     await res.waitUntilInitialized();
-    _maybeResume();
+    if (!invisibleWindowHint) {
+      _maybeResume();
+    }
     return res;
   }
 

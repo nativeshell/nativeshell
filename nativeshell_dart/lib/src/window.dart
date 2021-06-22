@@ -96,8 +96,14 @@ class Window {
     return WindowManager.instance.getWindow(handle);
   }
 
-  static Future<Window> create(dynamic initData) {
-    return WindowManager.instance.createWindow(initData);
+  static Future<Window> create(
+    dynamic initData, {
+    // Hint to window manager to not optimize for faster display of this window
+    // at the expense of current window.
+    bool invisibleWindowHint = false,
+  }) {
+    return WindowManager.instance
+        .createWindow(initData, invisibleWindowHint: invisibleWindowHint);
   }
 
   final visibilityChangedEvent = Event<bool>();
