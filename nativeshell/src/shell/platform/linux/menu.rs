@@ -39,6 +39,7 @@ pub struct PlatformMenu {
     item_selected: Cell<bool>,
     on_selection_done: RefCell<Option<Box<dyn FnOnce(bool)>>>,
     ignore_activate: Cell<bool>,
+    pending_selection_done: Cell<bool>,
 }
 
 #[allow(unused_variables)]
@@ -56,6 +57,7 @@ impl PlatformMenu {
             item_selected: Cell::new(false),
             on_selection_done: RefCell::new(None),
             ignore_activate: Cell::new(false),
+            pending_selection_done: Cell::new(false),
         }
     }
 
@@ -86,6 +88,24 @@ impl PlatformMenu {
                 s.context.menu_manager.borrow().on_menu_open(s.handle);
             }
         });
+
+        self.menu.connect_hide(move |menu| {
+            if let Some(platform_menu) = Self::platform_menu_from_gtk_menu(&menu) {
+                platform_menu.set_pending_selection_done();
+                // Fix for https://github.com/nativeshell/examples/issues/13
+                // Sometimes on KDE/Wayland when activating another window the
+                // selection_done event is not fired. So we trigger it here.
+                let platform_menu_clone = platform_menu.clone();
+                platform_menu
+                    .context
+                    .run_loop
+                    .borrow()
+                    .schedule_now(move || {
+                        platform_menu_clone.trigger_selection_done();
+                    })
+                    .detach();
+            }
+        });
     }
 
     // Callback will be fired if item in this menu or any submenu is selected
@@ -96,10 +116,16 @@ impl PlatformMenu {
             .replace(Box::new(callback));
     }
 
+    pub fn set_pending_selection_done(&self) {
+        self.pending_selection_done.set(true);
+    }
+
     pub fn trigger_selection_done(&self) {
-        let done = self.on_selection_done.borrow_mut().take();
-        if let Some(done) = done {
-            done(self.item_selected.get());
+        if self.pending_selection_done.replace(false) {
+            let done = self.on_selection_done.borrow_mut().take();
+            if let Some(done) = done {
+                done(self.item_selected.get());
+            }
         }
     }
 
