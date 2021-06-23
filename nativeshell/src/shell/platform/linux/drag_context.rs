@@ -74,7 +74,7 @@ impl DropContext {
         context: &gdk::DragContext,
         x: i32,
         y: i32,
-        _time: u32,
+        time: u32,
     ) {
         *self.drag_location.borrow_mut() = Point::xy(x as f64, y as f64);
         self.drag_context.borrow_mut().replace(context.clone());
@@ -84,10 +84,10 @@ impl DropContext {
             return;
         }
 
-        self.get_data(widget, context);
+        self.get_data(widget, context, time);
     }
 
-    fn get_data<T: IsA<Widget>>(&self, widget: &T, context: &gdk::DragContext) {
+    fn get_data<T: IsA<Widget>>(&self, widget: &T, context: &gdk::DragContext, time: u32) {
         let pending_data = {
             let mut pending_data = self.pending_data.borrow_mut();
 
@@ -97,7 +97,6 @@ impl DropContext {
 
             let mut adapters = self.data_adapters();
 
-            // widget.drag_get_data(context, target, time_)
             for target in context.list_targets() {
                 let adapter_index = adapters
                     .iter()
@@ -112,7 +111,7 @@ impl DropContext {
         };
 
         for data in pending_data.iter() {
-            widget.drag_get_data(&context, &data, 0);
+            widget.drag_get_data(&context, &data, time);
         }
     }
 
@@ -136,13 +135,13 @@ impl DropContext {
         context: &gdk::DragContext,
         x: i32,
         y: i32,
-        _time: u32,
+        time: u32,
     ) {
         *self.drag_location.borrow_mut() = Point::xy(x as f64, y as f64);
         self.dropping.replace(true);
 
         if self.pending_data.borrow().is_empty() {
-            self.get_data(widget, context);
+            self.get_data(widget, context, time);
         }
     }
 
