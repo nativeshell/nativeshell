@@ -176,7 +176,7 @@ impl DragContext {
 
         let mut first = true;
         let mut dragging_items = Vec::<StrongPtr>::new();
-        let snapshot = ns_image_from(request.image);
+        let snapshot = ns_image_from(vec![request.image]);
         let mut rect: NSRect = request.rect.into();
         flip_rect(view, &mut rect);
 
