@@ -45,7 +45,9 @@ impl<'a> PluginsImpl<'a> {
         let symlinks_dir = mkdir(path, Some("symlinks"))?;
         for plugin in plugins {
             let dst = symlinks_dir.join(&plugin.name);
-            fs::remove_file(&dst).wrap_error(FileOperation::Remove, || dst.clone())?;
+            if dst.exists() {
+                fs::remove_file(&dst).wrap_error(FileOperation::Remove, || dst.clone())?;
+            }
             symlink(&plugin.path, &dst)?
         }
 
