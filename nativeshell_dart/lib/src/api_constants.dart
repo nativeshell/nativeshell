@@ -8,6 +8,7 @@ class Channels {
 
   static final menuManager = 'nativeshell/menu-manager';
   static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
+  static final statusItemManager = 'nativeshell/status-item-manager';
 }
 
 class Events {
@@ -30,6 +31,7 @@ class Methods {
   static final windowShowModal = 'Window.showModal';
   static final windowReadyToShow = 'Window.readyToShow';
   static final windowHide = 'Window.hide';
+  static final windowActivate = 'Window.activate';
   static final windowClose = 'Window.close';
   static final windowCloseWithResult = 'Window.closeWithResult';
 
@@ -69,6 +71,12 @@ class Methods {
   // KeyboardMap
   static final keyboardMapGet = 'KeyboardMap.get';
   static final keyboardMapOnChanged = 'KeyboardMap.onChanged';
+
+  // StatusItem
+  static final statusItemCreate = 'StatusItem.create';
+  static final statusItemDestroy = 'StatusItem.destroy';
+  static final statusItemSetImage = 'StatusItem.setImage';
+  static final statusItemSetMenu = 'StatusItem.setMenu';
 }
 
 class Keys {

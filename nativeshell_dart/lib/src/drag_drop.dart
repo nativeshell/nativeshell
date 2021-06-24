@@ -361,16 +361,9 @@ class DragSession {
     required DragData data,
     required List<DragEffect> allowedEffects,
   }) async {
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-
     await _dragSourceChannel
         .invokeMethod(window.handle, Methods.dragSourceBeginDragSession, {
-      'image': {
-        'width': image.width,
-        'height': image.height,
-        'bytesPerRow': image.width * 4,
-        'data': bytes!.buffer.asUint8List()
-      },
+      'image': (await ImageData.fromImage(image)).serialize(),
       'rect': rect.serialize(),
       'data': data.serialize(),
       'allowedEffects':

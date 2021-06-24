@@ -61,6 +61,10 @@ class Window {
     await _invokeMethod(Methods.windowHide);
   }
 
+  Future<void> activate() async {
+    await _invokeMethod(Methods.windowActivate);
+  }
+
   Future<GeometryFlags> setGeometry(Geometry request,
       [GeometryPreference preference =
           GeometryPreference.preferContent]) async {
@@ -108,7 +112,6 @@ class Window {
   }
 
   final visibilityChangedEvent = Event<bool>();
-  final closeRequestEvent = VoidEvent();
   final closeEvent = VoidEvent();
 
   void onMessage(String message, dynamic arguments) {
@@ -169,10 +172,14 @@ class LocalWindow extends Window {
   @override
   void onMessage(String message, dynamic arguments) {
     if (message == Events.windowCloseRequest) {
-      close();
+      if (onCloseRequested == null || onCloseRequested!()) {
+        close();
+      }
     }
     super.onMessage(message, arguments);
   }
+
+  bool Function()? onCloseRequested;
 
   @override
   Future<void> show() async {

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::codec::Value;
 
-use super::{MenuHandle, Point, Rect, Size};
+use super::{MenuHandle, Point, Rect, Size, StatusItemHandle};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -181,6 +181,7 @@ pub struct ImageData {
     pub bytes_per_row: i32,
     #[serde(with = "serde_bytes")]
     pub data: Vec<u8>,
+    pub device_pixel_ratio: Option<f64>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -337,4 +338,28 @@ pub struct Key {
 #[serde(rename_all = "camelCase")]
 pub struct KeyboardMap {
     pub keys: Vec<Key>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemCreateRequest {}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemDestroyRequest {
+    pub handle: StatusItemHandle,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetImageRequest {
+    pub handle: StatusItemHandle,
+    pub image: Vec<ImageData>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetMenuRequest {
+    pub handle: StatusItemHandle,
+    pub menu: Option<MenuHandle>,
 }

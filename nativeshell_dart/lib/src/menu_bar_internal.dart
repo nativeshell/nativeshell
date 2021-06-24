@@ -430,7 +430,7 @@ class _MenuBarInternalState extends State<MenuBarInternal>
   @override
   void initState() {
     super.initState();
-    MenuManager.instance().registerDelegate(this);
+    MenuManager.instance.registerDelegate(this);
     // handle keyboard events before flutter event processing
     KeyInterceptor.instance
         .registerHandler(_onRawKeyEvent, stage: InterceptorStage.pre);
@@ -446,7 +446,7 @@ class _MenuBarInternalState extends State<MenuBarInternal>
 
   @override
   void dispose() {
-    MenuManager.instance().unregisterDelegate(this);
+    MenuManager.instance.unregisterDelegate(this);
     KeyInterceptor.instance
         .unregisterHandler(_onRawKeyEvent, stage: InterceptorStage.pre);
     if (windowContext != null) {

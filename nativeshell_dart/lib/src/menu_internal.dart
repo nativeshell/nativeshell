@@ -46,7 +46,7 @@ class MenuState {
     _currentAppMenu = this;
     final handle = await materialize();
 
-    await MenuManager.instance().setAppMenu(handle);
+    await MenuManager.instance.setAppMenu(handle);
   }
 
   Future<MenuHandle> _materializeLocked() async {
@@ -300,7 +300,7 @@ class MenuState {
 
     oldMenu._transferedTo = this;
 
-    MenuManager.instance().didTransferMenu(this);
+    MenuManager.instance.didTransferMenu(this);
   }
 }
 
@@ -363,23 +363,23 @@ class DefaultMaterializer extends MenuMaterializer {
     final handle = menu.currentHandle;
 
     final res = MenuHandle(
-        await MenuManager.instance()._invoke(Methods.menuCreateOrUpdate, {
+        await MenuManager.instance._invoke(Methods.menuCreateOrUpdate, {
       'handle': handle?.value,
       'menu': serialized,
     }));
     if (handle != null && handle != res) {
-      MenuManager.instance()._activeMenus.remove(handle);
+      MenuManager.instance._activeMenus.remove(handle);
     }
-    MenuManager.instance()._activeMenus[res] = menu;
+    MenuManager.instance._activeMenus[res] = menu;
     return res;
   }
 
   @override
   Future<void> destroyMenu(MenuHandle menuHandle) async {
-    await MenuManager.instance()._invoke(Methods.menuDestroy, {
+    await MenuManager.instance._invoke(Methods.menuDestroy, {
       'handle': menuHandle.value,
     });
-    MenuManager.instance()._activeMenus.remove(menuHandle);
+    MenuManager.instance._activeMenus.remove(menuHandle);
   }
 
   @override
@@ -396,9 +396,7 @@ abstract class MenuManagerDelegate {
 }
 
 class MenuManager {
-  static MenuManager instance() => _instance;
-
-  static final _instance = MenuManager();
+  static final instance = MenuManager();
 
   MenuManager() {
     _menuChannel.setMethodCallHandler(_onMethodCall);

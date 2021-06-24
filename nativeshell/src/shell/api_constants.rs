@@ -10,11 +10,14 @@ pub(crate) mod channel {
         pub const DRAG_SOURCE: &str = ".window.drag-source";
     }
 
-    // Flutter channel for mananing platform menus
+    // Flutter channel for managing platform menus
     pub const MENU_MANAGER: &str = "nativeshell/menu-manager";
 
     // Flutter channel for keyboard layout notifications
     pub const KEYBOARD_MAP_MANAGER: &str = "nativeshell/keyboard-map-manager";
+
+    // Flutter channel for managing status items
+    pub const STATUS_ITEM_MANAGER: &str = "nativeshell/status-item-manager";
 }
 
 pub const CURRENT_API_VERSION: i32 = 1;
@@ -44,6 +47,9 @@ pub(crate) mod method {
 
         // Hide the window
         pub const HIDE: &str = "Window.hide";
+
+        // Bring window front and request focus
+        pub const ACTIVATE: &str = "Window.activate";
 
         // Close the window; This will terminate the isolate
         pub const CLOSE: &str = "Window.close";
@@ -99,6 +105,13 @@ pub(crate) mod method {
     pub mod keyboard_map {
         pub const GET: &str = "KeyboardMap.get";
         pub const ON_CHANGED: &str = "KeyboardMap.onChanged";
+    }
+
+    pub mod status_item {
+        pub const CREATE: &str = "StatusItem.create";
+        pub const DESTROY: &str = "StatusItem.destroy";
+        pub const SET_IMAGE: &str = "StatusItem.setImage";
+        pub const SET_MENU: &str = "StatusItem.setMenu";
     }
 }
 

@@ -17,7 +17,7 @@ pub struct MethodCall<V> {
     pub args: V,
 }
 
-type MethodCallResult<V> = Result<V, MethodCallError<V>>;
+pub type MethodCallResult<V> = Result<V, MethodCallError<V>>;
 
 #[derive(Debug, Clone)]
 pub struct MethodCallError<V> {

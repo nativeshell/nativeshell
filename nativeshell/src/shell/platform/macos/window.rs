@@ -9,7 +9,8 @@ use std::{
 
 use cocoa::{
     appkit::{
-        NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+        NSApplication, NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior,
+        NSWindowStyleMask,
     },
     base::{id, nil, BOOL, NO, YES},
     foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSString, NSUInteger},
@@ -523,6 +524,15 @@ impl PlatformWindow {
             callback(Ok(result));
         }
         self.close()
+    }
+
+    pub fn activate(&self) -> PlatformResult<()> {
+        unsafe {
+            let app = NSApplication::sharedApplication(nil);
+            NSApplication::activateIgnoringOtherApps_(app, YES);
+            NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
+        }
+        Ok(())
     }
 
     pub fn close(&self) -> PlatformResult<()> {

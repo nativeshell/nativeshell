@@ -5,7 +5,7 @@ use crate::{util::LateRefCell, Error, Result};
 use super::{
     platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
     EngineManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler,
-    RunLoop, WindowManager, WindowMethodChannel,
+    RunLoop, StatusItemManager, WindowManager, WindowMethodChannel,
 };
 
 pub struct ContextOptions {
@@ -35,6 +35,7 @@ pub struct ContextImpl {
     pub window_manager: LateRefCell<WindowManager>,
     pub(crate) menu_manager: LateRefCell<RegisteredMethodCallHandler<MenuManager>>,
     pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
+    pub(crate) status_item_manager: LateRefCell<StatusItemManager>,
 }
 
 impl ContextImpl {
@@ -48,6 +49,7 @@ impl ContextImpl {
             window_manager: LateRefCell::new(),
             menu_manager: LateRefCell::new(),
             keyboard_map_manager: LateRefCell::new(),
+            status_item_manager: LateRefCell::new(),
         });
         let res = ContextRef { context: res };
         res.initialize(&res)?;
@@ -66,6 +68,8 @@ impl ContextImpl {
         self.menu_manager.set(MenuManager::new(context.weak()));
         self.keyboard_map_manager
             .set(KeyboardMapManager::new(context.weak()));
+        self.status_item_manager
+            .set(StatusItemManager::new(context));
 
         #[cfg(debug_assertions)]
         {
