@@ -130,29 +130,32 @@ pub unsafe fn array_with_objects(objects: &[StrongPtr]) -> id {
     NSArray::arrayWithObjects(nil, &vec)
 }
 
-pub fn ns_image_from(image: ImageData) -> StrongPtr {
+pub fn ns_image_from(images: Vec<ImageData>) -> StrongPtr {
     unsafe {
-        let data = CGDataProvider::from_buffer(Arc::new(image.data));
+        let res = StrongPtr::new(msg_send![NSImage::alloc(nil), init]);
+        for image in images {
+            let data = CGDataProvider::from_buffer(Arc::new(image.data));
 
-        let rgb = CGColorSpace::create_device_rgb();
+            let rgb = CGColorSpace::create_device_rgb();
 
-        let cgimage = CGImage::new(
-            image.width as usize,
-            image.height as usize,
-            8,
-            32,
-            image.bytes_per_row as usize,
-            &rgb,
-            kCGBitmapByteOrderDefault | kCGImageAlphaLast,
-            &data,
-            true,
-            kCGRenderingIntentDefault,
-        );
+            let cgimage = CGImage::new(
+                image.width as usize,
+                image.height as usize,
+                8,
+                32,
+                image.bytes_per_row as usize,
+                &rgb,
+                kCGBitmapByteOrderDefault | kCGImageAlphaLast,
+                &data,
+                true,
+                kCGRenderingIntentDefault,
+            );
 
-        StrongPtr::new(msg_send![NSImage::alloc(nil),
-            initWithCGImage:&*cgimage
-            size:NSSize::new(image.width as CGFloat, image.height as CGFloat)
-        ])
+            let rep: id = msg_send![class!(NSBitmapImageRep), alloc];
+            let rep = StrongPtr::new(msg_send![rep, initWithCGImage:&*cgimage]);
+            NSImage::addRepresentation_(*res, *rep);
+        }
+        res
     }
 }
 
