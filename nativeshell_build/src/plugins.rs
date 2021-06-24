@@ -33,6 +33,7 @@ pub(crate) struct Plugin {
     pub name: String,
     pub path: PathBuf,
     pub platform_path: PathBuf,
+    pub platform_name: String,
     pub platform_info: PluginPlatformInfo,
 }
 
@@ -126,14 +127,14 @@ impl<'a> Plugins<'a> {
         let mut res = Vec::<Plugin>::new();
         for item in lines {
             let mut platform_info = self.load_plugin_info(&item.1)?;
-            let key = match self.build.target_os {
+            let platform_name = match self.build.target_os {
                 TargetOS::Mac => "macos",
                 TargetOS::Windows => "windows",
                 TargetOS::Linux => "linux",
             };
-            if let Some(platform_info) = platform_info.remove(key) {
+            if let Some(platform_info) = platform_info.remove(platform_name) {
                 let path: PathBuf = item.1.into();
-                let platform_path = path.join(key);
+                let platform_path = path.join(platform_name);
 
                 // some plugins are FFI only, no need to build them
                 if platform_path.exists() {
@@ -141,6 +142,7 @@ impl<'a> Plugins<'a> {
                         name: item.0,
                         path,
                         platform_path,
+                        platform_name: platform_name.into(),
                         platform_info,
                     });
                 }

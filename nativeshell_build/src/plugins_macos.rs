@@ -26,7 +26,8 @@ impl<'a> PluginsImpl<'a> {
         let xcode = mkdir(&self.build.out_dir, Some("xcode"))?;
         if !skip_build {
             self.write_dummy_xcode_project(&xcode)?;
-            self.write_podfile(&xcode, plugins)?;
+            let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
+            self.write_podfile(&xcode, plugins, &symlinks_dir)?;
             self.install_cocoa_pods(&xcode)?;
         }
         let (frameworks_path, products_path) = self.build_pods(&xcode, skip_build)?;
@@ -40,23 +41,42 @@ impl<'a> PluginsImpl<'a> {
         self.write_plugin_registrar(&HashMap::new())
     }
 
-    fn write_podfile(&self, path: &Path, plugins: &[Plugin]) -> BuildResult<()> {
+    fn create_plugin_symlinks(&self, path: &Path, plugins: &[Plugin]) -> BuildResult<PathBuf> {
+        let symlinks_dir = mkdir(path, Some("symlinks"))?;
+        for plugin in plugins {
+            let dst = symlinks_dir.join(&plugin.name);
+            fs::remove_file(&dst).wrap_error(FileOperation::Remove, || dst.clone())?;
+            symlink(&plugin.path, &dst)?
+        }
+
+        Ok(symlinks_dir)
+    }
+
+    fn write_podfile(
+        &self,
+        path: &Path,
+        plugins: &[Plugin],
+        symlinks_dir: &Path,
+    ) -> BuildResult<()> {
         let mut file =
             File::create(path.join("PodFile")).wrap_error(FileOperation::Create, || path.into())?;
 
         write!(
             file,
             "ENV['COCOAPODS_DISABLE_STATS'] = 'true'\n\
-            target 'DummyProject' do\n  use_frameworks!\n"
+            platform :osx, '{}'\n\
+            target 'DummyProject' do\n  use_frameworks!\n",
+            Flutter::macosx_deployment_target()
         )
         .wrap_error(FileOperation::Write, || path.into())?;
 
         for plugin in plugins {
+            let plugin_path = symlinks_dir.join(&plugin.name);
             writeln!(
                 file,
                 "  pod '{}', :path => '{}', :binary => true",
                 plugin.name,
-                plugin.platform_path.to_string_lossy()
+                plugin_path.join(&plugin.platform_name).to_string_lossy()
             )
             .wrap_error(FileOperation::Write, || path.into())?;
         }
