@@ -23,7 +23,7 @@ pub trait WindowMenuDelegate {
 }
 
 pub struct WindowMenu {
-    context: Rc<Context>,
+    context: Context,
     hwnd: HWND,
     child_hwnd: HWND,
     delegate: Option<Weak<dyn WindowMenuDelegate>>,
@@ -59,7 +59,7 @@ thread_local! {
 // Support mouse tracking while popup menu is visible
 impl WindowMenu {
     pub fn new(
-        context: Rc<Context>,
+        context: Context,
         hwnd: HWND,
         child_hwnd: HWND,
         delegate: Weak<dyn WindowMenuDelegate>,
@@ -186,10 +186,12 @@ impl WindowMenu {
         });
 
         if res > 0 {
-            self.context.menu_manager.borrow().on_menu_action(
-                self.current_menu.borrow().as_ref().unwrap().request.handle,
-                res as i64,
-            );
+            if let Some(context) = self.context.get() {
+                context.menu_manager.borrow().on_menu_action(
+                    self.current_menu.borrow().as_ref().unwrap().request.handle,
+                    res as i64,
+                );
+            }
         }
 
         self.current_menu.borrow_mut().take();
@@ -274,13 +276,15 @@ impl WindowMenu {
             menu.menu_hwnd = menu_hwnd;
             if menu.request.preselect_first {
                 let hmenu = menu.platform_menu.menu;
-                self.context
-                    .run_loop
-                    .borrow()
-                    .schedule_now(move || unsafe {
-                        Self::preselect_first_enabled_item(menu_hwnd, hmenu);
-                    })
-                    .detach();
+                if let Some(context) = self.context.get() {
+                    context
+                        .run_loop
+                        .borrow()
+                        .schedule_now(move || unsafe {
+                            Self::preselect_first_enabled_item(menu_hwnd, hmenu);
+                        })
+                        .detach();
+                }
             }
         }
     }
@@ -359,16 +363,18 @@ impl WindowMenu {
                 false => (VK_LEFT, VK_RIGHT),
             };
 
-            if key == key_prev && current_menu.current_item_is_first {
-                self.context
-                    .menu_manager
-                    .borrow()
-                    .move_to_previous_menu(current_menu.platform_menu.handle);
-            } else if key == key_next && current_menu.current_item_is_last {
-                self.context
-                    .menu_manager
-                    .borrow()
-                    .move_to_next_menu(current_menu.platform_menu.handle);
+            if let Some(context) = self.context.get() {
+                if key == key_prev && current_menu.current_item_is_first {
+                    context
+                        .menu_manager
+                        .borrow()
+                        .move_to_previous_menu(current_menu.platform_menu.handle);
+                } else if key == key_next && current_menu.current_item_is_last {
+                    context
+                        .menu_manager
+                        .borrow()
+                        .move_to_next_menu(current_menu.platform_menu.handle);
+                }
             }
         }
     }
@@ -386,25 +392,27 @@ impl WindowMenu {
 
     unsafe fn track_mouse_leave(&self) {
         let hwnd = self.child_hwnd;
-        self.context
-            .run_loop
-            .borrow()
-            .schedule(
-                // this needs to be delayed a bit, if we schedule it immediately after
-                // hiding popup menu windows will fire WM_MOUSELEAVE even if cursor
-                // is within child_hwnd.
-                Duration::from_millis(50),
-                move || {
-                    let mut event = TRACKMOUSEEVENT {
-                        cbSize: size_of::<TRACKMOUSEEVENT>() as u32,
-                        dwFlags: TME_LEAVE,
-                        hwndTrack: hwnd,
-                        dwHoverTime: 0,
-                    };
-                    TrackMouseEvent(&mut event as *mut _);
-                },
-            )
-            .detach();
+        if let Some(context) = self.context.get() {
+            context
+                .run_loop
+                .borrow()
+                .schedule(
+                    // this needs to be delayed a bit, if we schedule it immediately after
+                    // hiding popup menu windows will fire WM_MOUSELEAVE even if cursor
+                    // is within child_hwnd.
+                    Duration::from_millis(50),
+                    move || {
+                        let mut event = TRACKMOUSEEVENT {
+                            cbSize: size_of::<TRACKMOUSEEVENT>() as u32,
+                            dwFlags: TME_LEAVE,
+                            hwndTrack: hwnd,
+                            dwHoverTime: 0,
+                        };
+                        TrackMouseEvent(&mut event as *mut _);
+                    },
+                )
+                .detach();
+        }
     }
 
     pub fn on_menu_select(&self, _msg: u32, w_param: WPARAM, l_param: LPARAM) {
@@ -437,7 +445,9 @@ impl WindowMenu {
             }
         }
         let handle = MenuHandle(info.dwMenuData as i64);
-        self.context.menu_manager.borrow_mut().on_menu_open(handle);
+        if let Some(context) = self.context.get() {
+            context.menu_manager.borrow_mut().on_menu_open(handle);
+        }
     }
 
     pub fn handle_message(

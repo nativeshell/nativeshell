@@ -33,7 +33,7 @@ use super::{
 pub type PlatformWindowType = isize; // HWND
 
 pub struct PlatformWindow {
-    context: Rc<Context>,
+    context: Context,
     hwnd: Cell<HWND>,
     child_hwnd: Cell<HWND>,
     state: LateRefCell<WindowBaseState>,
@@ -57,7 +57,7 @@ struct MouseState {
 
 impl PlatformWindow {
     pub fn new(
-        context: Rc<Context>,
+        context: Context,
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
@@ -144,9 +144,11 @@ impl PlatformWindow {
             weak.clone(),
         ));
 
-        let drag_context = Rc::new(DragContext::new(self.context.clone(), weak));
-        self.drag_context.set(drag_context.clone());
-        drag_context.assign_weak_self(Rc::downgrade(&drag_context));
+        if let Some(context) = self.context.get() {
+            let drag_context = Rc::new(DragContext::new(&context, weak));
+            self.drag_context.set(drag_context.clone());
+            drag_context.assign_weak_self(Rc::downgrade(&drag_context));
+        }
     }
 }
 
@@ -345,16 +347,18 @@ impl PlatformWindow {
             EndMenu();
         }
 
-        self.context
-            .run_loop
-            .borrow()
-            .schedule_now(move || {
-                let this = weak.upgrade();
-                if let Some(this) = this {
-                    this.window_menu.borrow().show_popup(menu, request, on_done);
-                }
-            })
-            .detach();
+        if let Some(context) = self.context.get() {
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || {
+                    let this = weak.upgrade();
+                    if let Some(this) = this {
+                        this.window_menu.borrow().show_popup(menu, request, on_done);
+                    }
+                })
+                .detach();
+        }
     }
 
     pub fn hide_popup_menu(&self, menu: Rc<PlatformMenu>) -> PlatformResult<()> {
@@ -366,26 +370,28 @@ impl PlatformWindow {
         let menu = unsafe { GetSystemMenu(self.hwnd(), false) };
         let position = self.get_state().local_to_global(&Point::xy(0.0, 0.0));
         let hwnd = self.hwnd();
-        self.context
-            .run_loop
-            .borrow()
-            .schedule_now(move || unsafe {
-                let cmd = TrackPopupMenuEx(
-                    menu,
-                    TPM_RETURNCMD.0,
-                    position.x,
-                    position.y,
-                    hwnd,
-                    null_mut(),
-                );
-                SendMessageW(
-                    hwnd,
-                    WM_SYSCOMMAND as u32,
-                    WPARAM(cmd.0 as usize),
-                    LPARAM(0),
-                );
-            })
-            .detach();
+        if let Some(context) = self.context.get() {
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || unsafe {
+                    let cmd = TrackPopupMenuEx(
+                        menu,
+                        TPM_RETURNCMD.0,
+                        position.x,
+                        position.y,
+                        hwnd,
+                        null_mut(),
+                    );
+                    SendMessageW(
+                        hwnd,
+                        WM_SYSCOMMAND as u32,
+                        WPARAM(cmd.0 as usize),
+                        LPARAM(0),
+                    );
+                })
+                .detach();
+        }
         Ok(())
     }
 
@@ -450,13 +456,15 @@ impl PlatformWindow {
                     );
                 }
                 let hwnd = self.child_hwnd();
-                self.context
-                    .run_loop
-                    .borrow()
-                    .schedule(Duration::from_secs(1), move || unsafe {
-                        SendMessageW(hwnd, WM_SHOWWINDOW as u32, WPARAM(1), LPARAM(1));
-                    })
-                    .detach();
+                if let Some(context) = self.context.get() {
+                    context
+                        .run_loop
+                        .borrow()
+                        .schedule(Duration::from_secs(1), move || unsafe {
+                            SendMessageW(hwnd, WM_SHOWWINDOW as u32, WPARAM(1), LPARAM(1));
+                        })
+                        .detach();
+                }
             }
             _ => {}
         }

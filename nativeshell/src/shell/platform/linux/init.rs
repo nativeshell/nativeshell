@@ -1,13 +1,13 @@
-use std::rc::{Rc, Weak};
+use std::rc::Weak;
 
 use gdk::{Event, WindowExt};
 use glib::ObjectExt;
 
-use crate::shell::{platform::window::PlatformWindow, Context};
+use crate::shell::{platform::window::PlatformWindow, ContextRef};
 
 use super::error::{PlatformError, PlatformResult};
 
-pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
+pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
     gtk::init().map_err(|e| PlatformError::GLibError {
         message: e.message.into(),
     })?;

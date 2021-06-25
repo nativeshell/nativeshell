@@ -53,19 +53,19 @@ impl ContextImpl {
 
     fn initialize(&self, context: &ContextRef) -> Result<()> {
         self.run_loop.set(RunLoop::new());
-        self.engine_manager.set(EngineManager::new(&context));
-        self.message_manager.set(MessageManager::new(&context));
+        self.engine_manager.set(EngineManager::new(context));
+        self.message_manager.set(MessageManager::new(context));
         self.window_method_channel
             .set(WindowMethodChannel::new(&context));
-        self.window_manager.set(WindowManager::new(&context));
-        self.menu_manager.set(MenuManager::new(&context));
+        self.window_manager.set(WindowManager::new(context));
+        self.menu_manager.set(MenuManager::new(context));
 
         #[cfg(debug_assertions)]
         {
             self.sponsor_prompt();
         }
 
-        init_platform(&context).map_err(Error::from)?;
+        init_platform(context).map_err(Error::from)?;
 
         Ok(())
     }

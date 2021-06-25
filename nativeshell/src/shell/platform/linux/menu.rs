@@ -491,7 +491,7 @@ impl PlatformMenu {
 pub struct PlatformMenuManager {}
 
 impl PlatformMenuManager {
-    pub fn new(_context: Rc<Context>) -> Self {
+    pub fn new(_context: Context) -> Self {
         Self {}
     }
 
