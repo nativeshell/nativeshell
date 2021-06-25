@@ -16,12 +16,15 @@ pub type EventHandlerUPP = ::std::option::Option<
 pub type ItemCount = ::std::os::raw::c_ulong;
 pub type OSType = u32;
 #[repr(C)]
+#[allow(non_snake_case)]
 #[derive(Debug, Copy, Clone)]
 pub struct EventTypeSpec {
     pub eventClass: OSType,
     pub eventKind: u32,
 }
+#[allow(non_upper_case_globals)]
 pub const kEventClassKeyboard: OSType = 1801812322;
+#[allow(non_upper_case_globals)]
 pub const kEventHotKeyPressed: u32 = 5;
 extern "C" {
     pub fn InstallEventHandler(
@@ -39,7 +42,10 @@ extern "C" {
 pub type EventParamName = OSType;
 pub type EventParamType = OSType;
 pub type ByteCount = ::std::os::raw::c_ulong;
+#[allow(non_upper_case_globals)]
 pub const kEventParamDirectObject: EventParamName = 757935405;
+#[allow(non_upper_case_globals)]
+pub const typeEventHotKeyID: OSType = 1751869796;
 extern "C" {
     pub fn GetEventParameter(
         inEvent: EventRef,

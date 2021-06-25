@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::codec::Value;
 
-use super::{MenuHandle, Point, Rect, Size, StatusItemHandle};
+use super::{HotKeyHandle, MenuHandle, Point, Rect, Size, StatusItemHandle};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -362,4 +362,22 @@ pub struct StatusItemSetImageRequest {
 pub struct StatusItemSetMenuRequest {
     pub handle: StatusItemHandle,
     pub menu: Option<MenuHandle>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyCreateRequest {
+    pub accelerator: Accelerator,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyDestroyRequest {
+    pub handle: HotKeyHandle,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyPressed {
+    pub handle: HotKeyHandle,
 }

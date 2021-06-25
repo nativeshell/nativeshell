@@ -51,7 +51,7 @@ impl StatusItemManager {
 
     fn on_create(
         &mut self,
-        request: StatusItemCreateRequest,
+        _request: StatusItemCreateRequest,
         engine: EngineHandle,
     ) -> Result<StatusItemHandle> {
         let handle = self.next_handle;

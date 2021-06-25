@@ -1,7 +1,7 @@
 use std::{ffi::CString, mem::ManuallyDrop, os::raw::c_char, slice, sync::Arc};
 
 use cocoa::{
-    appkit::{CGFloat, NSImage, NSView},
+    appkit::{NSImage, NSView},
     base::{id, nil},
     foundation::{NSArray, NSPoint, NSRect, NSSize, NSString},
 };

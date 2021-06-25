@@ -68,6 +68,10 @@ class StatusItemHandle {
   String toString() => 'StatusItemHandle($value)';
 }
 
+//
+//
+//
+
 final _statusItemChannel = MethodChannel(Channels.statusItemManager);
 
 class _StatusItemManager {
