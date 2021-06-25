@@ -2,11 +2,7 @@ use std::rc::{Rc, Weak};
 
 use crate::{util::LateRefCell, Error, Result};
 
-use super::{
-    platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
-    EngineManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler,
-    RunLoop, StatusItemManager, WindowManager, WindowMethodChannel,
-};
+use super::{EngineManager, HotKeyManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler, RunLoop, StatusItemManager, WindowManager, WindowMethodChannel, platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform}};
 
 pub struct ContextOptions {
     pub app_namespace: String,
@@ -36,6 +32,7 @@ pub struct ContextImpl {
     pub(crate) menu_manager: LateRefCell<RegisteredMethodCallHandler<MenuManager>>,
     pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
     pub(crate) status_item_manager: LateRefCell<StatusItemManager>,
+    pub(crate) hot_key_manager: LateRefCell<HotKeyManager>,
 }
 
 impl ContextImpl {
@@ -50,6 +47,7 @@ impl ContextImpl {
             menu_manager: LateRefCell::new(),
             keyboard_map_manager: LateRefCell::new(),
             status_item_manager: LateRefCell::new(),
+            hot_key_manager: LateRefCell::new(),
         });
         let res = ContextRef { context: res };
         res.initialize(&res)?;
@@ -70,6 +68,7 @@ impl ContextImpl {
             .set(KeyboardMapManager::new(context.weak()));
         self.status_item_manager
             .set(StatusItemManager::new(context));
+        self.hot_key_manager.set(HotKeyManager::new(context));
 
         #[cfg(debug_assertions)]
         {

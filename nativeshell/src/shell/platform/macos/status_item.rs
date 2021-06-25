@@ -1,7 +1,7 @@
 use std::rc::{Rc, Weak};
 
 use cocoa::{
-    appkit::{NSSquareStatusItemLength, NSStatusBar, NSVariableStatusItemLength},
+    appkit::{NSButton, NSSquareStatusItemLength, NSStatusBar, NSVariableStatusItemLength},
     base::{id, nil, YES},
 };
 use objc::rc::{autoreleasepool, StrongPtr};

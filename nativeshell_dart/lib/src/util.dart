@@ -1,8 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter/painting.dart';
-
-import 'api_model.dart';
 
 String enumToString<T>(T enumItem, {bool camelCase = false}) {
   return enumItem.toString().split('.')[1];
@@ -36,7 +33,11 @@ Future<ImageInfo?> loadImage(
 Future<List<ImageInfo>> loadAllImages(AssetImage image) async {
   final keys = <AssetBundleImageKey>{};
   keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 1.0)));
+  keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 1.25)));
+  keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 1.5)));
+  keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 1.75)));
   keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 2.0)));
+  keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 2.5)));
   keys.add(await image.obtainKey(ImageConfiguration(devicePixelRatio: 3.0)));
 
   final res = <ImageInfo>[];

@@ -17,7 +17,7 @@ class StatusItem {
     return _StatusItemManager.instance.createStatusItem();
   }
 
-  void dispose() async {
+  Future<void> dispose() async {
     _checkDisposed();
     await setMenu(null);
     _disposed = true;

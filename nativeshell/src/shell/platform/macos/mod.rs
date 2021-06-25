@@ -4,6 +4,8 @@ mod drag_context;
 pub mod drag_data;
 pub mod engine;
 pub mod error;
+pub mod hot_key;
+mod hot_key_sys;
 pub mod init;
 pub mod keyboard_map;
 pub mod menu;
