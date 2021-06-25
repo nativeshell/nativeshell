@@ -38,7 +38,7 @@ use super::{
 pub type PlatformWindowType = gtk::Window;
 
 pub struct PlatformWindow {
-    context: Rc<Context>,
+    context: Context,
     pub(super) window: gtk::Window,
     weak_self: LateRefCell<Weak<PlatformWindow>>,
     parent: Option<Weak<PlatformWindow>>,
@@ -62,7 +62,7 @@ pub struct PlatformWindow {
 
 impl PlatformWindow {
     pub fn new(
-        context: Rc<Context>,
+        context: Context,
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
@@ -122,17 +122,21 @@ impl PlatformWindow {
                     // This must be done after Gtk allocation is done, so schedule it on next
                     // run loop turn
                     let weak_clone = weak_clone.clone();
-                    s.context
-                        .run_loop
-                        .borrow()
-                        .schedule_now(move || {
-                            if let Some(s) = weak_clone.upgrade() {
-                                if let Some(req) = s.pending_geometry_request.borrow_mut().take() {
-                                    s._set_geometry(req, false);
+                    if let Some(context) = s.context.get() {
+                        context
+                            .run_loop
+                            .borrow()
+                            .schedule_now(move || {
+                                if let Some(s) = weak_clone.upgrade() {
+                                    if let Some(req) =
+                                        s.pending_geometry_request.borrow_mut().take()
+                                    {
+                                        s._set_geometry(req, false);
+                                    }
                                 }
-                            }
-                        })
-                        .detach();
+                            })
+                            .detach();
+                    }
                 }
             }
         });
@@ -160,10 +164,11 @@ impl PlatformWindow {
             }
         });
 
-        self.drop_context
-            .set(DropContext::new(self.context.clone(), weak.clone()));
-        self.drag_context
-            .set(DragContext::new(self.context.clone(), weak));
+        if let Some(context) = self.context.get() {
+            self.drop_context
+                .set(DropContext::new(&context, weak.clone()));
+            self.drag_context.set(DragContext::new(&context, weak));
+        }
         self.connect_drag_drop_events();
 
         self.schedule_first_frame_notification();
@@ -286,20 +291,22 @@ impl PlatformWindow {
         {
             self.pending_first_frame.replace(false);
             let weak = self.weak_self.borrow().clone();
-            self.context
-                .run_loop
-                .borrow()
-                .schedule(
-                    // delay one frame, just in case
-                    Duration::from_millis(1000 / 60 + 1),
-                    move || {
-                        let s = weak.upgrade();
-                        if let Some(s) = s {
-                            s.on_first_frame();
-                        }
-                    },
-                )
-                .detach();
+            if let Some(context) = self.context.get() {
+                context
+                    .run_loop
+                    .borrow()
+                    .schedule(
+                        // delay one frame, just in case
+                        Duration::from_millis(1000 / 60 + 1),
+                        move || {
+                            let s = weak.upgrade();
+                            if let Some(s) = s {
+                                s.on_first_frame();
+                            }
+                        },
+                    )
+                    .detach();
+            }
         }
     }
 

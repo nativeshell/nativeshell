@@ -18,7 +18,7 @@ use crate::{
     shell::{
         api_model::{DragData, DragEffect, DragRequest, DraggingInfo, ImageData},
         platform::drag_data::{FallThroughDragDataAdapter, UriListDataAdapter},
-        Context, PlatformWindowDelegate, Point,
+        Context, ContextRef, PlatformWindowDelegate, Point,
     },
 };
 
@@ -28,7 +28,7 @@ use super::{
 };
 
 pub struct DropContext {
-    context: Rc<Context>,
+    context: Context,
     window: Weak<PlatformWindow>,
     data_adapters: Vec<Box<dyn DragDataAdapter>>,
 
@@ -41,9 +41,9 @@ pub struct DropContext {
 }
 
 impl DropContext {
-    pub fn new(context: Rc<Context>, window: Weak<PlatformWindow>) -> Self {
+    pub fn new(context: &ContextRef, window: Weak<PlatformWindow>) -> Self {
         Self {
-            context: context.clone(),
+            context: context.weak(),
             window,
             data_adapters: vec![
                 Box::new(UriListDataAdapter::new()),
@@ -58,8 +58,8 @@ impl DropContext {
         }
     }
 
-    fn data_adapters(&self) -> Vec<&dyn DragDataAdapter> {
-        self.context
+    fn data_adapters<'a>(&'a self, context: &'a ContextRef) -> Vec<&'a dyn DragDataAdapter> {
+        context
             .options
             .custom_drag_data_adapters
             .iter()
@@ -95,15 +95,17 @@ impl DropContext {
                 return;
             }
 
-            let mut adapters = self.data_adapters();
+            if let Some(ctx) = self.context.get() {
+                let mut adapters = self.data_adapters(&ctx);
 
-            for target in context.list_targets() {
-                let adapter_index = adapters
-                    .iter()
-                    .position(|p| p.data_formats().contains(&target));
-                if let Some(adapter_index) = adapter_index {
-                    pending_data.push(target);
-                    adapters.remove(adapter_index);
+                for target in context.list_targets() {
+                    let adapter_index = adapters
+                        .iter()
+                        .position(|p| p.data_formats().contains(&target));
+                    if let Some(adapter_index) = adapter_index {
+                        pending_data.push(target);
+                        adapters.remove(adapter_index);
+                    }
                 }
             }
 
@@ -162,13 +164,15 @@ impl DropContext {
                 return;
             }
 
-            let adapters = self.data_adapters();
-            let data_type = data.get_data_type();
-            if let Some(pos) = pending_data.iter().position(|d| d == &data_type) {
-                pending_data.remove(pos);
-                for adapter in adapters {
-                    if adapter.data_formats().contains(&data_type) {
-                        adapter.retrieve_drag_data(data, &mut self.current_data.borrow_mut());
+            if let Some(ctx) = self.context.get() {
+                let adapters = self.data_adapters(&ctx);
+                let data_type = data.get_data_type();
+                if let Some(pos) = pending_data.iter().position(|d| d == &data_type) {
+                    pending_data.remove(pos);
+                    for adapter in adapters {
+                        if adapter.data_formats().contains(&data_type) {
+                            adapter.retrieve_drag_data(data, &mut self.current_data.borrow_mut());
+                        }
                     }
                 }
             }
@@ -234,13 +238,14 @@ impl DropContext {
     }
 
     pub fn register<T: IsA<Widget>>(&self, widget: &T) {
-        let adapters = self.data_adapters();
-
         let mut atoms = Vec::<Atom>::new();
-        for adapter in adapters {
-            adapter.data_formats().iter().for_each(|a| atoms.push(*a));
-        }
+        if let Some(ctx) = self.context.get() {
+            let adapters = self.data_adapters(&ctx);
 
+            for adapter in adapters {
+                adapter.data_formats().iter().for_each(|a| atoms.push(*a));
+            }
+        }
         let entries: Vec<TargetEntry> = atoms
             .iter()
             .map(|a| TargetEntry::new(&a.name(), TargetFlags::empty(), 0))
@@ -261,7 +266,7 @@ impl DropContext {
 //
 
 pub struct DragContext {
-    context: Rc<Context>,
+    context: Context,
     window: Weak<PlatformWindow>,
     data_adapters: Vec<Box<dyn DragDataAdapter>>,
     data: RefCell<Vec<Box<dyn DragDataSetter>>>,
@@ -269,9 +274,9 @@ pub struct DragContext {
 }
 
 impl DragContext {
-    pub fn new(context: Rc<Context>, window: Weak<PlatformWindow>) -> Self {
+    pub fn new(context: &ContextRef, window: Weak<PlatformWindow>) -> Self {
         Self {
-            context: context.clone(),
+            context: context.weak(),
             window,
             data_adapters: vec![
                 Box::new(UriListDataAdapter::new()),
@@ -287,8 +292,10 @@ impl DragContext {
         let mut data = self.data.borrow_mut();
         data.clear();
 
-        for a in &self.context.options.custom_drag_data_adapters {
-            data.append(&mut a.prepare_drag_data(&mut properties));
+        if let Some(context) = self.context.get() {
+            for a in &context.options.custom_drag_data_adapters {
+                data.append(&mut a.prepare_drag_data(&mut properties));
+            }
         }
         for a in &self.data_adapters {
             data.append(&mut a.prepare_drag_data(&mut properties));

@@ -30,7 +30,7 @@ use super::{
 };
 
 pub struct PlatformMenu {
-    context: Rc<Context>,
+    context: Context,
     handle: MenuHandle,
     weak_self: LateRefCell<Weak<PlatformMenu>>,
     pub(super) menu: gtk::Menu,
@@ -44,7 +44,7 @@ pub struct PlatformMenu {
 
 #[allow(unused_variables)]
 impl PlatformMenu {
-    pub fn new(context: Rc<Context>, handle: MenuHandle) -> Self {
+    pub fn new(context: Context, handle: MenuHandle) -> Self {
         let m = gtk::Menu::new();
 
         Self {
@@ -85,7 +85,9 @@ impl PlatformMenu {
         let weak = self.weak_self.borrow().clone();
         self.menu.connect_show(move |_| {
             if let Some(s) = weak.upgrade() {
-                s.context.menu_manager.borrow().on_menu_open(s.handle);
+                if let Some(context) = s.context.get() {
+                    context.menu_manager.borrow().on_menu_open(s.handle);
+                }
             }
         });
 
@@ -96,14 +98,15 @@ impl PlatformMenu {
                 // Sometimes on KDE/Wayland when activating another window the
                 // selection_done event is not fired. So we trigger it here.
                 let platform_menu_clone = platform_menu.clone();
-                platform_menu
-                    .context
-                    .run_loop
-                    .borrow()
-                    .schedule_now(move || {
-                        platform_menu_clone.trigger_selection_done();
-                    })
-                    .detach();
+                if let Some(context) = platform_menu.context.get() {
+                    context
+                        .run_loop
+                        .borrow()
+                        .schedule_now(move || {
+                            platform_menu_clone.trigger_selection_done();
+                        })
+                        .detach();
+                }
             }
         });
     }
@@ -266,10 +269,12 @@ impl PlatformMenu {
 
         let entry = id_to_menu_item.iter().find(|e| e.1 == menu_item);
         if let Some(entry) = entry {
-            self.context
-                .menu_manager
-                .borrow()
-                .on_menu_action(self.handle, *entry.0);
+            if let Some(context) = self.context.get() {
+                context
+                    .menu_manager
+                    .borrow()
+                    .on_menu_action(self.handle, *entry.0);
+            }
         }
     }
 
@@ -474,17 +479,18 @@ impl PlatformMenu {
     }
 
     pub fn move_to_previous_menu(&self) {
-        self.context
-            .menu_manager
-            .borrow()
-            .move_to_previous_menu(self.handle);
+        if let Some(context) = self.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .move_to_previous_menu(self.handle);
+        }
     }
 
     pub fn move_to_next_menu(&self) {
-        self.context
-            .menu_manager
-            .borrow()
-            .move_to_next_menu(self.handle);
+        if let Some(context) = self.context.get() {
+            context.menu_manager.borrow().move_to_next_menu(self.handle);
+        }
     }
 }
 
