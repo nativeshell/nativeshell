@@ -6,7 +6,7 @@ use super::{Context, EngineHandle, Handle};
 
 #[derive(Clone)]
 pub struct MethodInvokerProvider {
-    context: Rc<Context>,
+    context: Context,
     channel: String,
 }
 
@@ -15,11 +15,14 @@ impl MethodInvokerProvider {
         &self,
         handle: EngineHandle,
     ) -> Option<MethodInvoker<Value>> {
-        return self
-            .context
-            .message_manager
-            .borrow()
-            .get_method_invoker(handle, &self.channel);
+        if let Some(context) = self.context.get() {
+            context
+                .message_manager
+                .borrow()
+                .get_method_invoker(handle, &self.channel)
+        } else {
+            None
+        }
     }
 }
 
@@ -40,20 +43,21 @@ pub trait MethodCallHandler {
 
 // Convenience interface for registering custom method call handlers
 pub struct MethodChannel {
-    context: Rc<Context>,
+    context: Context,
     channel: String,
     _destroy_engine_handle: Handle,
 }
 
 impl MethodChannel {
-    pub fn new<H>(context: Rc<Context>, channel: &str, handler: H) -> Self
+    pub fn new<H>(context: Context, channel: &str, handler: H) -> Self
     where
         H: MethodCallHandler + 'static,
     {
+        let context_ref = context.get().unwrap();
         let handler = Rc::new(RefCell::new(Box::new(handler)));
 
         let handler_clone = handler.clone();
-        let destroy_engine_handle = context
+        let destroy_engine_handle = context_ref
             .engine_manager
             .borrow_mut()
             .register_destroy_engine_notification(move |handle| {
@@ -72,7 +76,7 @@ impl MethodChannel {
                 context: context.clone(),
                 channel: channel.into(),
             });
-        context
+        context_ref
             .message_manager
             .borrow_mut()
             .register_method_handler(channel, move |call, reply, engine| {
@@ -87,9 +91,11 @@ impl MethodChannel {
 
 impl Drop for MethodChannel {
     fn drop(&mut self) {
-        self.context
-            .message_manager
-            .borrow_mut()
-            .unregister_method_handler(&self.channel);
+        if let Some(context) = self.context.get() {
+            context
+                .message_manager
+                .borrow_mut()
+                .unregister_method_handler(&self.channel);
+        }
     }
 }

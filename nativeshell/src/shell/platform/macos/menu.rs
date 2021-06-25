@@ -50,14 +50,14 @@ impl Hash for StrongPtrWrapper {
 }
 
 pub struct PlatformMenuManager {
-    context: Rc<Context>,
+    context: Context,
     app_menu: RefCell<Option<Rc<PlatformMenu>>>,
     window_menus: RefCell<HashMap<StrongPtrWrapper, Rc<PlatformMenu>>>,
     update_handle: RefCell<Option<Handle>>,
 }
 
 impl PlatformMenuManager {
-    pub fn new(context: Rc<Context>) -> Self {
+    pub fn new(context: Context) -> Self {
         Self {
             context,
             app_menu: RefCell::new(None),
@@ -95,15 +95,19 @@ impl PlatformMenuManager {
     }
 
     fn schedule_update(&self) {
-        let context = self.context.clone();
-        let callback = self.context.run_loop.borrow().schedule_now(move || {
-            context
-                .menu_manager
-                .borrow()
-                .get_platform_menu_manager()
-                .update_menu();
-        });
-        self.update_handle.borrow_mut().replace(callback);
+        let context_clone = self.context.clone();
+        if let Some(context) = self.context.get() {
+            let callback = context.run_loop.borrow().schedule_now(move || {
+                if let Some(context) = context_clone.get() {
+                    context
+                        .menu_manager
+                        .borrow()
+                        .get_platform_menu_manager()
+                        .update_menu();
+                }
+            });
+            self.update_handle.borrow_mut().replace(callback);
+        }
     }
 
     pub fn set_app_menu(&self, menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
@@ -151,7 +155,7 @@ impl PlatformMenuManager {
 }
 
 pub struct PlatformMenu {
-    context: Rc<Context>,
+    context: Context,
     handle: MenuHandle,
     pub(super) menu: StrongPtr,
     previous_menu: RefCell<Menu>,
@@ -163,7 +167,7 @@ pub struct PlatformMenu {
 const ITEM_TAG: NSInteger = 9999;
 
 impl PlatformMenu {
-    pub fn new(context: Rc<Context>, handle: MenuHandle) -> Self {
+    pub fn new(context: Context, handle: MenuHandle) -> Self {
         unsafe {
             let menu: id = NSMenu::alloc(nil).initWithTitle_(*to_nsstring(""));
             let () = msg_send![menu, setAutoenablesItems: NO];
@@ -293,10 +297,13 @@ impl PlatformMenu {
             .iter()
             .filter_map(|f| f.submenu)
             .collect();
-        for c in children {
-            let menu = self.context.menu_manager.borrow().get_platform_menu(c);
-            if let Ok(menu) = menu {
-                menu.prepare_for_app_menu();
+
+        if let Some(context) = self.context.get() {
+            for c in children {
+                let menu = context.menu_manager.borrow().get_platform_menu(c);
+                if let Ok(menu) = menu {
+                    menu.prepare_for_app_menu();
+                }
             }
         }
     }
@@ -487,18 +494,22 @@ impl PlatformMenu {
     }
 
     fn menu_item_action(&self, item: id) {
-        let item_id = unsafe {
-            let object: id = msg_send![item, representedObject];
-            msg_send![object, longLongValue]
-        };
-        self.context
-            .menu_manager
-            .borrow()
-            .on_menu_action(self.handle, item_id);
+        if let Some(context) = self.context.get() {
+            let item_id = unsafe {
+                let object: id = msg_send![item, representedObject];
+                msg_send![object, longLongValue]
+            };
+            context
+                .menu_manager
+                .borrow()
+                .on_menu_action(self.handle, item_id);
+        }
     }
 
     fn on_menu_will_open(&self) {
-        self.context.menu_manager.borrow().on_menu_open(self.handle);
+        if let Some(context) = self.context.get() {
+            context.menu_manager.borrow().on_menu_open(self.handle);
+        }
     }
 
     fn create_menu_item(&self, menu_item: &MenuItem, menu_manager: &MenuManager) -> StrongPtr {
