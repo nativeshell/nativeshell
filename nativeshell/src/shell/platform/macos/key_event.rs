@@ -1,4 +1,4 @@
-use std::{ffi::c_void, os::raw::c_ulong};
+use std::{ffi::c_void, os::raw::c_ulong, time::Instant};
 
 use core_foundation::{
     base::CFRelease,
@@ -10,6 +10,7 @@ type CFObject = *mut c_void;
 #[link(name = "Carbon", kind = "framework")]
 extern "C" {
     static kTISPropertyUnicodeKeyLayoutData: CFObject;
+    pub static kTISNotifySelectedKeyboardInputSourceChanged: CFObject;
     fn TISCopyCurrentKeyboardLayoutInputSource() -> CFObject;
     fn TISGetInputSourceProperty(input_source: CFObject, property_key: CFObject) -> *mut c_void;
 

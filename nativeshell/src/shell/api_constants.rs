@@ -12,6 +12,9 @@ pub(crate) mod channel {
 
     // Flutter channel for mananing platform menus
     pub const MENU_MANAGER: &str = "nativeshell/menu-manager";
+
+    // Flutter channel for keyboard layout notifications
+    pub const KEYBOARD_MAP_MANAGER: &str = "nativeshell/keyboard-map-manager";
 }
 
 pub const CURRENT_API_VERSION: i32 = 1;
@@ -91,6 +94,11 @@ pub(crate) mod method {
         // Menubar - move to previous menu
         pub const MOVE_TO_PREVIOUS_MENU: &str = "Menubar.moveToPreviousMenu";
         pub const MOVE_TO_NEXT_MENU: &str = "Menubar.moveToNextMenu";
+    }
+
+    pub mod keyboard_map {
+        pub const GET: &str = "KeyboardMap.get";
+        pub const ON_CHANGED: &str = "KeyboardMap.onChanged";
     }
 }
 

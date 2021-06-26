@@ -1,5 +1,8 @@
 use nativeshell_build::Flutter;
 
+#[path = "key_codes/gen_key_map.rs"]
+mod gen_key_map;
+
 fn main() {
     #[cfg(target_os = "windows")]
     {
@@ -118,4 +121,6 @@ fn main() {
     if Flutter::build_mode() == "profile" {
         cargo_emit::rustc_cfg!("flutter_profile");
     }
+
+    gen_key_map::gen_key_map(&std::env::var("CARGO_CFG_TARGET_OS").unwrap()).unwrap();
 }

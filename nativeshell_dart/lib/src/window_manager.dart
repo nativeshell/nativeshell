@@ -6,6 +6,7 @@ import 'drag_drop.dart';
 import 'event.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
+import 'keyboard_map_internal.dart';
 import 'dart:io';
 
 // Do not use directly. Access windows through Window.of(context) or through
@@ -39,6 +40,8 @@ class WindowManager {
     final dispatcher = WindowMethodDispatcher.instance;
 
     await _checkApiVersion(dispatcher);
+
+    await KeyboardMapManager.instance.init();
 
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,

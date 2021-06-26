@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:pedantic/pedantic.dart';
 
 import 'api_model.dart';
+import 'api_model_internal.dart';
 import 'event.dart';
 import 'menu.dart';
 import 'util.dart';

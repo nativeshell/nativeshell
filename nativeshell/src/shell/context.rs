@@ -4,7 +4,8 @@ use crate::{util::LateRefCell, Error, Result};
 
 use super::{
     platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
-    EngineManager, MenuManager, MessageManager, RunLoop, WindowManager, WindowMethodChannel,
+    EngineManager, KeyboardMapManager, MenuManager, MessageManager, RunLoop, WindowManager,
+    WindowMethodChannel,
 };
 
 pub struct ContextOptions {
@@ -33,6 +34,7 @@ pub struct ContextImpl {
     pub window_method_channel: LateRefCell<WindowMethodChannel>,
     pub window_manager: LateRefCell<WindowManager>,
     pub menu_manager: LateRefCell<MenuManager>,
+    pub keyboard_map_manager: LateRefCell<KeyboardMapManager>,
 }
 
 impl ContextImpl {
@@ -45,6 +47,7 @@ impl ContextImpl {
             window_method_channel: LateRefCell::new(),
             window_manager: LateRefCell::new(),
             menu_manager: LateRefCell::new(),
+            keyboard_map_manager: LateRefCell::new(),
         });
         let res = ContextRef { context: res };
         res.initialize(&res)?;
@@ -59,6 +62,8 @@ impl ContextImpl {
             .set(WindowMethodChannel::new(&context));
         self.window_manager.set(WindowManager::new(context));
         self.menu_manager.set(MenuManager::new(context));
+        self.keyboard_map_manager
+            .set(KeyboardMapManager::new(context));
 
         #[cfg(debug_assertions)]
         {
