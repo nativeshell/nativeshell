@@ -81,6 +81,7 @@ impl ContextImpl {
     }
 }
 
+// Non owning cloneable reference to a Context. Call Context::get() to access the context.
 #[derive(Clone)]
 pub struct Context {
     context: Weak<ContextImpl>,
@@ -97,12 +98,13 @@ impl Context {
 }
 
 // Strong reference to a Context. Intentionally not clonable; There should be one
-// "master" reference and all other should be used just locally.
+// "master" owning reference and all other instances should be used just locally.
+// If you need to pass the context along, use weak() to get weak reference and pass that.
 pub struct ContextRef {
     context: Rc<ContextImpl>,
 }
 
-impl<'a> ContextRef {
+impl ContextRef {
     pub fn weak(&self) -> Context {
         Context {
             context: Rc::downgrade(&self.context),
