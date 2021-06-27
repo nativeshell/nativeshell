@@ -8,7 +8,7 @@ pub struct PlatformMenu {}
 
 #[allow(unused_variables)]
 impl PlatformMenu {
-    pub fn new(context: Rc<Context>, handle: MenuHandle) -> Self {
+    pub fn new(context: Context, handle: MenuHandle) -> Self {
         Self {}
     }
 
@@ -22,7 +22,7 @@ impl PlatformMenu {
 pub struct PlatformMenuManager {}
 
 impl PlatformMenuManager {
-    pub fn new(context: Rc<Context>) -> Self {
+    pub fn new(context: Context) -> Self {
         Self {}
     }
 

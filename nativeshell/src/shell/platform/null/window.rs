@@ -24,7 +24,7 @@ pub struct PlatformWindow {}
 #[allow(unused_variables)]
 impl PlatformWindow {
     pub fn new(
-        context: Rc<Context>,
+        context: Context,
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {

@@ -97,7 +97,7 @@ impl Context {
 }
 
 // Strong reference to a Context. Intentionally not clonable; There should be one
-// "master" reference and all other should be used just locally
+// "master" reference and all other should be used just locally.
 pub struct ContextRef {
     context: Rc<ContextImpl>,
 }
