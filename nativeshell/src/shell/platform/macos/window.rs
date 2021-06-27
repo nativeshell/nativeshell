@@ -9,7 +9,7 @@ use std::{
 
 use cocoa::{
     appkit::{
-        NSApplication, NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior,
+        NSApplication, NSColor, NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior,
         NSWindowStyleMask,
     },
     base::{id, nil, BOOL, NO, YES},
@@ -402,6 +402,13 @@ impl PlatformWindow {
             NSWindow::setCollectionBehavior_(*self.platform_window, collection_behavior);
 
             NSWindow::setStyleMask_(*self.platform_window, mask);
+
+            if style.frame == WindowFrame::NoFrame {
+                let transparent = NSColor::clearColor(nil);
+                NSWindow::setBackgroundColor_(*self.platform_window, transparent);
+            } else {
+                NSWindow::setBackgroundColor_(*self.platform_window, nil);
+            }
         }
         Ok(())
     }
@@ -795,6 +802,12 @@ lazy_static! {
         let mut decl = ClassDecl::new("IMFlutterWindow", window_superclass).unwrap();
 
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+
+        decl.add_method(
+            sel!(canBecomeKeyWindow),
+            can_become_key_window as extern "C" fn(&Object, Sel) -> BOOL,
+        );
+
         decl.add_method(
             sel!(sendEvent:),
             send_event as extern "C" fn(&mut Object, Sel, id),
@@ -836,6 +849,7 @@ lazy_static! {
 
         WindowClass(decl.register())
     };
+
     static ref WINDOW_DELEGATE_CLASS: WindowDelegateClass = unsafe {
         let delegate_superclass = class!(NSResponder);
         let mut decl = ClassDecl::new("IMFlutterWindowDelegate", delegate_superclass).unwrap();
@@ -978,6 +992,10 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
                 .window_did_resign_active(state.platform_window.clone());
         }
     });
+}
+
+extern "C" fn can_become_key_window(_this: &Object, _: Sel) -> BOOL {
+    YES
 }
 
 extern "C" fn send_event(this: &mut Object, _: Sel, e: id) {
