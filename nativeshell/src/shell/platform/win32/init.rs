@@ -22,10 +22,8 @@ pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
             }
         }
 
-        CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED)
-            .map_err::<PlatformError, _>(|e| e.into())?;
-
-        OleInitialize(null_mut()).map_err::<PlatformError, _>(|e| e.into())?;
+        CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED).map_err(PlatformError::from)?;
+        OleInitialize(null_mut()).map_err(PlatformError::from)?;
 
         // Needed for direct composition check
         LoadLibraryW("dcomp.dll");
