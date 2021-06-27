@@ -13,7 +13,7 @@ use super::{
     api_constants::*,
     api_model::{MenuAction, MenuCreateRequest, MenuDestroyRequest, MenuOpen, SetMenuRequest},
     platform::menu::{PlatformMenu, PlatformMenuManager},
-    Context, EngineHandle, WindowMethodCallResult,
+    Context, ContextRef, EngineHandle, WindowMethodCallResult,
 };
 
 struct MenuEntry {
@@ -22,7 +22,7 @@ struct MenuEntry {
 }
 
 pub struct MenuManager {
-    context: Rc<Context>,
+    context: Context,
     platform_menu_map: HashMap<MenuHandle, MenuEntry>,
     platform_menu_manager: PlatformMenuManager,
     next_handle: MenuHandle,
@@ -32,22 +32,24 @@ pub struct MenuManager {
 pub struct MenuHandle(pub(crate) i64);
 
 impl MenuManager {
-    pub(super) fn new(context: Rc<Context>) -> Self {
-        let context_copy = context.clone();
+    pub(super) fn new(context: &ContextRef) -> Self {
+        let context_weak = context.weak();
         context
             .message_manager
             .borrow_mut()
             .register_method_handler(channel::MENU_MANAGER, move |value, reply, engine| {
-                context_copy
-                    .menu_manager
-                    .borrow_mut()
-                    .on_method_call(value, reply, engine);
+                if let Some(context) = context_weak.get() {
+                    context
+                        .menu_manager
+                        .borrow_mut()
+                        .on_method_call(value, reply, engine);
+                }
             });
 
         Self {
-            context: context.clone(),
+            context: context.weak(),
             platform_menu_map: HashMap::new(),
-            platform_menu_manager: PlatformMenuManager::new(context),
+            platform_menu_manager: PlatformMenuManager::new(context.weak()),
             next_handle: MenuHandle(1),
         }
     }
@@ -94,12 +96,16 @@ impl MenuManager {
     }
 
     fn invoker_for_menu(&self, menu_handle: MenuHandle) -> Option<MethodInvoker<Value>> {
-        self.platform_menu_map.get(&menu_handle).and_then(|e| {
-            self.context
-                .message_manager
-                .borrow()
-                .get_method_invoker(e.engine, channel::MENU_MANAGER)
-        })
+        if let Some(context) = self.context.get() {
+            self.platform_menu_map.get(&menu_handle).and_then(|e| {
+                context
+                    .message_manager
+                    .borrow()
+                    .get_method_invoker(e.engine, channel::MENU_MANAGER)
+            })
+        } else {
+            None
+        }
     }
 
     pub(crate) fn on_menu_action(&self, menu_handle: MenuHandle, id: i64) {

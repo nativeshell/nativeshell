@@ -5,13 +5,13 @@ use crate::codec::{
     MethodInvoker, StandardMethodCodec, Value,
 };
 
-use super::{Context, EngineHandle, EngineManager};
+use super::{Context, ContextRef, EngineHandle, EngineManager};
 
 type MessageCallback = dyn Fn(Value, MessageReply<Value>, EngineHandle);
 type MethodCallback = dyn Fn(MethodCall<Value>, MethodCallReply<Value>, EngineHandle);
 
 pub struct MessageManager {
-    context: Rc<Context>,
+    context: Context,
 
     message_channels: HashMap<EngineHandle, HashMap<String, MessageChannel<Value>>>,
     message_handlers: Rc<RefCell<HashMap<String, Box<MessageCallback>>>>,
@@ -21,9 +21,9 @@ pub struct MessageManager {
 }
 
 impl MessageManager {
-    pub(super) fn new(context: Rc<Context>) -> Self {
+    pub(super) fn new(context: &ContextRef) -> Self {
         Self {
-            context,
+            context: context.weak(),
             message_channels: HashMap::new(),
             message_handlers: Rc::new(RefCell::new(HashMap::new())),
             method_channels: HashMap::new(),
@@ -35,45 +35,47 @@ impl MessageManager {
     where
         F: Fn(Value, MessageReply<Value>, EngineHandle) + 'static,
     {
-        let context = self.context.clone();
-        if !self
-            .message_handlers
-            .as_ref()
-            .borrow()
-            .contains_key(channel)
-        {
-            // register handlers on engines
-            let manager = context.engine_manager.borrow();
-            let engines = manager.get_all_engines();
-            for engine in engines {
-                self.register_message_channel_for_engine(&manager, engine, channel);
+        if let Some(context) = self.context.get() {
+            if !self
+                .message_handlers
+                .as_ref()
+                .borrow()
+                .contains_key(channel)
+            {
+                // register handlers on engines
+                let manager = context.engine_manager.borrow();
+                let engines = manager.get_all_engines();
+                for engine in engines {
+                    self.register_message_channel_for_engine(&manager, engine, channel);
+                }
             }
-        }
 
-        self.message_handlers
-            .as_ref()
-            .borrow_mut()
-            .insert(channel.into(), Box::new(callback));
+            self.message_handlers
+                .as_ref()
+                .borrow_mut()
+                .insert(channel.into(), Box::new(callback));
+        }
     }
 
     pub fn register_method_handler<F>(&mut self, channel: &str, callback: F)
     where
         F: Fn(MethodCall<Value>, MethodCallReply<Value>, EngineHandle) + 'static,
     {
-        let context = self.context.clone();
-        if !self.method_handlers.as_ref().borrow().contains_key(channel) {
-            // register handlers on engines
-            let manager = context.engine_manager.borrow();
-            let engines = manager.get_all_engines();
-            for engine in engines {
-                self.register_method_channel_for_engine(&manager, engine, channel);
+        if let Some(context) = self.context.get() {
+            if !self.method_handlers.as_ref().borrow().contains_key(channel) {
+                // register handlers on engines
+                let manager = context.engine_manager.borrow();
+                let engines = manager.get_all_engines();
+                for engine in engines {
+                    self.register_method_channel_for_engine(&manager, engine, channel);
+                }
             }
-        }
 
-        self.method_handlers
-            .as_ref()
-            .borrow_mut()
-            .insert(channel.into(), Box::new(callback));
+            self.method_handlers
+                .as_ref()
+                .borrow_mut()
+                .insert(channel.into(), Box::new(callback));
+        }
     }
 
     pub fn unregister_message_handler(&mut self, channel: &str) {

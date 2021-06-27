@@ -55,7 +55,7 @@ use super::{
 pub type PlatformWindowType = StrongPtr;
 
 pub struct PlatformWindow {
-    context: Rc<Context>,
+    context: Context,
     platform_window: PlatformWindowType,
     parent_platform_window: Option<WeakPtr>,
     platform_delegate: StrongPtr,
@@ -76,7 +76,7 @@ extern "C" {
 
 impl PlatformWindow {
     pub fn new(
-        context: Rc<Context>,
+        context: Context,
         delegate: Weak<dyn PlatformWindowDelegate>,
         parent: Option<Rc<PlatformWindow>>,
     ) -> Self {
@@ -140,9 +140,11 @@ impl PlatformWindow {
             NSWindow::setContentSize_(*self.platform_window, Size::wh(1.0, 1.0).into());
         }
 
-        let drag_context = DragContext::new(self.context.clone(), weak);
-        drag_context.register(*self.platform_window);
-        self.drag_context.set(drag_context);
+        if let Some(context) = self.context.get() {
+            let drag_context = DragContext::new(&context, weak);
+            drag_context.register(*self.platform_window);
+            self.drag_context.set(drag_context);
+        }
     }
 
     pub fn get_platform_window(&self) -> PlatformWindowType {
@@ -474,14 +476,16 @@ impl PlatformWindow {
                         delegate.visibility_changed(true);
                     };
                 } else {
-                    // wait until we have content generated (with proper size)
-                    s.context
-                        .run_loop
-                        .borrow()
-                        .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
-                            Self::show_when_ready(weak_self, attempt + 1)
-                        })
-                        .detach();
+                    if let Some(context) = s.context.get() {
+                        // wait until we have content generated (with proper size)
+                        context
+                            .run_loop
+                            .borrow()
+                            .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
+                                Self::show_when_ready(weak_self, attempt + 1)
+                            })
+                            .detach();
+                    }
                 }
             });
         }
@@ -717,7 +721,9 @@ impl PlatformWindow {
             //
             // Note there is a special support in MacOS PlatformRunLoop when scheduling tasks
             // run in 0 time to not block the dispatch queue.
-            self.context.run_loop.borrow().schedule_now(cb).detach();
+            if let Some(context) = self.context.get() {
+                context.run_loop.borrow().schedule_now(cb).detach();
+            }
         }
     }
 
@@ -734,11 +740,13 @@ impl PlatformWindow {
     }
 
     pub fn set_window_menu(&self, menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
-        self.context
-            .menu_manager
-            .borrow()
-            .get_platform_menu_manager()
-            .set_menu_for_window(self.platform_window.clone(), menu);
+        if let Some(context) = self.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .get_platform_menu_manager()
+                .set_menu_for_window(self.platform_window.clone(), menu);
+        }
         Ok(())
     }
 
@@ -918,35 +926,38 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
             }
             let () = msg_send![*state.platform_window, setContentViewController: nil];
         }
-        state
-            .context
-            .menu_manager
-            .borrow()
-            .get_platform_menu_manager()
-            .window_will_close(state.platform_window.clone());
+        if let Some(context) = state.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .get_platform_menu_manager()
+                .window_will_close(state.platform_window.clone());
+        }
         delegate.will_close();
     });
 }
 
 extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, _delegate| {
-        state
-            .context
-            .menu_manager
-            .borrow()
-            .get_platform_menu_manager()
-            .window_did_become_active(state.platform_window.clone());
+        if let Some(context) = state.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .get_platform_menu_manager()
+                .window_did_become_active(state.platform_window.clone());
+        }
     });
 }
 
 extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, _delegate| {
-        state
-            .context
-            .menu_manager
-            .borrow()
-            .get_platform_menu_manager()
-            .window_did_resign_active(state.platform_window.clone());
+        if let Some(context) = state.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .get_platform_menu_manager()
+                .window_did_resign_active(state.platform_window.clone());
+        }
     });
 }
 

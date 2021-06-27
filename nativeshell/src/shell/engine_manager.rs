@@ -1,17 +1,16 @@
 use std::{
     cell::{Ref, RefCell},
     collections::HashMap,
-    rc::Rc,
 };
 
-use super::{Context, FlutterEngine, Handle};
+use super::{Context, ContextRef, FlutterEngine, Handle};
 use crate::{Error, Result};
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub struct EngineHandle(pub i64);
 
 pub struct EngineManager {
-    context: Rc<Context>,
+    context: Context,
     engines: HashMap<EngineHandle, Box<RefCell<FlutterEngine>>>,
     next_handle: EngineHandle,
     next_destroy_notification: i64,
@@ -19,9 +18,9 @@ pub struct EngineManager {
 }
 
 impl EngineManager {
-    pub(super) fn new(context: Rc<Context>) -> Self {
+    pub(super) fn new(context: &ContextRef) -> Self {
         Self {
-            context,
+            context: context.weak(),
             engines: HashMap::new(),
             next_handle: EngineHandle(1),
             next_destroy_notification: 1,
@@ -29,16 +28,20 @@ impl EngineManager {
         }
     }
 
-    pub fn create_engine(&mut self) -> EngineHandle {
-        let engine = FlutterEngine::create(&self.context.options.flutter_plugins);
-        let handle = self.next_handle;
-        self.next_handle.0 += 1;
-        self.engines.insert(handle, Box::new(RefCell::new(engine)));
-        self.context
-            .message_manager
-            .borrow_mut()
-            .engine_created(self, handle);
-        handle
+    pub fn create_engine(&mut self) -> Result<EngineHandle> {
+        if let Some(context) = self.context.get() {
+            let engine = FlutterEngine::create(&context.options.flutter_plugins);
+            let handle = self.next_handle;
+            self.next_handle.0 += 1;
+            self.engines.insert(handle, Box::new(RefCell::new(engine)));
+            context
+                .message_manager
+                .borrow_mut()
+                .engine_created(self, handle);
+            Ok(handle)
+        } else {
+            Err(Error::InvalidContext)
+        }
     }
 
     pub fn launch_engine(&mut self, handle: EngineHandle) -> Result<()> {
@@ -66,11 +69,13 @@ impl EngineManager {
 
         let context = self.context.clone();
         Handle::new(move || {
-            context
-                .engine_manager
-                .borrow_mut()
-                .destroy_notifications
-                .remove(&handle);
+            if let Some(context) = context.get() {
+                context
+                    .engine_manager
+                    .borrow_mut()
+                    .destroy_notifications
+                    .remove(&handle);
+            }
         })
     }
 
@@ -85,7 +90,9 @@ impl EngineManager {
             engine.shut_down()?;
         }
         if self.engines.is_empty() {
-            (self.context.options.on_last_engine_removed)(self.context.clone());
+            if let Some(context) = self.context.get() {
+                (context.options.on_last_engine_removed)(&context);
+            }
         }
         Ok(())
     }

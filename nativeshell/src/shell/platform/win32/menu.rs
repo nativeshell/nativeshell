@@ -27,7 +27,7 @@ pub struct PlatformMenu {
 pub struct PlatformMenuManager {}
 
 impl PlatformMenuManager {
-    pub fn new(_context: Rc<Context>) -> Self {
+    pub fn new(_context: Context) -> Self {
         Self {}
     }
 
@@ -37,7 +37,7 @@ impl PlatformMenuManager {
 }
 
 impl PlatformMenu {
-    pub fn new(_context: Rc<Context>, handle: MenuHandle) -> Self {
+    pub fn new(_context: Context, handle: MenuHandle) -> Self {
         let menu = unsafe {
             let menu = CreatePopupMenu();
 

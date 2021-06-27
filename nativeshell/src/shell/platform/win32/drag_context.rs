@@ -9,7 +9,7 @@ use windows::create_instance;
 use crate::{
     shell::{
         api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
-        Context, IPoint,
+        Context, ContextRef, IPoint,
     },
     util::LateRefCell,
 };
@@ -31,7 +31,7 @@ use super::{
 use super::all_bindings::*;
 
 pub struct DragContext {
-    context: Rc<Context>,
+    context: Context,
     weak_self: LateRefCell<Weak<DragContext>>,
     window: Weak<PlatformWindow>,
     drag_data: RefCell<Option<DragData>>,
@@ -40,9 +40,9 @@ pub struct DragContext {
 }
 
 impl DragContext {
-    pub fn new(context: Rc<Context>, window: Weak<PlatformWindow>) -> Self {
+    pub fn new(context: &ContextRef, window: Weak<PlatformWindow>) -> Self {
         Self {
-            context: context.clone(),
+            context: context.weak(),
             weak_self: LateRefCell::new(),
             window,
             drag_data: RefCell::new(None),
@@ -75,24 +75,28 @@ impl DragContext {
 
     pub fn begin_drag_session(&self, request: DragRequest) -> PlatformResult<()> {
         let weak = self.weak_self.clone_value();
-        self.context
-            .run_loop
-            .borrow()
-            .schedule_now(move || {
-                if let Some(s) = weak.upgrade() {
-                    unsafe {
-                        s.start_drag_internal(request);
+        if let Some(context) = self.context.get() {
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || {
+                    if let Some(s) = weak.upgrade() {
+                        unsafe {
+                            s.start_drag_internal(request);
+                        }
                     }
-                }
-            })
-            .detach();
+                })
+                .detach();
+        }
         Ok(())
     }
 
     fn serialize_drag_data(&self, mut data: DragData) -> HashMap<u32, Vec<u8>> {
         let mut res = HashMap::new();
-        for adapter in &self.context.options.custom_drag_data_adapters {
-            adapter.prepare_drag_data(&mut data.properties, &mut res);
+        if let Some(context) = self.context.get() {
+            for adapter in &context.options.custom_drag_data_adapters {
+                adapter.prepare_drag_data(&mut data.properties, &mut res);
+            }
         }
         for adapter in &self.data_adapters {
             adapter.prepare_drag_data(&mut data.properties, &mut res);
@@ -103,8 +107,10 @@ impl DragContext {
     fn deserialize_drag_data(&self, data: IDataObject) -> DragData {
         let mut res: DragData = Default::default();
 
-        for adapter in &self.context.options.custom_drag_data_adapters {
-            adapter.retrieve_drag_data(data.clone(), &mut res.properties);
+        if let Some(context) = self.context.get() {
+            for adapter in &context.options.custom_drag_data_adapters {
+                adapter.retrieve_drag_data(data.clone(), &mut res.properties);
+            }
         }
 
         for adapter in &self.data_adapters {

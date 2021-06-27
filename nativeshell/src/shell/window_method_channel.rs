@@ -7,10 +7,12 @@ use crate::{
     Result,
 };
 
-use super::{api_constants::channel, Context, EngineHandle, WindowHandle, WindowManager};
+use super::{
+    api_constants::channel, Context, ContextRef, EngineHandle, WindowHandle, WindowManager,
+};
 
 pub struct WindowMethodChannel {
-    context: Rc<Context>,
+    context: Context,
     handlers: Rc<RefCell<HashMap<String, Box<WindowMethodCallback>>>>,
 }
 
@@ -42,7 +44,7 @@ pub struct WindowMethodInvoker {
 
 #[derive(Clone)]
 pub struct WindowMessageBroadcaster {
-    context: Rc<Context>,
+    context: Context,
     channel: String,
     source_window_handle: WindowHandle,
 }
@@ -55,10 +57,9 @@ impl WindowMessageBroadcaster {
             message,
             arguments,
         );
-        self.context
-            .window_manager
-            .borrow()
-            .broadcast_message(encoded);
+        if let Some(context) = self.context.get() {
+            context.window_manager.borrow().broadcast_message(encoded);
+        }
     }
 }
 
@@ -82,10 +83,10 @@ impl WindowMethodInvoker {
 type WindowMethodCallback = dyn Fn(WindowMethodCall, WindowMethodCallReply, EngineHandle);
 
 impl WindowMethodChannel {
-    pub(super) fn new(context: Rc<Context>) -> Self {
+    pub(super) fn new(context: &ContextRef) -> Self {
         let handlers = Rc::new(RefCell::new(HashMap::new()));
 
-        let context_copy = context.clone();
+        let context_weak = context.weak();
         let handlers_copy = handlers.clone();
         context
             .message_manager
@@ -93,16 +94,15 @@ impl WindowMethodChannel {
             .register_message_handler(
                 channel::DISPATCHER, //
                 move |message, reply, engine| {
-                    Self::on_message(
-                        context_copy.clone(),
-                        handlers_copy.clone(),
-                        message,
-                        reply,
-                        engine,
-                    );
+                    if let Some(context) = context_weak.get() {
+                        Self::on_message(&context, handlers_copy.clone(), message, reply, engine);
+                    }
                 },
             );
-        Self { context, handlers }
+        Self {
+            context: context.weak(),
+            handlers,
+        }
     }
 
     pub fn register_method_handler<F>(&mut self, channel: &str, callback: F)
@@ -147,7 +147,7 @@ impl WindowMethodChannel {
     }
 
     fn on_message(
-        context: Rc<Context>,
+        context: &ContextRef,
         handlers: Rc<RefCell<HashMap<String, Box<WindowMethodCallback>>>>,
         message: Value,
         reply: MessageReply<Value>,
@@ -179,10 +179,12 @@ impl WindowMethodChannel {
 
 impl Drop for WindowMethodChannel {
     fn drop(&mut self) {
-        self.context
-            .message_manager
-            .borrow_mut()
-            .unregister_message_handler(channel::DISPATCHER);
+        if let Some(context) = self.context.get() {
+            context
+                .message_manager
+                .borrow_mut()
+                .unregister_message_handler(channel::DISPATCHER);
+        }
     }
 }
 

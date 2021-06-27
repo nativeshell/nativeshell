@@ -1,6 +1,6 @@
-use std::{ptr::null_mut, rc::Rc};
+use std::ptr::null_mut;
 
-use crate::shell::Context;
+use crate::shell::ContextRef;
 
 use super::{
     all_bindings::*,
@@ -10,7 +10,7 @@ use super::{
     util::{direct_composition_supported, HRESULTExt},
 };
 
-pub fn init_platform(_context: Rc<Context>) -> PlatformResult<()> {
+pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
     unsafe {
         // Angle will try opening these with GetModuleHandleEx, which means they need to be
         // loaded first; Otherwise it falls back to d3dcompiler_47, which is not present on

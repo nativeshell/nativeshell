@@ -8,17 +8,18 @@ use crate::{
         MessageCodec, MessageSender, MethodCallError, StandardMethodCodec, Value,
     },
     util::OkLog,
+    Error, Result,
 };
 
 use super::{
     api_constants::*,
     platform::window::{PlatformWindow, PlatformWindowType},
-    Context, EngineHandle, PlatformWindowDelegate, Window, WindowHandle, WindowMethodCall,
-    WindowMethodCallReply,
+    Context, ContextRef, EngineHandle, PlatformWindowDelegate, Window, WindowHandle,
+    WindowMethodCall, WindowMethodCallReply, WindowMethodCallResult,
 };
 
 pub struct WindowManager {
-    context: Rc<Context>,
+    context: Context,
     windows: HashMap<WindowHandle, Rc<Window>>,
     next_handle: WindowHandle,
     engine_to_window: HashMap<EngineHandle, WindowHandle>,
@@ -38,25 +39,29 @@ struct WindowCreateResponse {
 }
 
 impl WindowManager {
-    pub(super) fn new(context: Rc<Context>) -> Self {
-        let context_copy = context.clone();
+    pub(super) fn new(context: &ContextRef) -> Self {
+        let context_weak = context.weak();
         context
             .window_method_channel
             .borrow_mut()
             .register_method_handler(channel::win::WINDOW_MANAGER, move |call, reply, engine| {
-                Self::on_method_call(context_copy.clone(), call, reply, engine);
+                if let Some(context) = context_weak.get() {
+                    Self::on_method_call(&context, call, reply, engine);
+                }
             });
 
-        let context_copy = context.clone();
+        let context_weak = context.weak();
         context
             .window_method_channel
             .borrow_mut()
             .register_method_handler(channel::win::DRAG_SOURCE, move |call, reply, engine| {
-                Self::on_method_call(context_copy.clone(), call, reply, engine);
+                if let Some(context) = context_weak.get() {
+                    Self::on_method_call(&context, call, reply, engine);
+                }
             });
 
         WindowManager {
-            context,
+            context: context.weak(),
             windows: HashMap::new(),
             next_handle: WindowHandle(1),
             engine_to_window: HashMap::new(),
@@ -67,55 +72,57 @@ impl WindowManager {
         &mut self,
         init_data: Value,
         parent: Option<WindowHandle>,
-    ) -> WindowHandle {
-        let window_handle = self.next_handle;
-        self.next_handle.0 += 1;
+    ) -> Result<WindowHandle> {
+        if let Some(context) = self.context.get() {
+            let window_handle = self.next_handle;
+            self.next_handle.0 += 1;
 
-        let engine_handle = self.context.engine_manager.borrow_mut().create_engine();
+            let engine_handle = context.engine_manager.borrow_mut().create_engine()?;
 
-        self.engine_to_window.insert(engine_handle, window_handle);
+            self.engine_to_window.insert(engine_handle, window_handle);
 
-        let window = Rc::new(Window::new(
-            self.context.clone(),
-            window_handle,
-            engine_handle,
-            init_data,
-            parent,
-        ));
+            let window = Rc::new(Window::new(
+                self.context.clone(),
+                window_handle,
+                engine_handle,
+                init_data,
+                parent,
+            ));
 
-        window.assign_weak_self(Rc::downgrade(&window));
+            window.assign_weak_self(Rc::downgrade(&window));
 
-        let parent_platform_window = parent
-            .and_then(|h| self.windows.get(&h))
-            .map(|w| w.platform_window.borrow().clone());
+            let parent_platform_window = parent
+                .and_then(|h| self.windows.get(&h))
+                .map(|w| w.platform_window.borrow().clone());
 
-        let platform_window = Rc::new(PlatformWindow::new(
-            self.context.clone(),
-            Rc::downgrade(&(window.clone() as Rc<dyn PlatformWindowDelegate>)),
-            parent_platform_window,
-        ));
+            let platform_window = Rc::new(PlatformWindow::new(
+                self.context.clone(),
+                Rc::downgrade(&(window.clone() as Rc<dyn PlatformWindowDelegate>)),
+                parent_platform_window,
+            ));
 
-        self.windows.insert(window_handle, window.clone());
+            self.windows.insert(window_handle, window.clone());
 
-        platform_window.assign_weak_self(
-            Rc::downgrade(&platform_window),
-            &self
-                .context
+            platform_window.assign_weak_self(
+                Rc::downgrade(&platform_window),
+                &context
+                    .engine_manager
+                    .borrow()
+                    .get_engine(engine_handle)
+                    .unwrap()
+                    .platform_engine,
+            );
+            window.platform_window.set(platform_window);
+
+            context
                 .engine_manager
-                .borrow()
-                .get_engine(engine_handle)
-                .unwrap()
-                .platform_engine,
-        );
-        window.platform_window.set(platform_window);
+                .borrow_mut()
+                .launch_engine(engine_handle)?;
 
-        self.context
-            .engine_manager
-            .borrow_mut()
-            .launch_engine(engine_handle)
-            .ok_log();
-
-        window_handle
+            Ok(window_handle)
+        } else {
+            Err(Error::InvalidContext)
+        }
     }
 
     pub fn get_platform_window(&self, handle: WindowHandle) -> Option<PlatformWindowType> {
@@ -126,27 +133,31 @@ impl WindowManager {
     }
 
     pub(super) fn remove_window(&mut self, window: &Window) {
-        let engine_handle = window.engine_handle;
-        let context_copy = self.context.clone();
+        if let Some(context) = self.context.get() {
+            let engine_handle = window.engine_handle;
+            let context_copy = self.context.clone();
 
-        // This is a bit hacky; When engine destroy is triggered from flutter
-        // platform task runner, we need to schedule this on next run loop turn otherwise
-        // it may cause crashes. This particular hack could be avoided by scheduling
-        // every flutter message callback on run loop, but is probably not worth the
-        // overhead.
-        self.context
-            .run_loop
-            .borrow()
-            .schedule_now(move || {
-                context_copy
-                    .engine_manager
-                    .borrow_mut()
-                    .remove_engine(engine_handle)
-                    .ok_log();
-            })
-            .detach();
+            // This is a bit hacky; When engine destroy is triggered from flutter
+            // platform task runner, we need to schedule this on next run loop turn otherwise
+            // it may cause crashes. This particular hack could be avoided by scheduling
+            // every flutter message callback on run loop, but is probably not worth the
+            // overhead.
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || {
+                    if let Some(context) = context_copy.get() {
+                        context
+                            .engine_manager
+                            .borrow_mut()
+                            .remove_engine(engine_handle)
+                            .ok_log();
+                    }
+                })
+                .detach();
 
-        self.windows.remove(&window.window_handle);
+            self.windows.remove(&window.window_handle);
+        }
     }
 
     fn on_init(&self, window: WindowHandle) -> Value {
@@ -166,9 +177,14 @@ impl WindowManager {
         ))
     }
 
-    fn on_create_window(&mut self, argument: Value, parent: WindowHandle) -> Value {
-        let win = self.create_window(argument, Some(parent));
-        to_value(&WindowCreateResponse { window_handle: win }).unwrap()
+    fn on_create_window(
+        &mut self,
+        argument: Value,
+        parent: WindowHandle,
+    ) -> WindowMethodCallResult {
+        self.create_window(argument, Some(parent))
+            .map_err(|e| MethodCallError::from(e))
+            .map(|win| to_value(&WindowCreateResponse { window_handle: win }).unwrap())
     }
 
     pub(crate) fn message_sender_for_window(
@@ -176,14 +192,18 @@ impl WindowManager {
         handle: WindowHandle,
         channel_name: &str,
     ) -> Option<MessageSender<Value>> {
-        let manager = self.context.message_manager.borrow();
-        self.windows
-            .get(&handle)
-            .and_then(|w| manager.get_message_sender(w.engine_handle, channel_name))
+        if let Some(context) = self.context.get() {
+            let manager = context.message_manager.borrow();
+            self.windows
+                .get(&handle)
+                .and_then(|w| manager.get_message_sender(w.engine_handle, channel_name))
+        } else {
+            None
+        }
     }
 
     fn on_method_call(
-        context: Rc<Context>,
+        context: &ContextRef,
         call: WindowMethodCall,
         reply: WindowMethodCallReply,
         engine: EngineHandle,
@@ -217,10 +237,12 @@ impl WindowManager {
             }
             method::window_manager::CREATE_WINDOW => {
                 let create_request: WindowCreateRequest = from_value(&call.arguments).unwrap();
-                reply.send(Ok(context
-                    .window_manager
-                    .borrow_mut()
-                    .on_create_window(create_request.init_data, create_request.parent)));
+                reply.send(
+                    context
+                        .window_manager
+                        .borrow_mut()
+                        .on_create_window(create_request.init_data, create_request.parent),
+                );
             }
             _ => {
                 let window = {
@@ -245,20 +267,22 @@ impl WindowManager {
     }
 
     pub(crate) fn broadcast_message(&self, message: Value) {
-        let codec: &'static dyn MessageCodec<Value> = &StandardMethodCodec;
-        // we use binary messenger directly to be able to encode the message only once
-        let message = codec.encode_message(&message);
-        for window in self.windows.values() {
-            if !window.initialized.get() {
-                continue;
-            }
-            let manager = self.context.engine_manager.borrow();
-            let engine = manager.get_engine(window.engine_handle);
-            if let Some(engine) = engine {
-                engine
-                    .binary_messenger()
-                    .post_message(channel::DISPATCHER, &message)
-                    .ok_log();
+        if let Some(context) = self.context.get() {
+            let codec: &'static dyn MessageCodec<Value> = &StandardMethodCodec;
+            // we use binary messenger directly to be able to encode the message only once
+            let message = codec.encode_message(&message);
+            for window in self.windows.values() {
+                if !window.initialized.get() {
+                    continue;
+                }
+                let manager = context.engine_manager.borrow();
+                let engine = manager.get_engine(window.engine_handle);
+                if let Some(engine) = engine {
+                    engine
+                        .binary_messenger()
+                        .post_message(channel::DISPATCHER, &message)
+                        .ok_log();
+                }
             }
         }
     }
