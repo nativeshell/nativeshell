@@ -84,6 +84,8 @@ class _HotKeyManager {
   }) async {
     final handle = HotKeyHandle(await _invoke(Methods.hotKeyCreate, {
       'accelerator': accelerator.serialize(),
+      'platformKey': KeyboardMap.current()
+          .getPlatformVirtualKeyCode(accelerator.key!.key),
     }));
     final res = HotKey._(handle: handle, callback: callback);
     _hotKeys[res.handle] = res;

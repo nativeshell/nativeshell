@@ -59,7 +59,12 @@ impl HotKeyManager {
         self.next_handle.0 += 1;
 
         self.platform_manager
-            .create_hot_key(request.accelerator, handle.clone(), engine)
+            .create_hot_key(
+                request.accelerator,
+                request.platform_key,
+                handle.clone(),
+                engine,
+            )
             .map_err(Error::from)?;
 
         Ok(handle)

@@ -368,6 +368,7 @@ pub struct StatusItemSetMenuRequest {
 #[serde(rename_all = "camelCase")]
 pub struct HotKeyCreateRequest {
     pub accelerator: Accelerator,
+    pub platform_key: i64,
 }
 
 #[derive(serde::Deserialize)]

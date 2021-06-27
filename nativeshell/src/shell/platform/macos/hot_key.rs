@@ -95,6 +95,7 @@ impl PlatformHotKeyManager {
     pub(crate) fn create_hot_key(
         &self,
         accelerator: Accelerator,
+        virtual_key: i64,
         handle: HotKeyHandle,
         engine: EngineHandle,
     ) -> PlatformResult<()> {
@@ -106,11 +107,25 @@ impl PlatformHotKeyManager {
             id,
         };
 
+        let mut modifiers = 0u32;
+        if accelerator.meta {
+            modifiers |= 1 << 8;
+        }
+        if accelerator.shift {
+            modifiers |= 1 << 9;
+        }
+        if accelerator.alt {
+            modifiers |= 1 << 11;
+        }
+        if accelerator.control {
+            modifiers |= 1 << 12;
+        }
+
         let mut key_ref: EventHotKeyRef = std::ptr::null_mut();
         unsafe {
             RegisterEventHotKey(
-                0,
-                1 << 8,
+                virtual_key as u32,
+                modifiers,
                 hot_key_id,
                 GetEventDispatcherTarget(),
                 0,
