@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2021-06-16
+
+- Performance improvements when opening new windows.
+- Window sizing fixes on Linux.
+
 ## [0.1.7] - 2021-06-16
 
 - Added Menu.onOpen callback.
