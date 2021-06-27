@@ -15,7 +15,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::InvalidContext => {
-                write!(f, "Context already destroyed")
+                write!(f, "Context was already destroyed")
             }
             Error::Platform(error) => Display::fmt(error, f),
             Error::InvalidEngineHandle => {
