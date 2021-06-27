@@ -8,10 +8,12 @@ use std::{
 
 use windows::{create_instance, IUnknown, Interface, HRESULT};
 
+use crate::util::OkLog;
+
 use super::{
     all_bindings::*,
     drag_util::{CLSID_DragDropHelper, DataUtil},
-    util::{com_object_from_ptr, get_raw_ptr, HRESULTExt},
+    util::{com_object_from_ptr, get_raw_ptr},
 };
 
 pub trait DropTargetDelegate {
@@ -528,11 +530,7 @@ impl DataObject {
 
                         if let Some(data) = data {
                             let stream = SHCreateMemStream(data.as_ptr(), data.len() as u32);
-                            stream
-                                .clone()
-                                .unwrap()
-                                .Seek(0, STREAM_SEEK_END, std::ptr::null_mut())
-                                .ok_log();
+                            stream.clone().unwrap().Seek(0, STREAM_SEEK_END).ok_log();
                             *pmedium = STGMEDIUM {
                                 tymed: TYMED_ISTREAM.0 as u32,
                                 Anonymous: STGMEDIUM_0 {

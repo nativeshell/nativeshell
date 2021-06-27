@@ -1,8 +1,3 @@
-use std::panic::Location;
-
-use log::{Level, Record};
-use widestring::WideCString;
-
 use super::{
     all_bindings::*,
     error::{PlatformError, PlatformResult},
@@ -43,44 +38,6 @@ pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T>
     }
 }
 
-pub trait HRESULTExt {
-    fn ok_log(&self) -> bool;
-    fn as_platform_result(&self) -> PlatformResult<()>;
-}
-
-impl HRESULTExt for HRESULT {
-    #[track_caller]
-    fn ok_log(&self) -> bool {
-        if self.is_err() {
-            let location = Location::caller();
-            log::logger().log(
-                &Record::builder()
-                    .args(format_args!(
-                        "Unexpected windows error 0x{:X} ({}) at {}",
-                        self.0,
-                        hresult_description(self.0).unwrap_or_else(|| "Unknown".into()),
-                        location
-                    ))
-                    .file(Some(location.file()))
-                    .line(Some(location.line()))
-                    .level(Level::Error)
-                    .build(),
-            );
-            false
-        } else {
-            true
-        }
-    }
-
-    fn as_platform_result(&self) -> PlatformResult<()> {
-        if self.is_ok() {
-            Ok(())
-        } else {
-            Err(PlatformError::HResult(self.0))
-        }
-    }
-}
-
 pub fn clipboard_format_to_string(format: u32) -> String {
     let mut buf: [u16; 4096] = [0; 4096];
     unsafe {
@@ -111,34 +68,9 @@ impl BoolResultExt for BOOL {
         } else {
             let err = unsafe { GetLastError() };
             let err = HRESULT_FROM_WIN32(err.0);
-            Err(PlatformError::HResult(err))
+            let err = HRESULT(err);
+            Err(PlatformError::WindowsError(err.into()))
         }
-    }
-}
-
-pub(super) fn hresult_description(hr: u32) -> Option<String> {
-    const FORMAT_MESSAGE_MAX_WIDTH_MASK: u32 = 0x000000FF;
-    unsafe {
-        let message_buffer: *mut u16 = std::ptr::null_mut();
-        let format_result = FormatMessageW(
-            FORMAT_MESSAGE_FROM_SYSTEM
-                | FORMAT_MESSAGE_ALLOCATE_BUFFER
-                | FORMAT_MESSAGE_IGNORE_INSERTS
-                | FORMAT_MESSAGE_OPTIONS(FORMAT_MESSAGE_MAX_WIDTH_MASK),
-            std::ptr::null_mut(),
-            hr,
-            0,
-            PWSTR(message_buffer),
-            0,
-            std::ptr::null_mut(),
-        );
-        if format_result == 0 || message_buffer.is_null() {
-            return None;
-        }
-
-        let result = WideCString::from_raw(message_buffer);
-        LocalFree(message_buffer as isize);
-        result.to_string().ok()
     }
 }
 

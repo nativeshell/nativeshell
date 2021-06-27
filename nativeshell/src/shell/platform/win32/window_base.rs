@@ -18,7 +18,7 @@ use super::{
     display::Displays,
     error::PlatformResult,
     flutter_sys::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
-    util::{clamp, BoolResultExt, HRESULTExt, GET_X_LPARAM, GET_Y_LPARAM},
+    util::{clamp, BoolResultExt, GET_X_LPARAM, GET_Y_LPARAM},
 };
 
 pub struct WindowBaseState {
@@ -378,7 +378,7 @@ impl WindowBaseState {
             cyBottomHeight: 0,
         };
         unsafe {
-            DwmExtendFrameIntoClientArea(self.hwnd, &margins as *const _).as_platform_result()
+            DwmExtendFrameIntoClientArea(self.hwnd, &margins as *const _).map_err(|e| e.into())
         }
     }
 

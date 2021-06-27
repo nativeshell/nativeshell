@@ -1,4 +1,3 @@
-use super::util::hresult_description;
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]
@@ -6,7 +5,7 @@ pub enum PlatformError {
     UnknownError,
     LaunchEngineFailure,
     SendMessageFailure { channel: String },
-    HResult(u32),
+    WindowsError(windows::Error),
     NotAvailable,
 }
 
@@ -24,14 +23,7 @@ impl Display for PlatformError {
             PlatformError::LaunchEngineFailure => {
                 write!(f, "Failed to launch Flutter engine")
             }
-            PlatformError::HResult(hresult) => {
-                write!(
-                    f,
-                    "Error 0x{:X} ({})",
-                    hresult,
-                    hresult_description(*hresult).unwrap_or_else(|| "Unknown".into())
-                )
-            }
+            PlatformError::WindowsError(error) => error.fmt(f),
             PlatformError::NotAvailable => {
                 write!(f, "Feature is not available")
             }
@@ -40,3 +32,9 @@ impl Display for PlatformError {
 }
 
 impl std::error::Error for PlatformError {}
+
+impl From<windows::Error> for PlatformError {
+    fn from(src: windows::Error) -> PlatformError {
+        PlatformError::WindowsError(src)
+    }
+}

@@ -131,16 +131,8 @@ impl DataUtil {
     pub fn get_data(object: IDataObject, format: u32) -> windows::Result<Vec<u8>> {
         let mut format = Self::get_format(format);
 
-        let mut medium = STGMEDIUM {
-            tymed: 0,
-            Anonymous: STGMEDIUM_0 { hGlobal: 0 },
-            pUnkForRelease: None,
-        };
-
         unsafe {
-            object
-                .GetData(&mut format as *mut _, &mut medium as *mut STGMEDIUM)
-                .ok()?;
+            let mut medium = object.GetData(&mut format as *mut _)?;
 
             let size = GlobalSize(medium.Anonymous.hGlobal);
             let data = GlobalLock(medium.Anonymous.hGlobal);

@@ -6,8 +6,8 @@ use super::{
     all_bindings::*,
     dpi::become_dpi_aware,
     dxgi_hook::init_dxgi_hook,
-    error::PlatformResult,
-    util::{direct_composition_supported, HRESULTExt},
+    error::{PlatformError, PlatformResult},
+    util::direct_composition_supported,
 };
 
 pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
@@ -22,9 +22,10 @@ pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
             }
         }
 
-        CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED).as_platform_result()?;
+        CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED)
+            .map_err::<PlatformError, _>(|e| e.into())?;
 
-        OleInitialize(null_mut()).as_platform_result()?;
+        OleInitialize(null_mut()).map_err::<PlatformError, _>(|e| e.into())?;
 
         // Needed for direct composition check
         LoadLibraryW("dcomp.dll");

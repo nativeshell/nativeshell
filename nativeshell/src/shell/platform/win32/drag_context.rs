@@ -11,7 +11,7 @@ use crate::{
         api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
         Context, ContextRef, IPoint,
     },
-    util::LateRefCell,
+    util::{LateRefCell, OkLog},
 };
 
 use super::{
@@ -24,7 +24,6 @@ use super::{
         create_dragimage_bitmap, CLSID_DragDropHelper,
     },
     error::PlatformResult,
-    util::HRESULTExt,
     window::PlatformWindow,
 };
 
@@ -70,7 +69,7 @@ impl DragContext {
 
     pub fn shut_down(&self) -> PlatformResult<()> {
         let window = self.window.upgrade().unwrap();
-        unsafe { RevokeDragDrop(window.hwnd()).as_platform_result() }
+        unsafe { RevokeDragDrop(window.hwnd()).map_err(|e| e.into()) }
     }
 
     pub fn begin_drag_session(&self, request: DragRequest) -> PlatformResult<()> {
@@ -120,6 +119,34 @@ impl DragContext {
         res
     }
 
+    pub unsafe fn do_drag_drop<'a>(
+        pdataobj: impl ::windows::IntoParam<'a, IDataObject>,
+        pdropsource: impl ::windows::IntoParam<'a, IDropSource>,
+        dwokeffects: u32,
+        pdweffect: *mut u32,
+    ) -> HRESULT {
+        #[cfg(windows)]
+        {
+            #[link(name = "OLE32")]
+            extern "system" {
+                fn DoDragDrop(
+                    pdataobj: ::windows::RawPtr,
+                    pdropsource: ::windows::RawPtr,
+                    dwokeffects: u32,
+                    pdweffect: *mut u32,
+                ) -> ::windows::HRESULT;
+            }
+            DoDragDrop(
+                pdataobj.into_param().abi(),
+                pdropsource.into_param().abi(),
+                ::std::mem::transmute(dwokeffects),
+                ::std::mem::transmute(pdweffect),
+            )
+        }
+        #[cfg(not(windows))]
+        unimplemented!("Unsupported target OS");
+    }
+
     unsafe fn start_drag_internal(&self, request: DragRequest) {
         let window = self.window.upgrade().unwrap();
         let data = self.serialize_drag_data(request.data);
@@ -149,7 +176,8 @@ impl DragContext {
         let source = DropSource::new();
         let ok_effects = convert_drag_effects(&request.allowed_effects);
         let mut effects_out: u32 = 0;
-        let res = DoDragDrop(data, source, ok_effects, &mut effects_out as *mut u32);
+        // TODO: Remove the wrapper once https://github.com/microsoft/windows-rs/issues/922 is resolved
+        let res = Self::do_drag_drop(data, source, ok_effects, &mut effects_out as *mut u32);
 
         if let Some(delegate) = window.delegate() {
             let mut effect = DragEffect::None;
