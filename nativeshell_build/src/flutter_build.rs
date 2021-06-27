@@ -7,12 +7,13 @@ use std::{
 
 use dunce::simplified;
 use path_slash::PathExt;
+use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 use crate::{
     artifacts_emitter::ArtifactsEmitter,
     error::BuildError,
     plugins::Plugins,
-    util::{get_artifacts_dir, run_command},
+    util::{copy_to, get_artifacts_dir, run_command},
     BuildResult, FileOperation, IOResultExt,
 };
 
@@ -106,21 +107,76 @@ impl Flutter {
                 .join("package_config_subset"),
         )?;
 
-        Self::copy(
-            self.root_dir.join("pubspec.yaml"),
-            flutter_out_root.join("pubspec.yaml"),
+        let assets = self.copy_pubspec_yaml(
+            &self.root_dir.join("pubspec.yaml"),
+            &flutter_out_root.join("pubspec.yaml"),
         )?;
 
         self.precache()?;
         self.run_flutter_assemble(&flutter_out_root)?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
-        self.emit_flutter_checks(&local_roots).unwrap();
+        self.emit_flutter_checks(&local_roots, &assets).unwrap();
 
         if Self::build_mode() == "profile" {
             cargo_emit::rustc_cfg!("flutter_profile");
         }
 
         Ok(())
+    }
+
+    fn link_asset(
+        &self,
+        from_dir: &Path,
+        to_dir: &Path,
+        asset: &str,
+    ) -> BuildResult<Option<PathBuf>> {
+        let mut segments = asset.split("/");
+        if let Some(first) = segments.next() {
+            if first != "packages" {
+                let asset = from_dir.join(first);
+                copy_to(&asset, to_dir, true)?;
+                return Ok(Some(asset));
+            }
+        }
+        Ok(None)
+    }
+
+    // copy pub_spec.yaml, linking assets in the process; asset directories
+    // need to be linked relative to pubspec.yaml
+    // Returns asset directories
+    fn copy_pubspec_yaml(&self, from: &Path, to: &Path) -> BuildResult<Vec<PathBuf>> {
+        let mut res = Vec::<PathBuf>::new();
+
+        let pub_spec = fs::read_to_string(from).wrap_error(FileOperation::Read, || from.into())?;
+        let pub_spec = YamlLoader::load_from_str(&pub_spec)
+            .map_err(|err| BuildError::YamlError { source: err })?;
+
+        let from_dir = from.parent().unwrap();
+        let to_dir = to.parent().unwrap();
+
+        let flutter = &pub_spec[0];
+        if let Yaml::Hash(hash) = flutter {
+            let flutter = hash.get(&Yaml::String("flutter".into()));
+            if let Some(Yaml::Hash(flutter)) = flutter {
+                let assets = flutter.get(&Yaml::String("assets".into()));
+                if let Some(Yaml::Array(assets)) = assets {
+                    for asset in assets {
+                        if let Yaml::String(str) = asset {
+                            if let Some(asset) = self.link_asset(from_dir, to_dir, str)? {
+                                res.push(asset);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut out_str = String::new();
+        let mut emitter = YamlEmitter::new(&mut out_str);
+        emitter.dump(flutter).unwrap();
+
+        Self::copy(from, to)?;
+        Ok(res)
     }
 
     pub fn build_mode() -> String {
@@ -342,7 +398,7 @@ impl Flutter {
         Ok(())
     }
 
-    fn emit_flutter_checks(&self, roots: &HashSet<PathBuf>) -> BuildResult<()> {
+    fn emit_flutter_checks(&self, roots: &HashSet<PathBuf>, assets: &[PathBuf]) -> BuildResult<()> {
         cargo_emit::rerun_if_changed! {
             self.root_dir.join("pubspec.yaml").to_str().unwrap(),
             self.root_dir.join("pubspec.lock").to_str().unwrap(),
@@ -350,6 +406,16 @@ impl Flutter {
 
         for path in roots {
             self.emit_checks_for_dir(path)?;
+        }
+
+        for asset in assets {
+            if asset.is_dir() {
+                self.emit_checks_for_dir(asset)?;
+            } else {
+                cargo_emit::rerun_if_changed! {
+                    asset.to_string_lossy()
+                }
+            }
         }
 
         cargo_emit::rerun_if_env_changed!("FLUTTER_PROFILE");
