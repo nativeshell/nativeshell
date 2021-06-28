@@ -1,4 +1,4 @@
-use std::{ffi::c_void, os::raw::c_ulong, time::Instant};
+use std::{ffi::c_void, os::raw::c_ulong};
 
 use core_foundation::{
     base::CFRelease,

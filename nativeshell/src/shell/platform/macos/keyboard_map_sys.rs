@@ -1,7 +1,4 @@
-use std::{
-    ffi::c_void,
-    os::raw::{c_uint, c_ulong},
-};
+use std::{ffi::c_void, os::raw::c_ulong};
 
 use core_foundation::{array::CFIndex, dictionary::CFDictionaryRef, string::CFStringRef};
 
@@ -13,7 +10,7 @@ extern "C" {
     pub static kTISPropertyUnicodeKeyLayoutData: CFObject;
     pub static kTISNotifySelectedKeyboardInputSourceChanged: CFStringRef;
     pub fn TISCopyCurrentKeyboardLayoutInputSource() -> CFObject;
-    pub fn  TISCopyCurrentASCIICapableKeyboardInputSource() -> CFObject;
+    pub fn TISCopyCurrentASCIICapableKeyboardInputSource() -> CFObject;
     pub fn TISGetInputSourceProperty(input_source: CFObject, property_key: CFObject)
         -> *mut c_void;
 
