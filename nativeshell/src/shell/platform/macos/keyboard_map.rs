@@ -209,6 +209,7 @@ impl PlatformKeyboardMap {
 
     fn on_layout_changed(&self) {
         if let Some(context) = self.context.get() {
+            // clear cached layout
             self.current_layout.borrow_mut().take();
             context
                 .keyboard_map_manager
