@@ -1,7 +1,7 @@
 use nativeshell_build::Flutter;
 
-#[path = "key_codes/gen_key_map.rs"]
-mod gen_key_map;
+#[path = "keyboard_map/gen_keyboard_map.rs"]
+mod gen_keyboard_map;
 
 fn main() {
     #[cfg(target_os = "windows")]
@@ -122,5 +122,6 @@ fn main() {
         cargo_emit::rustc_cfg!("flutter_profile");
     }
 
-    gen_key_map::gen_key_map(&std::env::var("CARGO_CFG_TARGET_OS").unwrap()).unwrap();
+    let target_system = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    gen_keyboard_map::generate_keyboard_map(&target_system).unwrap();
 }

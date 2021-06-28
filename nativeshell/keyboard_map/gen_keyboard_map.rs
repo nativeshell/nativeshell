@@ -39,11 +39,11 @@ fn first_number(value: &serde_json::Value) -> Option<i64> {
     }
 }
 
-pub fn gen_key_map(platform_name: &str) -> anyhow::Result<()> {
+pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
     let root_dir: PathBuf = std::env::var("CARGO_MANIFEST_DIR")?.into();
     let out_dir: PathBuf = std::env::var("OUT_DIR")?.into();
 
-    let codes_dir = root_dir.join("key_codes");
+    let codes_dir = root_dir.join("keyboard_map");
     let physical = fs::read_to_string(codes_dir.join("physical_key_data.json"))?;
     let logical = fs::read_to_string(codes_dir.join("logical_key_data.json"))?;
 
@@ -83,7 +83,7 @@ pub fn gen_key_map(platform_name: &str) -> anyhow::Result<()> {
         }
     }
 
-    let gen_path = out_dir.join("generated_key_map.rs");
+    let gen_path = out_dir.join("generated_keyboard_map.rs");
     let mut file = File::create(gen_path)?;
     writeln!(
         file,

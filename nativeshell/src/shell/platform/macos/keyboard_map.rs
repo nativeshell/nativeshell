@@ -37,7 +37,10 @@ pub struct PlatformKeyboardMap {
     current_layout: RefCell<Option<KeyboardMap>>,
 }
 
-include!(std::concat!(std::env!("OUT_DIR"), "/generated_key_map.rs"));
+include!(std::concat!(
+    std::env!("OUT_DIR"),
+    "/generated_keyboard_map.rs"
+));
 
 impl PlatformKeyboardMap {
     pub fn new(context: Context) -> Self {
