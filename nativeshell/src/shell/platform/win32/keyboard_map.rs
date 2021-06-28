@@ -1,6 +1,7 @@
 use super::all_bindings::*;
 use std::cell::Cell;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::mem;
 use std::rc::Weak;
 
@@ -15,7 +16,7 @@ pub struct PlatformKeyboardMap {
     weak_self: LateRefCell<Weak<PlatformKeyboardMap>>,
     source: RefCell<Option<ITfSource>>,
     cookie: Cell<u32>,
-    current_layout: RefCell<Option<KeyboardMap>>,
+    cached_layout: RefCell<HashMap<isize, KeyboardMap>>,
 }
 
 include!(std::concat!(
@@ -30,14 +31,16 @@ impl PlatformKeyboardMap {
             weak_self: LateRefCell::new(),
             source: RefCell::new(None),
             cookie: Cell::new(TF_INVALID_COOKIE),
-            current_layout: RefCell::new(None),
+            cached_layout: RefCell::new(HashMap::new()),
         }
     }
 
     pub fn get_current_map(&self) -> KeyboardMap {
-        self.current_layout
+        let current = unsafe { GetKeyboardLayout(0) };
+        self.cached_layout
             .borrow_mut()
-            .get_or_insert_with(|| self.create_keyboard_layout())
+            .entry(current.0)
+            .or_insert_with(|| self.create_keyboard_layout())
             .clone()
     }
 
@@ -249,8 +252,6 @@ impl PlatformKeyboardMap {
 
     fn keyboard_layout_changed(&self) {
         if let Some(context) = self.context.get() {
-            // clear cached layout
-            self.current_layout.borrow_mut().take();
             context
                 .keyboard_map_manager
                 .borrow()
