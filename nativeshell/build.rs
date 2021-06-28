@@ -71,11 +71,15 @@ fn main() {
             Windows::Win32::UI::KeyboardAndMouseInput::{
                 SetFocus, EnableWindow, IsWindowEnabled, SetActiveWindow, ReleaseCapture, SetCapture,
                 GetCapture, GetAsyncKeyState, GetKeyboardState, GetKeyState, TrackMouseEvent, ToUnicode,
+                ToUnicodeEx, MapVirtualKeyW, ToAscii, GetKeyboardLayout, GetKeyboardLayoutList,
                 TRACKMOUSEEVENT,
             },
             Windows::Win32::UI::Shell::{
                 SetWindowSubclass, RemoveWindowSubclass, DefSubclassProc, IDropTargetHelper, IDragSourceHelper,
                 DragQueryFileW, DROPFILES, SHCreateMemStream, SHDRAGIMAGE,
+            },
+            Windows::Win32::UI::TextServices::{
+                ITfLanguageProfileNotifySink, ITfInputProcessorProfiles, ITfSource, CLSID_TF_InputProcessorProfiles, TF_INVALID_COOKIE,
             },
             Windows::Win32::UI::WindowsAndMessaging::{
                 // Messages
@@ -87,7 +91,7 @@ fn main() {
                 WM_TIMER, WM_MENUCOMMAND, WM_COMMAND, WM_USER, WM_CANCELMODE, WM_MENUSELECT,
                 WM_CHANGEUISTATE, WM_UPDATEUISTATE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYUP, WM_SETFOCUS, WM_DWMCOMPOSITIONCHANGED,
                 WM_NCLBUTTONDOWN, WM_ERASEBKGND, WM_ENTERSIZEMOVE, WM_EXITSIZEMOVE,
-                WM_QUERYUISTATE, WM_SYSCOMMAND, WM_INITMENUPOPUP,
+                WM_QUERYUISTATE, WM_SYSCOMMAND, WM_INITMENUPOPUP, WM_INPUTLANGCHANGE,
                 MK_LBUTTON,
                 // Methods
                 GetSystemMenu, EnableMenuItem, CreatePopupMenu, DestroyMenu, AppendMenuW,
@@ -103,9 +107,9 @@ fn main() {
                 CREATESTRUCTW, MSG, WINDOWPOS, NCCALCSIZE_PARAMS,
                 // Constants
                 TRACK_POPUP_MENU_FLAGS, WINDOW_LONG_PTR_INDEX,
-                VK_SHIFT, WNDCLASS_STYLES, IDC_ARROW, SC_CLOSE, HTCAPTION, HTTOPLEFT,
+                VK_SHIFT, VK_MENU, VK_CONTROL, WNDCLASS_STYLES, IDC_ARROW, SC_CLOSE, HTCAPTION, HTTOPLEFT,
                 HTTOPRIGHT, HTTOP, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTBOTTOM, HTLEFT, HTRIGHT, HTCLIENT, HTTRANSPARENT,
-                MSGF_MENU, VK_DOWN, VK_RIGHT, VK_LEFT,
+                MSGF_MENU, VK_DOWN, VK_RIGHT, VK_LEFT, MAPVK_VK_TO_VSC, MAPVK_VSC_TO_VK, MAPVK_VK_TO_CHAR,
             },
         );
     }
