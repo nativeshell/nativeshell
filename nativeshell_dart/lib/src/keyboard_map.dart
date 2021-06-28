@@ -11,7 +11,7 @@ class KeyboardMap {
   // Retrieves current keyboard map.
   static KeyboardMap current() => KeyboardMapManager.instance.currentMap;
 
-  int? getPlatformVirtualKeyCode(KeyboardKey key) {
+  int? getPlatformKeyCode(KeyboardKey key) {
     if (key is PhysicalKeyboardKey) {
       return _physicalToKey[key.usbHidUsage]?.platform;
     } else if (key is LogicalKeyboardKey) {
@@ -21,7 +21,7 @@ class KeyboardMap {
     }
   }
 
-  PhysicalKeyboardKey? getPhysicalKeyForPlatformVirtualKeyCode(int code) {
+  PhysicalKeyboardKey? getPhysicalKeyForPlatformKeyCode(int code) {
     final key = _platformToKey[code];
     return key != null ? PhysicalKeyboardKey(key.physical) : null;
   }
