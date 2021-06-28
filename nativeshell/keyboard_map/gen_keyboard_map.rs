@@ -51,35 +51,38 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
     let logical_keys: HashMap<String, LogicalKeyEntry> = serde_json::from_str(&logical)?;
 
     let mut key_data = BTreeMap::<i64, KeyData>::new();
-    for v in physical_keys.values() {
-        if let (Some(platform), Some(usb)) = (
-            v.scan_codes.get(platform_name).and_then(first_number),
-            v.scan_codes.get("usb").and_then(first_number),
-        ) {
-            key_data.insert(
-                platform,
-                KeyData {
-                    name: v.names.get("name").unwrap().into(),
-                    platform,
-                    physical: usb,
-                    logical: None,
-                },
-            );
-        }
-    }
 
     let logical_platform_name: String = match platform_name {
         "linux" => "gtk".into(),
         name => name.into(),
     };
 
-    for v in logical_keys.values() {
-        if let Some(values) = &v.values {
-            if let Some(value) = values.get(&logical_platform_name).and_then(|v| v.get(0)) {
-                if let Some(key) = key_data.get_mut(value) {
-                    key.logical = Some(v.value);
+    for v in physical_keys.values() {
+        if let (Some(platform), Some(usb)) = (
+            v.scan_codes.get(platform_name).and_then(first_number),
+            v.scan_codes.get("usb").and_then(first_number),
+        ) {
+            let name = v.names.get("name").unwrap();
+            let mut logical = None::<i64>;
+            if let Some(logical_key) = logical_keys.get(name) {
+                if let Some(values) = &logical_key.values {
+                    if let Some(values) = values.get(&logical_platform_name) {
+                        if !values.is_empty() {
+                            logical = Some(logical_key.value);
+                        }
+                    }
                 }
             }
+
+            key_data.insert(
+                platform,
+                KeyData {
+                    name: name.into(),
+                    platform,
+                    physical: usb,
+                    logical,
+                },
+            );
         }
     }
 
