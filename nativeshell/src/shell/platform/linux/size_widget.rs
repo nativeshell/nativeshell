@@ -1,10 +1,10 @@
-use std::{cmp::max, ffi::CString, mem};
+use std::{cmp::max, ffi::CString, mem, ptr};
 
 use glib::{
     translate::{FromGlibPtrFull, FromGlibPtrNone},
     ObjectExt,
 };
-use gtk::{Widget, WidgetExt};
+use gtk::{prelude::WidgetExt, Widget};
 
 unsafe extern "C" fn class_init(class: glib_sys::gpointer, _class_data: glib_sys::gpointer) {
     let widget_class = class as *mut gtk_sys::GtkWidgetClass;
@@ -46,10 +46,10 @@ unsafe extern "C" fn get_preferred_width(
     natural: *mut i32,
 ) {
     let widget = Widget::from_glib_none(widget);
-    let width: Option<&i32> = widget.get_data("nativeshell_minimum_width");
-    if let Some(width) = width {
-        *minimum = max(*width, 1);
-        *natural = max(*width, 1);
+    let width: Option<ptr::NonNull<i32>> = widget.data("nativeshell_minimum_width");
+    if let Some(width) = width.map(|w| *unsafe { w.as_ref() }) {
+        *minimum = max(width, 1);
+        *natural = max(width, 1);
     } else {
         *minimum = 1;
         *natural = 1;
@@ -62,10 +62,10 @@ unsafe extern "C" fn get_preferred_height(
     natural: *mut i32,
 ) {
     let widget = Widget::from_glib_none(widget);
-    let height: Option<&i32> = widget.get_data("nativeshell_minimum_height");
-    if let Some(height) = height {
-        *minimum = max(*height, 1);
-        *natural = max(*height, 1);
+    let height: Option<ptr::NonNull<i32>> = widget.data("nativeshell_minimum_height");
+    if let Some(height) = height.map(|h| *unsafe { h.as_ref() }) {
+        *minimum = max(height, 1);
+        *natural = max(height, 1);
     } else {
         *minimum = 1;
         *natural = 1;

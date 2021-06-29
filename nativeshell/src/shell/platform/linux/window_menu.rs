@@ -3,11 +3,11 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use gdk::{Event, EventType, Gravity, Rectangle, WindowExt};
+use gdk::{Event, EventType, Gravity, Rectangle};
 
 use gtk::{
-    ContainerExt, Fixed, FixedExt, GtkMenuExt, GtkMenuItemExt, Menu, MenuBar, MenuDirectionType,
-    MenuItem, MenuShellExt, WidgetExt,
+    prelude::{ContainerExt, FixedExt, GtkMenuExt, GtkMenuItemExt, MenuShellExt, WidgetExt},
+    Fixed, Menu, MenuBar, MenuDirectionType, MenuItem,
 };
 
 use crate::shell::{
@@ -81,9 +81,9 @@ impl WindowMenu {
 
         // Store last motion event, this is necessary to get proper hover after
         // closing the menu; Note that this works even without
-        if event.get_event_type() == EventType::MotionNotify {
+        if event.event_type() == EventType::MotionNotify {
             self.last_motion_event.borrow_mut().replace(event.clone());
-        } else if event.get_event_type() == EventType::LeaveNotify {
+        } else if event.event_type() == EventType::LeaveNotify {
             self.last_motion_event.borrow_mut().take();
         }
 
@@ -93,10 +93,10 @@ impl WindowMenu {
             .as_ref()
             .and_then(|r| r.tracking_rect.as_ref())
         {
-            if event.get_event_type() == EventType::MotionNotify {
-                let event_coords = event.get_root_coords();
+            if event.event_type() == EventType::MotionNotify {
+                let event_coords = event.root_coords();
                 if let Some(event_coords) = event_coords {
-                    let window_pos = window.view.borrow().get_window().unwrap().get_origin();
+                    let window_pos = window.view.borrow().window().unwrap().origin();
                     let point = Point::xy(
                         event_coords.0 - window_pos.1 as f64,
                         event_coords.1 - window_pos.2 as f64,
@@ -110,7 +110,7 @@ impl WindowMenu {
                     }
                 }
             }
-            if event.get_event_type() == EventType::LeaveNotify {
+            if event.event_type() == EventType::LeaveNotify {
                 return true;
             }
         }
@@ -135,12 +135,12 @@ impl WindowMenu {
         let last_button_event = events
             .values()
             .filter(|e| {
-                e.get_event_type() == EventType::ButtonPress
-                    || e.get_event_type() == EventType::ButtonRelease
+                e.event_type() == EventType::ButtonPress
+                    || e.event_type() == EventType::ButtonRelease
             })
-            .max_by(|e1, e2| e1.get_time().cmp(&e2.get_time()))
+            .max_by(|e1, e2| e1.time().cmp(&e2.time()))
             .and_then(|e| {
-                if e.get_event_type() == EventType::ButtonPress {
+                if e.event_type() == EventType::ButtonPress {
                     Some(e)
                 } else {
                     None
@@ -189,7 +189,7 @@ impl WindowMenu {
             // enabled during keyboard navigation; this also takes care of enabling
             // mnemonics
             if request.preselect_first {
-                for item in menu.menu.get_children() {
+                for item in menu.menu.children() {
                     if item.is_sensitive() {
                         item.mnemonic_activate(true);
                         break;
@@ -198,7 +198,7 @@ impl WindowMenu {
             }
         } else {
             menu.menu.popup_at_rect(
-                &window.view.borrow().get_window().unwrap(),
+                &window.view.borrow().window().unwrap(),
                 &Rectangle {
                     x: request.position.x as i32,
                     y: request.position.y as i32,
@@ -237,12 +237,12 @@ impl WindowMenu {
         self.menu_item
             .set_size_request(item_rect.width, item_rect.height);
 
-        self.menu_item.get_preferred_width();
-        self.menu_item.get_preferred_height();
+        self.menu_item.preferred_width();
+        self.menu_item.preferred_height();
 
         // call this otherwise size_allocate complains
-        self.menu_bar.get_preferred_width();
-        self.menu_bar.get_preferred_height();
+        self.menu_bar.preferred_width();
+        self.menu_bar.preferred_height();
 
         self.menu_bar_container
             .move_(&self.menu_bar, item_rect.x, item_rect.y);
@@ -259,7 +259,7 @@ impl WindowMenu {
     }
 
     fn on_menu_selection_done(&self, menu: &Menu) {
-        menu.get_toplevel().unwrap().unrealize();
+        menu.toplevel().unwrap().unrealize();
 
         let current_menu = {
             let current = self.current_menu.borrow();

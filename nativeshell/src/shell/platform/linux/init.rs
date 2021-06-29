@@ -1,6 +1,6 @@
-use std::rc::Weak;
+use std::{ptr, rc::Weak};
 
-use gdk::{Event, WindowExt};
+use gdk::Event;
 use glib::ObjectExt;
 
 use crate::shell::{platform::window::PlatformWindow, ContextRef};
@@ -13,12 +13,15 @@ pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
     })?;
 
     Event::set_handler(Some(|e: &mut Event| {
-        let win = e.get_window().map(|w| w.get_toplevel());
+        let win = e.window().map(|w| w.toplevel());
 
         if let Some(win) = win {
-            let platform_window: Option<&Weak<PlatformWindow>> =
-                unsafe { win.get_data("nativeshell_platform_window") };
-            if let Some(platform_window) = platform_window.and_then(|w| w.upgrade()) {
+            let platform_window: Option<ptr::NonNull<Weak<PlatformWindow>>> =
+                unsafe { win.data("nativeshell_platform_window") };
+
+            if let Some(platform_window) =
+                platform_window.and_then(|w| unsafe { w.as_ref() }.upgrade())
+            {
                 platform_window.on_event(e);
             }
         }

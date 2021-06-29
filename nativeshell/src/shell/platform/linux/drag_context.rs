@@ -9,8 +9,8 @@ use cairo::{Format, ImageSurface};
 use gdk::{Atom, DragAction, EventType};
 use glib::IsA;
 use gtk::{
-    prelude::{DragContextExtManual, WidgetExtManual},
-    DestDefaults, SelectionData, TargetEntry, TargetFlags, TargetList, Widget, WidgetExt,
+    prelude::{DragContextExtManual, WidgetExt, WidgetExtManual},
+    DestDefaults, SelectionData, TargetEntry, TargetFlags, TargetList, Widget,
 };
 
 use crate::{
@@ -166,7 +166,7 @@ impl DropContext {
 
             if let Some(ctx) = self.context.get() {
                 let adapters = self.data_adapters(&ctx);
-                let data_type = data.get_data_type();
+                let data_type = data.data_type();
                 if let Some(pos) = pending_data.iter().position(|d| d == &data_type) {
                     pending_data.remove(pos);
                     for adapter in adapters {
@@ -185,7 +185,7 @@ impl DropContext {
                 data: DragData {
                     properties: take(&mut self.current_data.borrow_mut()),
                 },
-                allowed_effects: Self::convert_drag_actions_from_gtk(context.get_actions()),
+                allowed_effects: Self::convert_drag_actions_from_gtk(context.actions()),
             };
             if !self.dropping.get() {
                 self.with_delegate(|d| d.dragging_updated(&info));
@@ -327,14 +327,14 @@ impl DragContext {
         let drag_event = events
             .values()
             .filter(|e| {
-                e.get_event_type() == EventType::ButtonPress
-                    || e.get_event_type() == EventType::MotionNotify
+                e.event_type() == EventType::ButtonPress
+                    || e.event_type() == EventType::MotionNotify
             })
-            .max_by(|e1, e2| e1.get_time().cmp(&e2.get_time()));
+            .max_by(|e1, e2| e1.time().cmp(&e2.time()));
 
         let button = events
             .get(&EventType::ButtonPress)
-            .and_then(|e| e.get_button())
+            .and_then(|e| e.button())
             .unwrap_or(0);
 
         let targets = self.prepare_data(&mut request);
@@ -348,17 +348,12 @@ impl DragContext {
             -1,
         );
 
-        let event_coords = drag_event
-            .and_then(|e| e.get_coords())
-            .unwrap_or((0.0, 0.0));
+        let event_coords = drag_event.and_then(|e| e.coords()).unwrap_or((0.0, 0.0));
 
         if let Some(context) = context {
             let surface = &Self::surface_from_image_data(request.image);
-            let scale_factor = widget.get_scale_factor() as f64;
-            surface.set_device_scale(
-                widget.get_scale_factor() as f64,
-                widget.get_scale_factor() as f64,
-            );
+            let scale_factor = widget.scale_factor() as f64;
+            surface.set_device_scale(widget.scale_factor() as f64, widget.scale_factor() as f64);
             surface.set_device_offset(
                 (request.rect.x - event_coords.0) * scale_factor,
                 (request.rect.y - event_coords.1) * scale_factor,
@@ -425,7 +420,7 @@ impl DragContext {
         if self.dragging.get() {
             // if failes it means drag faile
             self.cleanup();
-            let action = context.get_selected_action();
+            let action = context.selected_action();
             let action = DropContext::convert_drag_actions_from_gtk(action)
                 .first()
                 .cloned()

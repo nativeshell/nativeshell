@@ -45,14 +45,14 @@ const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
 impl DragDataAdapter for UriListDataAdapter {
     fn retrieve_drag_data(&self, data: &SelectionData, data_out: &mut HashMap<String, Value>) {
         let mut uris = Vec::<String>::new();
-        let data_uris = data.get_uris();
+        let data_uris = data.uris();
         for uri in data_uris {
             let uri = uri.trim().to_string();
             if !uris.contains(&uri) {
                 uris.push(uri);
             }
         }
-        if let Some(string) = data.get_text() {
+        if let Some(string) = data.text() {
             let parts = string.split('\n');
             for part in parts {
                 let part = part.trim().to_string();
@@ -216,7 +216,7 @@ impl FallThroughDragDataAdapter {
 impl DragDataAdapter for FallThroughDragDataAdapter {
     fn retrieve_drag_data(&self, data: &SelectionData, data_out: &mut HashMap<String, Value>) {
         let codec: &'static dyn MessageCodec<Value> = &StandardMethodCodec;
-        let data = data.get_data();
+        let data = data.data();
         let value = codec.decode_message(&data).unwrap();
         if let Value::Map(value) = value {
             for entry in value {
