@@ -321,3 +321,20 @@ pub struct MenuOpen {
 pub struct SetMenuRequest {
     pub handle: Option<MenuHandle>,
 }
+
+#[derive(serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Key {
+    pub platform: i64,
+    pub physical: i64,
+    pub logical: Option<i64>,
+    pub logical_shift: Option<i64>,
+    pub logical_alt: Option<i64>,
+    pub logical_alt_shift: Option<i64>,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyboardMap {
+    pub keys: Vec<Key>,
+}

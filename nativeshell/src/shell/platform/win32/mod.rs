@@ -11,6 +11,7 @@ pub mod error;
 pub mod flutter_sys;
 pub mod init;
 pub mod key_event;
+pub mod keyboard_map;
 pub mod menu;
 pub mod run_loop;
 pub mod util;
@@ -34,7 +35,10 @@ mod all_bindings {
             Com::*, DataExchange::*, Diagnostics::Debug::*, LibraryLoader::*, Memory::*,
             SystemServices::*, Threading::*,
         },
-        UI::{Controls::*, KeyboardAndMouseInput::*, Shell::*, WindowsAndMessaging::*},
+        UI::{
+            Controls::*, KeyboardAndMouseInput::*, Shell::*, TextServices::*,
+            WindowsAndMessaging::*,
+        },
     };
     pub use windows::*;
 }

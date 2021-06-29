@@ -7,6 +7,7 @@ class Channels {
   static final dragSource = '.window.drag-source';
 
   static final menuManager = 'nativeshell/menu-manager';
+  static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
 }
 
 class Events {
@@ -64,6 +65,10 @@ class Methods {
   // Menubar
   static final menubarMoveToPreviousMenu = 'Menubar.moveToPreviousMenu';
   static final menubarMoveToNextMenu = 'Menubar.moveToNextMenu';
+
+  // KeyboardMap
+  static final keyboardMapGet = 'KeyboardMap.get';
+  static final keyboardMapOnChanged = 'KeyboardMap.onChanged';
 }
 
 class Keys {

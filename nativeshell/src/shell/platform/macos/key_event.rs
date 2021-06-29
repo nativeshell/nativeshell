@@ -10,6 +10,7 @@ type CFObject = *mut c_void;
 #[link(name = "Carbon", kind = "framework")]
 extern "C" {
     static kTISPropertyUnicodeKeyLayoutData: CFObject;
+    pub static kTISNotifySelectedKeyboardInputSourceChanged: CFObject;
     fn TISCopyCurrentKeyboardLayoutInputSource() -> CFObject;
     fn TISGetInputSourceProperty(input_source: CFObject, property_key: CFObject) -> *mut c_void;
 
