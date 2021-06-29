@@ -13,7 +13,7 @@ use super::{
 
 pub struct KeyboardMapManager {
     context: Context,
-    platform_layout: Rc<PlatformKeyboardMap>,
+    pub(crate) platform_map: Rc<PlatformKeyboardMap>,
     _engine_destroy_notification_handle: Handle,
     engines: HashSet<EngineHandle>,
 }
@@ -52,11 +52,9 @@ impl KeyboardMapManager {
                 }
             });
 
-        platform_layout.get_current_map();
-
         Self {
             context: context.weak(),
-            platform_layout,
+            platform_map: platform_layout,
             _engine_destroy_notification_handle: handle,
             engines: HashSet::new(),
         }
@@ -71,7 +69,7 @@ impl KeyboardMapManager {
         match call.method.as_str() {
             method::keyboard_map::GET => {
                 self.engines.insert(engine);
-                let layout = self.platform_layout.get_current_map();
+                let layout = self.platform_map.get_current_map();
                 reply.send_ok(to_value(layout).unwrap());
             }
             _ => {}
@@ -80,7 +78,7 @@ impl KeyboardMapManager {
 
     pub(crate) fn keyboard_layout_changed(&self) {
         if let Some(context) = self.context.get() {
-            let layout = self.platform_layout.get_current_map();
+            let layout = self.platform_map.get_current_map();
             let layout = to_value(layout).unwrap();
             for engine in &self.engines {
                 let sender = context

@@ -73,7 +73,7 @@ impl PlatformKeyboardMap {
 
             CFRelease(input_source);
 
-            KeyboardMap { keys: keys }
+            KeyboardMap { keys }
         }
     }
 

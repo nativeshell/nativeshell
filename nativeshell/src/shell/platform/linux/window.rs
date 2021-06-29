@@ -373,6 +373,16 @@ impl PlatformWindow {
                 .insert(event.event_type(), event.clone());
         }
 
+        if event.event_type() == EventType::KeyPress {
+            if let Some(context) = self.context.get() {
+                context
+                    .keyboard_map_manager
+                    .borrow()
+                    .platform_map
+                    .on_key_event(event);
+            }
+        }
+
         if self.window_menu.borrow().should_forward_event(&event) {
             self.propagate_event(event);
         }

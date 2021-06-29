@@ -29,6 +29,7 @@ struct KeyData {
     platform: i64,
     physical: i64,
     logical: Option<i64>,
+    fallback: Option<i64>,
 }
 
 fn first_number(value: &serde_json::Value) -> Option<i64> {
@@ -52,21 +53,28 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
 
     let mut key_data = BTreeMap::<i64, KeyData>::new();
 
-    let logical_platform_name: String = match platform_name {
-        "linux" => "gtk".into(),
-        name => name.into(),
+    let logical_platform_name: &str = match platform_name {
+        "linux" => "gtk",
+        name => name,
+    };
+
+    let physical_platform_name: &str = match platform_name {
+        "linux" => "xkb",
+        name => name,
     };
 
     for v in physical_keys.values() {
         if let (Some(platform), Some(usb)) = (
-            v.scan_codes.get(platform_name).and_then(first_number),
+            v.scan_codes.get(physical_platform_name).and_then(first_number),
             v.scan_codes.get("usb").and_then(first_number),
         ) {
             let name = v.names.get("name").unwrap();
             let mut logical = None::<i64>;
+            let mut fallback = None::<i64>;
             if let Some(logical_key) = logical_keys.get(name) {
+                fallback = Some(logical_key.value);
                 if let Some(values) = &logical_key.values {
-                    if let Some(values) = values.get(&logical_platform_name) {
+                    if let Some(values) = values.get(logical_platform_name) {
                         if !values.is_empty() {
                             logical = Some(logical_key.value);
                         }
@@ -81,6 +89,7 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
                     platform,
                     physical: usb,
                     logical,
+                    fallback, // US layout fallback
                 },
             );
         }
@@ -90,7 +99,7 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
     let mut file = File::create(gen_path)?;
     writeln!(
         file,
-        "struct KeyMapEntry {{ platform: i64, physical: i64, logical: Option<i64>, }}"
+        "struct KeyMapEntry {{ platform: i64, physical: i64, logical: Option<i64>, fallback: Option<i64> }}"
     )?;
     writeln!(file)?;
     writeln!(file, "fn get_key_map() -> Vec<KeyMapEntry> {{")?;
@@ -98,8 +107,8 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
     for v in key_data.values() {
         writeln!(
             file,
-            "        KeyMapEntry {{ platform: {}, physical: {}, logical: {:?} }}, // {}",
-            v.platform, v.physical, v.logical, v.name,
+            "        KeyMapEntry {{ platform: {}, physical: {}, logical: {:?}, fallback: {:?} }}, // {}",
+            v.platform, v.physical, v.logical, v.fallback, v.name,
         )?;
     }
     writeln!(file, "    ]")?;
