@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nativeshell/nativeshell.dart';
 import 'key_interceptor.dart';
 import 'menu.dart';
 
@@ -64,14 +65,19 @@ class Accelerator {
   @override
   int get hashCode => hashValues(alt, control, meta, shift, key?.key);
 
-  bool matches(RawKeyEventEx event) {
+  bool matches(RawKeyEvent event) {
     final key = this.key?.key;
-    return event.altPressed == alt &&
-        event.controlPressed == control &&
-        event.metaPressed == meta &&
-        event.shiftPressed == shift &&
-        key != null &&
-        (key == event.keyWithoutModifiers || key == event.keyWithoutModifiers2);
+    if (key != null) {
+      final physicalKey =
+          KeyboardMap.current().getPhysicalKeyForLogicalKey(key);
+      return event.isAltPressed == alt &&
+          event.isControlPressed == control &&
+          event.isMetaPressed == meta &&
+          event.isShiftPressed == shift &&
+          physicalKey == event.physicalKey;
+    } else {
+      return false;
+    }
   }
 
   LogicalKeyboardKey _keyForCodeUnit(int codeUnit) {
@@ -116,9 +122,9 @@ class AcceleratorRegistry {
     _menus.remove(menu);
   }
 
-  bool _handleKeyEvent(RawKeyEventEx event) {
+  bool _handleKeyEvent(RawKeyEvent event) {
     var handled = false;
-    if (event.event is RawKeyDownEvent) {
+    if (event is RawKeyDownEvent) {
       for (final a in _accelerators.entries) {
         if (a.key.matches(event)) {
           a.value();

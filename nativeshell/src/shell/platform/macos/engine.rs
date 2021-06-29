@@ -1,13 +1,8 @@
-use std::ffi::c_void;
-
 use cocoa::base::{id, nil, BOOL, NO};
 use log::warn;
 use objc::rc::{autoreleasepool, StrongPtr};
 
-use crate::shell::platform::{
-    key_interceptor::override_key_event,
-    platform_impl::utils::{class_from_string, to_nsstring},
-};
+use crate::shell::platform::platform_impl::utils::{class_from_string, to_nsstring};
 
 use super::{
     binary_messenger::PlatformBinaryMessenger,
@@ -31,7 +26,6 @@ impl PlatformEngine {
             let view_controller: id = msg_send![class, alloc];
             let view_controller = StrongPtr::new(msg_send![view_controller, initWithProject: nil]);
             let engine: id = msg_send![*view_controller, engine];
-            let embedder_api: *mut c_void = msg_send![engine, embedderAPI];
 
             // register plugins with this engine
             for plugin in plugins {
@@ -48,7 +42,6 @@ impl PlatformEngine {
                 }
             }
 
-            override_key_event(embedder_api);
             Self {
                 handle: StrongPtr::retain(engine),
                 view_controller,

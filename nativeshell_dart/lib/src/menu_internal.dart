@@ -178,7 +178,7 @@ class MenuState {
     return false;
   }
 
-  VoidCallback? actionForEvent(RawKeyEventEx event) {
+  VoidCallback? actionForEvent(RawKeyEvent event) {
     for (final e in _transferTarget._currentElements) {
       if (e.item.action != null &&
           e.item.accelerator != null &&

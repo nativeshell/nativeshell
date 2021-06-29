@@ -8,7 +8,6 @@ pub mod error;
 pub mod flutter;
 pub mod flutter_sys;
 pub mod init;
-pub mod key_event;
 pub mod keyboard_map;
 pub mod menu;
 pub mod menu_item;
