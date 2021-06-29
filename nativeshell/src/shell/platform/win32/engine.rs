@@ -1,4 +1,4 @@
-use std::{ffi::CString, mem::size_of, ptr};
+use std::{ffi::CString, ptr};
 
 use super::{
     binary_messenger::PlatformBinaryMessenger,
