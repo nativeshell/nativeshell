@@ -339,7 +339,7 @@ impl LanguageProfileNotifySink {
         res
     }
 
-    fn langauge_changed(&self) -> HRESULT {
+    fn language_changed(&self) -> HRESULT {
         if let Some(target) = self.target.upgrade() {
             target.keyboard_layout_changed();
         }
@@ -371,6 +371,6 @@ impl LanguageProfileNotifySink {
         S_OK
     }
     unsafe extern "system" fn _on_language_changed(this: ::windows::RawPtr) -> HRESULT {
-        (*(this as *mut Self)).langauge_changed()
+        (*(this as *mut Self)).language_changed()
     }
 }
