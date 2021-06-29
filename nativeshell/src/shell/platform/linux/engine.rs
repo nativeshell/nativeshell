@@ -1,13 +1,9 @@
-use std::ffi::c_void;
-
-use glib::translate::ToGlibPtr;
 use gtk::prelude::WidgetExt;
 
 use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::PlatformResult,
     flutter::{self, EngineExt, ViewExt},
-    flutter_sys,
 };
 
 pub struct PlatformEngine {
