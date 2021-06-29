@@ -97,6 +97,7 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
 
     let gen_path = out_dir.join("generated_keyboard_map.rs");
     let mut file = File::create(gen_path)?;
+    writeln!(file, "#[allow(dead_code)]")?;
     writeln!(
         file,
         "struct KeyMapEntry {{ platform: i64, physical: i64, logical: Option<i64>, fallback: Option<i64> }}"
