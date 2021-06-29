@@ -3,14 +3,17 @@ use std::{
     cmp::max,
     collections::HashMap,
     fmt::Write,
+    ptr,
     rc::{Rc, Weak},
 };
 
-use gdk::{ModifierType, WindowExt};
+use gdk::ModifierType;
 use glib::{Cast, ObjectExt};
 use gtk::{
-    AccelLabel, AccelLabelExt, BinExt, ContainerExt, GtkMenuExt, GtkMenuItemExt, MenuDirectionType,
-    MenuShellExt, WidgetExt,
+    prelude::{
+        AccelLabelExt, BinExt, ContainerExt, GtkMenuExt, GtkMenuItemExt, MenuShellExt, WidgetExt,
+    },
+    AccelLabel, MenuDirectionType,
 };
 
 use crate::{
@@ -133,9 +136,9 @@ impl PlatformMenu {
     }
 
     fn platform_menu_from_gtk_menu(menu: &gtk::Menu) -> Option<Rc<PlatformMenu>> {
-        let platform_menu: Option<&Weak<PlatformMenu>> =
-            unsafe { menu.get_data("nativeshell_platform_menu") };
-        platform_menu.and_then(|m| m.upgrade())
+        let platform_menu: Option<ptr::NonNull<Weak<PlatformMenu>>> =
+            unsafe { menu.data("nativeshell_platform_menu") };
+        platform_menu.and_then(|m| unsafe { m.as_ref() }.upgrade())
     }
 
     pub fn update_from_menu(&self, menu: Menu, manager: &MenuManager) -> PlatformResult<()> {
@@ -206,13 +209,13 @@ impl PlatformMenu {
     }
 
     fn resize_menu_if_needed(&self) {
-        let top_level = self.menu.get_toplevel();
-        let win = top_level.as_ref().and_then(|w| w.get_window());
+        let top_level = self.menu.toplevel();
+        let win = top_level.as_ref().and_then(|w| w.window());
         if let (Some(win), Some(top_level)) = (win, top_level) {
             if win.is_visible() {
-                let natural_size = top_level.get_preferred_size().1;
-                let width = win.get_width();
-                let height = win.get_height();
+                let natural_size = top_level.preferred_size().1;
+                let width = win.width();
+                let height = win.height();
 
                 if width < natural_size.width || height < natural_size.height {
                     win.resize(
@@ -257,7 +260,7 @@ impl PlatformMenu {
     }
 
     fn menu_item_selected(&self, menu_item: &gtk::MenuItem) {
-        if menu_item.get_submenu().is_some() {
+        if menu_item.submenu().is_some() {
             return; // not interested in submenus
         }
         let id_to_menu_item = self.id_to_menu_item.borrow();
@@ -283,8 +286,8 @@ impl PlatformMenu {
 
         loop {
             let widget = res
-                .get_attach_widget()
-                .and_then(|w| w.get_parent())
+                .attach_widget()
+                .and_then(|w| w.parent())
                 .and_then(|w| w.downcast::<gtk::Menu>().ok());
             match widget {
                 Some(widget) => {
@@ -389,7 +392,7 @@ impl PlatformMenu {
         item.set_label(&Self::convert_mnemonics(&menu_item.title));
 
         let label = item
-            .get_child()
+            .child()
             .and_then(|c| c.downcast::<AccelLabel>().ok())
             .unwrap();
 
@@ -468,10 +471,10 @@ impl PlatformMenu {
         } else if direction == MenuDirectionType::Child {
             let selected = self
                 .menu
-                .get_selected_item()
+                .selected_item()
                 .and_then(|w| w.downcast::<gtk::MenuItem>().ok());
             if let Some(selected) = selected {
-                if selected.get_submenu().is_none() {
+                if selected.submenu().is_none() {
                     self.move_to_next_menu();
                 }
             }

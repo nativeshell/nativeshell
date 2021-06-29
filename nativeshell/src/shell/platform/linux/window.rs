@@ -5,11 +5,11 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, WMDecoration, WMFunction, WindowExt};
+use gdk::{Event, EventType, WMDecoration, WMFunction};
 use glib::{Cast, ObjectExt};
 use gtk::{
-    propagate_event, ContainerExt, EventBox, GtkWindowExt, Inhibit, Overlay, OverlayExt, Widget,
-    WidgetExt,
+    prelude::{ContainerExt, GtkWindowExt, OverlayExt, WidgetExt},
+    propagate_event, EventBox, Inhibit, Overlay, Widget,
 };
 
 use crate::{
@@ -144,7 +144,7 @@ impl PlatformWindow {
         self.window.realize();
         unsafe {
             self.window
-                .get_window()
+                .window()
                 .unwrap()
                 .set_data("nativeshell_platform_window", weak);
         }
@@ -186,7 +186,7 @@ impl PlatformWindow {
                         .borrow()
                         .drag_motion(w, context, x, y, time);
                 }
-                Inhibit(true)
+                true
             });
 
             let weak = self.weak_self.borrow().clone();
@@ -204,7 +204,7 @@ impl PlatformWindow {
                         .borrow()
                         .drag_drop(w, context, x, y, time);
                 }
-                Inhibit(true)
+                true
             });
 
             let weak = self.weak_self.borrow().clone();
@@ -277,7 +277,7 @@ impl PlatformWindow {
     fn get_gl_area(&self) -> Option<Widget> {
         let mut res: Option<Widget> = None;
         self.view.borrow().forall(|w| {
-            if w.get_type().name() == "FlGLArea" {
+            if w.type_().name() == "FlGLArea" {
                 res = Some(w.clone());
             }
         });
@@ -362,15 +362,15 @@ impl PlatformWindow {
     }
 
     pub(super) fn on_event(&self, event: &mut Event) {
-        if event.get_event_type() == EventType::ButtonPress
-            || event.get_event_type() == EventType::ButtonRelease
-            || event.get_event_type() == EventType::KeyPress
-            || event.get_event_type() == EventType::KeyRelease
-            || event.get_event_type() == EventType::MotionNotify
+        if event.event_type() == EventType::ButtonPress
+            || event.event_type() == EventType::ButtonRelease
+            || event.event_type() == EventType::KeyPress
+            || event.event_type() == EventType::KeyRelease
+            || event.event_type() == EventType::MotionNotify
         {
             self.last_event
                 .borrow_mut()
-                .insert(event.get_event_type(), event.clone());
+                .insert(event.event_type(), event.clone());
         }
 
         if self.window_menu.borrow().should_forward_event(&event) {
@@ -382,7 +382,7 @@ impl PlatformWindow {
         let event_box = self.get_event_box();
         if let Some(event_box) = event_box {
             let mut event =
-                translate_event_to_window(&event, &self.view.borrow().get_window().unwrap());
+                translate_event_to_window(&event, &self.view.borrow().window().unwrap());
             propagate_event(&event_box, &mut event);
         }
     }
@@ -416,7 +416,7 @@ impl PlatformWindow {
 
         self.window.set_modal(true);
         self.window
-            .get_window()
+            .window()
             .unwrap()
             .set_type_hint(gdk::WindowTypeHint::Dialog);
 
@@ -464,7 +464,7 @@ impl PlatformWindow {
 
         if resizing || force {
             if let Some(content_size) = &geometry.content_size {
-                if !self.window.get_resizable() {
+                if !self.window.is_resizable() {
                     size_widget_set_min_size(
                         &self.size_widget,
                         content_size.width as i32,
@@ -478,7 +478,7 @@ impl PlatformWindow {
             }
         }
 
-        if self.window.get_resizable() {
+        if self.window.is_resizable() {
             if let Some(min_content_size) = &geometry.min_content_size {
                 size_widget_set_min_size(
                     &self.size_widget,
@@ -497,13 +497,13 @@ impl PlatformWindow {
         let last_request = self.last_geometry_request.borrow();
 
         let frame_origin = if get_session_type() == SessionType::X11 {
-            let origin = self.window.get_position();
+            let origin = self.window.position();
             Some(Point::xy(origin.0 as f64, origin.1 as f64))
         } else {
             None
         };
 
-        let content_size = self.window.get_size();
+        let content_size = self.window.size();
         let content_size = Size::wh(content_size.0 as f64, content_size.1 as f64);
 
         Ok(WindowGeometry {
@@ -537,7 +537,7 @@ impl PlatformWindow {
 
         self.window.realize();
 
-        let window = self.window.get_window().unwrap();
+        let window = self.window.window().unwrap();
         match style.frame {
             WindowFrame::Regular => {
                 window.set_decorations(WMDecoration::ALL);
@@ -550,7 +550,7 @@ impl PlatformWindow {
             }
         }
 
-        let prev_resizable = self.window.get_resizable();
+        let prev_resizable = self.window.is_resizable();
         self.window.set_resizable(style.can_resize);
 
         let last_request = self.last_geometry_request.borrow().clone();
@@ -580,16 +580,16 @@ impl PlatformWindow {
 
     pub fn perform_window_drag(&self) -> PlatformResult<()> {
         if let Some(event) = self.last_event.borrow().get(&EventType::ButtonPress) {
-            if let (Some(coords), Some(button)) = (event.get_root_coords(), event.get_button()) {
+            if let (Some(coords), Some(button)) = (event.root_coords(), event.button()) {
                 // release event will get eaten, we need to synthetize it otherwise flutter keeps waiting for it
                 let mut release = synthetize_button_up(event);
                 gtk::main_do_event(&mut release);
 
-                self.window.get_window().unwrap().begin_move_drag(
+                self.window.window().unwrap().begin_move_drag(
                     button as i32,
                     coords.0 as i32,
                     coords.1 as i32,
-                    event.get_time(),
+                    event.time(),
                 );
             }
         }

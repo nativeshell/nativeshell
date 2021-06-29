@@ -46,7 +46,7 @@ impl PlatformRunLoop {
         let handle = self.next_handle();
 
         let timers = self.timers.clone();
-        let source_id = timeout_add_local(in_time.as_millis() as u32, move || {
+        let source_id = timeout_add_local(in_time, move || {
             timers.borrow_mut().remove(&handle);
             let f = callback
                 .borrow_mut()

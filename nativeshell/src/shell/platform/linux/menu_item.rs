@@ -4,7 +4,7 @@ use glib::{
     translate::{FromGlibPtrFull, ToGlibPtr},
     Cast,
 };
-use gtk::CheckMenuItemExt;
+use gtk::prelude::CheckMenuItemExt;
 
 // GtkCheckMenuItem has a 'feature' where it unconditionally changes check status on activation.
 // We want to be more explicit about it - activation should not change check status
@@ -92,14 +92,14 @@ pub(super) fn create_radio_menu_item() -> gtk::RadioMenuItem {
 // Sets or clears checked status on menu item; This requires calling the original
 // "activate" class method on menu item
 pub(super) fn check_menu_item_set_checked(item: &gtk::CheckMenuItem, checked: bool) {
-    if item.get_active() == checked {
+    if item.is_active() == checked {
         return;
     }
     activate_menu_item(item.upcast_ref::<gtk::MenuItem>());
 }
 
 pub(super) fn radio_menu_item_set_checked(item: &gtk::RadioMenuItem, checked: bool) {
-    if item.get_active() == checked {
+    if item.is_active() == checked {
         return;
     }
     activate_menu_item(item.upcast_ref::<gtk::MenuItem>());

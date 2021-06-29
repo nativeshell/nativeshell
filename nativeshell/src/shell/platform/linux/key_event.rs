@@ -1,4 +1,4 @@
-use gdk::{keyval_to_unicode, Display, Keymap, ModifierType};
+use gdk::{Display, Keymap, ModifierType};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,10 +11,15 @@ struct KeyEvent {
     other: serde_json::Map<String, serde_json::Value>,
 }
 
+fn keyval_to_unicode(keyval: u32) -> Option<u32> {
+    let res = unsafe { gdk_sys::gdk_keyval_to_unicode(keyval) };
+    return if res > 0 { Some(res) } else { None };
+}
+
 pub fn process_key_event(event: Vec<u8>) -> Vec<u8> {
     let mut event: KeyEvent = serde_json::from_slice(&event).unwrap();
-    if let Some(display) = Display::get_default() {
-        if let Some(keymap) = Keymap::get_for_display(&display) {
+    if let Some(display) = Display::default() {
+        if let Some(keymap) = Keymap::for_display(&display) {
             if let Some(state) =
                 keymap.translate_keyboard_state(event.scan_code as u32, ModifierType::empty(), 0)
             {

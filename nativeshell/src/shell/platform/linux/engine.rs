@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 
 use glib::translate::ToGlibPtr;
-use gtk::WidgetExt;
+use gtk::prelude::WidgetExt;
 
 use crate::shell::platform::key_interceptor::override_key_event;
 
