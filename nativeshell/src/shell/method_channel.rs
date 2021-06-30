@@ -1,4 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::{Rc, Weak},
+};
 
 use crate::codec::{MethodCall, MethodCallReply, MethodInvoker, Value};
 
@@ -26,7 +29,7 @@ impl MethodInvokerProvider {
     }
 }
 
-pub trait MethodCallHandler {
+pub trait MethodCallHandler: Sized + 'static {
     fn on_method_call(
         &mut self,
         call: MethodCall<Value>,
@@ -34,27 +37,38 @@ pub trait MethodCallHandler {
         engine: EngineHandle,
     );
 
-    // keep the method invoker provider if you want to call methods on engines
-    fn set_method_invoker_provider(&mut self, _provider: MethodInvokerProvider) {}
+    // Implementation can store weak reference if it needs to pass it around.
+    // Guaranteed to call before any other methods.
+    fn assign_weak_self(&mut self, _weak_self: Weak<RefCell<Self>>) {}
 
-    // called when engine is about to be destroyed
+    // Keep the method invoker provider if you want to call methods on engines.
+    fn assign_invoker_provider(&mut self, _provider: MethodInvokerProvider) {}
+
+    // Called when engine is about to be destroyed.
     fn on_engine_destroyed(&mut self, _engine: EngineHandle) {}
+
+    // Registers itself for handling platform channel methods.
+    fn register(self, context: Context, channel: &str) -> RegisteredMethodCallHandler<Self> {
+        RegisteredMethodCallHandler::new(context, channel, self)
+    }
 }
 
-// Convenience interface for registering custom method call handlers
-pub struct MethodChannel {
+pub struct RegisteredMethodCallHandler<T: MethodCallHandler> {
     context: Context,
     channel: String,
     _destroy_engine_handle: Handle,
+    handler: Rc<RefCell<T>>,
 }
 
-impl MethodChannel {
-    pub fn new<H>(context: Context, channel: &str, handler: H) -> Self
-    where
-        H: MethodCallHandler + 'static,
-    {
+// Active method call handler
+impl<T: MethodCallHandler> RegisteredMethodCallHandler<T> {
+    fn new(context: Context, channel: &str, handler: T) -> Self {
         let context_ref = context.get().unwrap();
-        let handler = Rc::new(RefCell::new(Box::new(handler)));
+        let handler = Rc::new(RefCell::new(handler));
+
+        handler
+            .borrow_mut()
+            .assign_weak_self(Rc::downgrade(&handler));
 
         let handler_clone = handler.clone();
         let destroy_engine_handle = context_ref
@@ -64,38 +78,68 @@ impl MethodChannel {
                 handler_clone.borrow_mut().on_engine_destroyed(handle);
             });
 
-        let res = Self {
-            context: context.clone(),
-            channel: channel.into(),
-            _destroy_engine_handle: destroy_engine_handle,
-        };
         handler
-            .as_ref()
             .borrow_mut()
-            .set_method_invoker_provider(MethodInvokerProvider {
-                context,
+            .assign_invoker_provider(MethodInvokerProvider {
+                context: context.clone(),
                 channel: channel.into(),
             });
+
+        let handler_clone = handler.clone();
         context_ref
             .message_manager
             .borrow_mut()
             .register_method_handler(channel, move |call, reply, engine| {
-                handler
+                handler_clone
                     .as_ref()
                     .borrow_mut()
                     .on_method_call(call, reply, engine);
             });
-        res
+
+        Self {
+            context,
+            channel: channel.into(),
+            _destroy_engine_handle: destroy_engine_handle,
+            handler,
+        }
+    }
+
+    pub fn borrow(&self) -> Ref<T> {
+        self.handler.borrow()
+    }
+
+    pub fn borrow_mut(&self) -> RefMut<T> {
+        self.handler.borrow_mut()
     }
 }
 
-impl Drop for MethodChannel {
+impl<T: MethodCallHandler> Drop for RegisteredMethodCallHandler<T> {
     fn drop(&mut self) {
         if let Some(context) = self.context.get() {
             context
                 .message_manager
                 .borrow_mut()
                 .unregister_method_handler(&self.channel);
+        }
+    }
+}
+
+trait Holder {}
+
+impl<T: MethodCallHandler> Holder for RegisteredMethodCallHandler<T> {}
+
+// Convenience interface for registering custom method call handlers
+pub struct MethodChannel {
+    _registration: Box<dyn Holder>,
+}
+
+impl MethodChannel {
+    pub fn new<H>(context: Context, channel: &str, handler: H) -> Self
+    where
+        H: MethodCallHandler,
+    {
+        Self {
+            _registration: Box::new(handler.register(context, channel)),
         }
     }
 }

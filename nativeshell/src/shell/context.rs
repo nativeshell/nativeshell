@@ -4,8 +4,8 @@ use crate::{util::LateRefCell, Error, Result};
 
 use super::{
     platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
-    EngineManager, KeyboardMapManager, MenuManager, MessageManager, RunLoop, WindowManager,
-    WindowMethodChannel,
+    EngineManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler,
+    RunLoop, WindowManager, WindowMethodChannel,
 };
 
 pub struct ContextOptions {
@@ -33,8 +33,8 @@ pub struct ContextImpl {
     pub message_manager: LateRefCell<MessageManager>,
     pub window_method_channel: LateRefCell<WindowMethodChannel>,
     pub window_manager: LateRefCell<WindowManager>,
-    pub menu_manager: LateRefCell<MenuManager>,
-    pub keyboard_map_manager: LateRefCell<KeyboardMapManager>,
+    pub(crate) menu_manager: LateRefCell<MenuManager>,
+    pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
 }
 
 impl ContextImpl {
@@ -63,7 +63,7 @@ impl ContextImpl {
         self.window_manager.set(WindowManager::new(context));
         self.menu_manager.set(MenuManager::new(context));
         self.keyboard_map_manager
-            .set(KeyboardMapManager::new(context));
+            .set(KeyboardMapManager::new(context.weak()));
 
         #[cfg(debug_assertions)]
         {

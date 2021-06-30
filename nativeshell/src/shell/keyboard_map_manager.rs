@@ -1,69 +1,48 @@
-use std::{collections::HashSet, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashSet,
+    rc::{Rc, Weak},
+};
 
 use crate::{
-    codec::{value::to_value, MethodCall, MethodCallReply, Value},
-    util::OkLog,
+    codec::value::to_value,
+    util::{Late, OkLog},
 };
 
 use super::{
     api_constants::{channel, method},
     platform::keyboard_map::PlatformKeyboardMap,
-    Context, ContextRef, EngineHandle, Handle,
+    Context, EngineHandle, MethodCallHandler, MethodInvokerProvider, RegisteredMethodCallHandler,
 };
 
 pub struct KeyboardMapManager {
     context: Context,
-    pub(crate) platform_map: Rc<PlatformKeyboardMap>,
-    _engine_destroy_notification_handle: Handle,
+    platform_map: Late<Rc<PlatformKeyboardMap>>,
     engines: HashSet<EngineHandle>,
+    provider: Late<MethodInvokerProvider>,
+}
+
+pub trait KeyboardMapDelegate {
+    fn keyboard_map_did_change(&self);
 }
 
 impl KeyboardMapManager {
-    pub(super) fn new(context: &ContextRef) -> Self {
-        let platform_layout = Rc::new(PlatformKeyboardMap::new(context.weak()));
-        platform_layout.assign_weak_self(Rc::downgrade(&platform_layout));
-
-        let context_weak = context.weak();
-        context
-            .message_manager
-            .borrow_mut()
-            .register_method_handler(
-                channel::KEYBOARD_MAP_MANAGER,
-                move |value, reply, engine| {
-                    if let Some(context) = context_weak.get() {
-                        context
-                            .keyboard_map_manager
-                            .borrow_mut()
-                            .on_method_call(value, reply, engine);
-                    }
-                },
-            );
-
-        let context_weak = context.weak();
-        let handle = context
-            .engine_manager
-            .borrow_mut()
-            .register_destroy_engine_notification(move |engine| {
-                if let Some(context) = context_weak.get() {
-                    context
-                        .keyboard_map_manager
-                        .borrow_mut()
-                        .on_engine_destroyed(engine);
-                }
-            });
-
+    pub fn new(context: Context) -> RegisteredMethodCallHandler<Self> {
         Self {
-            context: context.weak(),
-            platform_map: platform_layout,
-            _engine_destroy_notification_handle: handle,
+            context: context.clone(),
+            platform_map: Late::new(),
             engines: HashSet::new(),
+            provider: Late::new(),
         }
+        .register(context, channel::KEYBOARD_MAP_MANAGER)
     }
+}
 
+impl MethodCallHandler for KeyboardMapManager {
     fn on_method_call(
         &mut self,
-        call: MethodCall<Value>,
-        reply: MethodCallReply<Value>,
+        call: crate::codec::MethodCall<crate::codec::Value>,
+        reply: crate::codec::MethodCallReply<crate::codec::Value>,
         engine: EngineHandle,
     ) {
         #[allow(clippy::single_match)]
@@ -77,29 +56,38 @@ impl KeyboardMapManager {
         }
     }
 
-    pub(crate) fn keyboard_layout_changed(&self) {
-        if let Some(context) = self.context.get() {
-            let layout = self.platform_map.get_current_map();
-            let layout = to_value(layout).unwrap();
-            for engine in &self.engines {
-                let sender = context
-                    .message_manager
-                    .borrow()
-                    .get_method_invoker(*engine, channel::KEYBOARD_MAP_MANAGER);
-                if let Some(sender) = sender {
-                    sender
-                        .call_method(
-                            method::keyboard_map::ON_CHANGED.into(),
-                            layout.clone(),
-                            |_| {},
-                        )
-                        .ok_log();
-                }
-            }
-        }
+    fn assign_weak_self(&mut self, weak_self: Weak<RefCell<Self>>) {
+        let delegate: Weak<RefCell<dyn KeyboardMapDelegate>> = weak_self;
+        self.platform_map.set(Rc::new(PlatformKeyboardMap::new(
+            self.context.clone(),
+            delegate,
+        )));
     }
 
+    fn assign_invoker_provider(&mut self, provider: MethodInvokerProvider) {
+        self.provider.set(provider);
+    }
+
+    // called when engine is about to be destroyed
     fn on_engine_destroyed(&mut self, engine: EngineHandle) {
         self.engines.remove(&engine);
+    }
+}
+
+impl KeyboardMapDelegate for KeyboardMapManager {
+    fn keyboard_map_did_change(&self) {
+        let layout = self.platform_map.get_current_map();
+        let layout = to_value(layout).unwrap();
+        for engine in &self.engines {
+            if let Some(invoker) = self.provider.get_method_invoker_for_engine(*engine) {
+                invoker
+                    .call_method(
+                        method::keyboard_map::ON_CHANGED.into(),
+                        layout.clone(),
+                        |_| {},
+                    )
+                    .ok_log();
+            }
+        }
     }
 }
