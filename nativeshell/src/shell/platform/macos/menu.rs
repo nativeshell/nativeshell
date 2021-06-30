@@ -4,6 +4,7 @@ use std::{
     ffi::c_void,
     fmt::Write,
     hash::Hash,
+    mem::ManuallyDrop,
     rc::{Rc, Weak},
 };
 
@@ -192,7 +193,7 @@ impl PlatformMenu {
     pub fn assign_weak_self(&self, weak: Weak<PlatformMenu>) {
         self.weak_self.set(weak.clone());
         unsafe {
-            let state_ptr = Box::into_raw(Box::new(weak)) as *mut c_void;
+            let state_ptr = weak.into_raw() as *mut c_void;
             (**self.target).set_ivar("imState", state_ptr);
         }
     }
@@ -557,12 +558,12 @@ lazy_static! {
 }
 
 extern "C" fn dealloc(this: &Object, _sel: Sel) {
-    let state_ptr = unsafe {
-        let state_ptr: *mut c_void = *this.get_ivar("imState");
-        &mut *(state_ptr as *mut Weak<PlatformMenu>)
-    };
     unsafe {
-        Box::from_raw(state_ptr);
+        let state_ptr = {
+            let state_ptr: *mut c_void = *this.get_ivar("imState");
+            state_ptr as *const PlatformMenu
+        };
+        Weak::from_raw(state_ptr);
 
         let superclass = superclass(this);
         let () = msg_send![super(this, superclass), dealloc];
@@ -570,22 +571,28 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
 }
 
 extern "C" fn on_action(this: &Object, _sel: Sel, sender: id) {
-    let state_ptr = unsafe {
-        let state_ptr: *mut c_void = *this.get_ivar("imState");
-        &mut *(state_ptr as *mut Weak<PlatformMenu>)
+    let state = unsafe {
+        let state_ptr = {
+            let state_ptr: *mut c_void = *this.get_ivar("imState");
+            state_ptr as *const PlatformMenu
+        };
+        ManuallyDrop::new(Weak::from_raw(state_ptr))
     };
-    let upgraded = state_ptr.upgrade();
+    let upgraded = state.upgrade();
     if let Some(upgraded) = upgraded {
         upgraded.menu_item_action(sender);
     }
 }
 
 extern "C" fn menu_will_open(this: &Object, _: Sel, _menu: id) {
-    let state_ptr = unsafe {
-        let state_ptr: *mut c_void = *this.get_ivar("imState");
-        &mut *(state_ptr as *mut Weak<PlatformMenu>)
+    let state = unsafe {
+        let state_ptr = {
+            let state_ptr: *mut c_void = *this.get_ivar("imState");
+            state_ptr as *const PlatformMenu
+        };
+        ManuallyDrop::new(Weak::from_raw(state_ptr))
     };
-    let upgraded = state_ptr.upgrade();
+    let upgraded = state.upgrade();
     if let Some(upgraded) = upgraded {
         upgraded.on_menu_will_open();
     }
