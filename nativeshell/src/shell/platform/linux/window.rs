@@ -378,6 +378,7 @@ impl PlatformWindow {
                 context
                     .keyboard_map_manager
                     .borrow()
+                    .borrow()
                     .platform_map
                     .on_key_event(event);
             }

@@ -17,7 +17,7 @@ use super::{
 
 pub struct KeyboardMapManager {
     context: Context,
-    platform_map: Late<Rc<PlatformKeyboardMap>>,
+    pub(crate) platform_map: Late<Rc<PlatformKeyboardMap>>,
     engines: HashSet<EngineHandle>,
     provider: Late<MethodInvokerProvider>,
 }

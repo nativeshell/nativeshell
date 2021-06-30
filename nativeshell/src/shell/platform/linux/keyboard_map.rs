@@ -9,16 +9,16 @@ use glib::translate::ToGlibPtr;
 use crate::{
     shell::{
         api_model::{Key, KeyboardMap},
-        Context,
+        Context, KeyboardMapDelegate,
     },
     util::LateRefCell,
 };
 
 pub struct PlatformKeyboardMap {
-    context: Context,
     weak_self: LateRefCell<Weak<PlatformKeyboardMap>>,
     current_layout: RefCell<Option<KeyboardMap>>,
     current_group: Cell<u8>,
+    delegate: Weak<RefCell<dyn KeyboardMapDelegate>>,
 }
 
 include!(std::concat!(
@@ -43,12 +43,12 @@ fn lookup_key(keymap: &Keymap, key: &gdk_sys::GdkKeymapKey) -> Option<i64> {
 }
 
 impl PlatformKeyboardMap {
-    pub fn new(context: Context) -> Self {
+    pub fn new(_context: Context, delegate: Weak<RefCell<dyn KeyboardMapDelegate>>) -> Self {
         Self {
-            context,
             weak_self: LateRefCell::new(),
             current_group: Cell::new(0),
             current_layout: RefCell::new(None),
+            delegate,
         }
     }
 
@@ -255,13 +255,8 @@ impl PlatformKeyboardMap {
     }
 
     fn on_layout_changed(&self) {
-        if let Some(context) = self.context.get() {
-            // clear cached layout
-            self.current_layout.borrow_mut().take();
-            context
-                .keyboard_map_manager
-                .borrow()
-                .keyboard_layout_changed();
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().keyboard_map_did_change();
         }
     }
 }
