@@ -6,17 +6,18 @@ use std::mem;
 use std::rc::Weak;
 
 use crate::shell::api_model::Key;
+use crate::shell::KeyboardMapDelegate;
 use crate::{
     shell::{api_model::KeyboardMap, Context},
     util::{LateRefCell, OkLog},
 };
 
 pub struct PlatformKeyboardMap {
-    context: Context,
     weak_self: LateRefCell<Weak<PlatformKeyboardMap>>,
     source: RefCell<Option<ITfSource>>,
     cookie: Cell<u32>,
     cached_layout: RefCell<HashMap<isize, KeyboardMap>>,
+    delegate: Weak<RefCell<dyn KeyboardMapDelegate>>,
 }
 
 include!(std::concat!(
@@ -25,13 +26,13 @@ include!(std::concat!(
 ));
 
 impl PlatformKeyboardMap {
-    pub fn new(context: Context) -> Self {
+    pub fn new(_context: Context, delegate: Weak<RefCell<dyn KeyboardMapDelegate>>) -> Self {
         Self {
-            context,
             weak_self: LateRefCell::new(),
             source: RefCell::new(None),
             cookie: Cell::new(TF_INVALID_COOKIE),
             cached_layout: RefCell::new(HashMap::new()),
+            delegate,
         }
     }
 
@@ -218,20 +219,6 @@ impl PlatformKeyboardMap {
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformKeyboardMap>) {
         self.weak_self.set(weak.clone());
-        if let Some(context) = self.context.get() {
-            context
-                .run_loop
-                .borrow()
-                .schedule_now(move || {
-                    if let Some(map) = weak.upgrade() {
-                        map.init();
-                    }
-                })
-                .detach();
-        }
-    }
-
-    fn init(&self) {
         let profiles: ITfInputProcessorProfiles =
             create_instance(&CLSID_TF_InputProcessorProfiles).unwrap();
         let source = profiles.cast::<ITfSource>().unwrap();
@@ -251,11 +238,8 @@ impl PlatformKeyboardMap {
     }
 
     fn keyboard_layout_changed(&self) {
-        if let Some(context) = self.context.get() {
-            context
-                .keyboard_map_manager
-                .borrow()
-                .keyboard_layout_changed();
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().keyboard_map_did_change();
         }
     }
 }
