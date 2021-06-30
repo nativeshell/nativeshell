@@ -191,7 +191,7 @@ impl PlatformMenu {
                 id_to_menu_item: RefCell::new(HashMap::new()),
                 target,
                 weak_self: LateRefCell::new(),
-                delegate: delegate,
+                delegate,
             }
         }
     }
