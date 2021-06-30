@@ -1,5 +1,6 @@
 use std::{
     cell::{Cell, RefCell},
+    mem::ManuallyDrop,
     rc::Weak,
     {ffi::c_void, os::raw::c_ulong},
 };
@@ -33,7 +34,7 @@ use super::keyboard_map_sys::{
 pub struct PlatformKeyboardMap {
     context: Context,
     weak_self: LateRefCell<Weak<PlatformKeyboardMap>>,
-    observer: Cell<*mut Weak<PlatformKeyboardMap>>,
+    observer: Cell<*const PlatformKeyboardMap>,
     current_layout: RefCell<Option<KeyboardMap>>,
 }
 
@@ -191,7 +192,7 @@ impl PlatformKeyboardMap {
     pub fn assign_weak_self(&self, weak: Weak<PlatformKeyboardMap>) {
         self.weak_self.set(weak.clone());
 
-        let ptr = Box::into_raw(Box::new(weak));
+        let ptr = weak.into_raw();
 
         unsafe {
             let center = CFNotificationCenterGetDistributedCenter();
@@ -231,7 +232,7 @@ impl Drop for PlatformKeyboardMap {
                     kTISNotifySelectedKeyboardInputSourceChanged,
                     std::ptr::null_mut(),
                 );
-                Box::from_raw(observer);
+                Weak::from_raw(observer);
             }
         }
     }
@@ -244,8 +245,9 @@ extern "C" fn observer(
     _object: *const c_void,
     _user_info: CFDictionaryRef,
 ) {
-    let layout = observer as *mut Weak<PlatformKeyboardMap>;
-    let layout = unsafe { &*layout };
+    let layout =
+        ManuallyDrop::new(unsafe { Weak::from_raw(observer as *const PlatformKeyboardMap) });
+
     if let Some(layout) = layout.upgrade() {
         layout.on_layout_changed();
     }
