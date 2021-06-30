@@ -73,7 +73,7 @@ impl MethodChannel {
             .as_ref()
             .borrow_mut()
             .set_method_invoker_provider(MethodInvokerProvider {
-                context: context.clone(),
+                context,
                 channel: channel.into(),
             });
         context_ref

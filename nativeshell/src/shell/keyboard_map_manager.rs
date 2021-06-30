@@ -66,6 +66,7 @@ impl KeyboardMapManager {
         reply: MethodCallReply<Value>,
         engine: EngineHandle,
     ) {
+        #[allow(clippy::single_match)]
         match call.method.as_str() {
             method::keyboard_map::GET => {
                 self.engines.insert(engine);
@@ -84,7 +85,7 @@ impl KeyboardMapManager {
                 let sender = context
                     .message_manager
                     .borrow()
-                    .get_method_invoker(engine.clone(), channel::KEYBOARD_MAP_MANAGER);
+                    .get_method_invoker(*engine, channel::KEYBOARD_MAP_MANAGER);
                 if let Some(sender) = sender {
                     sender
                         .call_method(

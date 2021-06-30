@@ -183,7 +183,7 @@ impl WindowManager {
         parent: WindowHandle,
     ) -> WindowMethodCallResult {
         self.create_window(argument, Some(parent))
-            .map_err(|e| MethodCallError::from(e))
+            .map_err(MethodCallError::from)
             .map(|win| to_value(&WindowCreateResponse { window_handle: win }).unwrap())
     }
 

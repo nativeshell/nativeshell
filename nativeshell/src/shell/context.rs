@@ -38,7 +38,7 @@ pub struct ContextImpl {
 }
 
 impl ContextImpl {
-    fn new(options: ContextOptions) -> Result<ContextRef> {
+    fn create(options: ContextOptions) -> Result<ContextRef> {
         let res = Rc::new(Self {
             options,
             run_loop: LateRefCell::new(),
@@ -93,12 +93,13 @@ pub struct Context {
 }
 
 impl Context {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(options: ContextOptions) -> Result<ContextRef> {
-        ContextImpl::new(options)
+        ContextImpl::create(options)
     }
 
     pub fn get(&self) -> Option<ContextRef> {
-        return self.context.upgrade().map(|c| ContextRef { context: c });
+        self.context.upgrade().map(|c| ContextRef { context: c })
     }
 }
 

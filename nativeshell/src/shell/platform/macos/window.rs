@@ -475,17 +475,15 @@ impl PlatformWindow {
                     if let Some(delegate) = s.delegate.upgrade() {
                         delegate.visibility_changed(true);
                     };
-                } else {
-                    if let Some(context) = s.context.get() {
-                        // wait until we have content generated (with proper size)
-                        context
-                            .run_loop
-                            .borrow()
-                            .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
-                                Self::show_when_ready(weak_self, attempt + 1)
-                            })
-                            .detach();
-                    }
+                } else if let Some(context) = s.context.get() {
+                    // wait until we have content generated (with proper size)
+                    context
+                        .run_loop
+                        .borrow()
+                        .schedule(Duration::from_secs_f64(1.0 / 60.0), move || {
+                            Self::show_when_ready(weak_self, attempt + 1)
+                        })
+                        .detach();
                 }
             });
         }

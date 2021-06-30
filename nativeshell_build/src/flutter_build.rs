@@ -130,7 +130,7 @@ impl Flutter {
         to_dir: &Path,
         asset: &str,
     ) -> BuildResult<Option<PathBuf>> {
-        let mut segments = asset.split("/");
+        let mut segments = asset.split('/');
         if let Some(first) = segments.next() {
             if first != "packages" {
                 let asset = from_dir.join(first);
