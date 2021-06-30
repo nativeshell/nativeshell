@@ -3,11 +3,11 @@ use std::{ptr, rc::Weak};
 use gdk::Event;
 use glib::ObjectExt;
 
-use crate::shell::{platform::window::PlatformWindow, ContextRef};
+use crate::shell::{platform::window::PlatformWindow};
 
 use super::error::{PlatformError, PlatformResult};
 
-pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
+pub fn init_platform() -> PlatformResult<()> {
     gtk::init().map_err(|e| PlatformError::GLibError {
         message: e.message.into(),
     })?;
