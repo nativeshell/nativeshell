@@ -1,6 +1,4 @@
-use std::{ffi::CString, mem::size_of, ptr};
-
-use crate::shell::platform::key_interceptor::override_key_event;
+use std::{ffi::CString, ptr};
 
 use super::{
     binary_messenger::PlatformBinaryMessenger,
@@ -47,12 +45,6 @@ impl PlatformEngine {
                     register_func(registrar as *mut _);
                 }
             }
-        }
-
-        unsafe {
-            // TODO: This makes assumption about internal engine layout and will possibly
-            // break in future;
-            override_key_event((engine as *mut u8).add(2 * size_of::<isize>()) as *mut _);
         }
         Self { handle: engine }
     }
