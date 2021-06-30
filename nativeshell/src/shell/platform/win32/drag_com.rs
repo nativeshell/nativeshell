@@ -627,13 +627,13 @@ impl DataObject {
                         if let Some(stream) = stream {
                             loop {
                                 let mut num_read: u32 = 0;
-                                if !stream
+                                if stream
                                     .Read(
                                         buf.as_mut_ptr() as *mut _,
                                         buf.len() as u32,
                                         &mut num_read as *mut _,
                                     )
-                                    .is_ok()
+                                    .is_err()
                                 {
                                     break;
                                 }

@@ -15,7 +15,7 @@ fn set_per_monitor_aware() -> bool {
                 let function: extern "system" fn(isize) -> BOOL =
                     std::mem::transmute(set_awareness_context);
                 //  Windows 10 Anniversary Update (1607) or later
-                if function(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2).as_bool() == false {
+                if !function(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2).as_bool() {
                     function(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
                 }
                 res = true;

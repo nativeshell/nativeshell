@@ -73,13 +73,13 @@ impl PlatformKeyboardMap {
 
         // if choosing from list, prefer layout that has actual numbers
         for l in &vec {
-            if self.is_ascii_capable(l.clone(), true) {
-                return l.clone();
+            if self.is_ascii_capable(*l, true) {
+                return *l;
             }
         }
         for l in &vec {
-            if self.is_ascii_capable(l.clone(), false) {
-                return l.clone();
+            if self.is_ascii_capable(*l, false) {
+                return *l;
             }
         }
 
@@ -159,11 +159,11 @@ impl PlatformKeyboardMap {
             }
         }
 
-        return if res > 0 && buf[0] >= 0x20 {
+        if res > 0 && buf[0] >= 0x20 {
             Some(buf[0])
         } else {
             None
-        };
+        }
     }
 
     unsafe fn key_from_entry(&self, entry: &KeyMapEntry, hkl: HKL) -> Key {
@@ -218,7 +218,7 @@ impl PlatformKeyboardMap {
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformKeyboardMap>) {
-        self.weak_self.set(weak.clone());
+        self.weak_self.set(weak);
         let profiles: ITfInputProcessorProfiles =
             create_instance(&CLSID_TF_InputProcessorProfiles).unwrap();
         let source = profiles.cast::<ITfSource>().unwrap();

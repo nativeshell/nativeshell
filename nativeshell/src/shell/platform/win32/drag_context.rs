@@ -119,7 +119,7 @@ impl DragContext {
         res
     }
 
-    pub unsafe fn do_drag_drop<'a>(
+    unsafe fn do_drag_drop<'a>(
         pdataobj: impl ::windows::IntoParam<'a, IDataObject>,
         pdropsource: impl ::windows::IntoParam<'a, IDropSource>,
         dwokeffects: u32,
