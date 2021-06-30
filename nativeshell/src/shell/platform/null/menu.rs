@@ -1,6 +1,9 @@
-use std::rc::{Rc, Weak};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
-use crate::shell::{api_model::Menu, Context, MenuHandle, MenuManager};
+use crate::shell::{api_model::Menu, Context, MenuDelegate, MenuHandle, MenuManager};
 
 use super::error::{PlatformError, PlatformResult};
 
@@ -8,7 +11,11 @@ pub struct PlatformMenu {}
 
 #[allow(unused_variables)]
 impl PlatformMenu {
-    pub fn new(context: Context, handle: MenuHandle) -> Self {
+    pub fn new(
+        context: Context,
+        handle: MenuHandle,
+        delegate: Weak<RefCell<dyn MenuDelegate>>,
+    ) -> Self {
         Self {}
     }
 
@@ -25,6 +32,8 @@ impl PlatformMenuManager {
     pub fn new(context: Context) -> Self {
         Self {}
     }
+
+    pub(crate) fn assign_weak_self(&self, _weak_self: Weak<PlatformMenuManager>) {}
 
     pub fn set_app_menu(&self, menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
