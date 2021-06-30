@@ -24,7 +24,7 @@ use crate::{
     shell::api_model::{Menu, MenuItem, MenuItemRole},
     shell::{
         api_model::{Accelerator, CheckStatus, MenuRole},
-        Context, Handle, MenuHandle, MenuManager,
+        Context, Handle, MenuDelegate, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},
 };
@@ -52,6 +52,7 @@ impl Hash for StrongPtrWrapper {
 
 pub struct PlatformMenuManager {
     context: Context,
+    weak_self: LateRefCell<Weak<PlatformMenuManager>>,
     app_menu: RefCell<Option<Rc<PlatformMenu>>>,
     window_menus: RefCell<HashMap<StrongPtrWrapper, Rc<PlatformMenu>>>,
     update_handle: RefCell<Option<Handle>>,
@@ -61,10 +62,15 @@ impl PlatformMenuManager {
     pub fn new(context: Context) -> Self {
         Self {
             context,
+            weak_self: LateRefCell::new(),
             app_menu: RefCell::new(None),
             window_menus: RefCell::new(HashMap::new()),
             update_handle: RefCell::new(None),
         }
+    }
+
+    pub(crate) fn assign_weak_self(&self, weak_self: Weak<PlatformMenuManager>) {
+        self.weak_self.set(weak_self);
     }
 
     fn update_menu(&self) {
@@ -96,15 +102,11 @@ impl PlatformMenuManager {
     }
 
     fn schedule_update(&self) {
-        let context_clone = self.context.clone();
+        let weak_self = self.weak_self.borrow().clone();
         if let Some(context) = self.context.get() {
             let callback = context.run_loop.borrow().schedule_now(move || {
-                if let Some(context) = context_clone.get() {
-                    context
-                        .menu_manager
-                        .borrow()
-                        .get_platform_menu_manager()
-                        .update_menu();
+                if let Some(s) = weak_self.upgrade() {
+                    s.update_menu();
                 }
             });
             self.update_handle.borrow_mut().replace(callback);
@@ -156,19 +158,23 @@ impl PlatformMenuManager {
 }
 
 pub struct PlatformMenu {
-    context: Context,
     handle: MenuHandle,
     pub(super) menu: StrongPtr,
     previous_menu: RefCell<Menu>,
     id_to_menu_item: RefCell<HashMap<i64, StrongPtr>>,
     target: StrongPtr,
     weak_self: LateRefCell<Weak<PlatformMenu>>,
+    delegate: Weak<RefCell<dyn MenuDelegate>>,
 }
 
 const ITEM_TAG: NSInteger = 9999;
 
 impl PlatformMenu {
-    pub fn new(context: Context, handle: MenuHandle) -> Self {
+    pub fn new(
+        _context: Context,
+        handle: MenuHandle,
+        delegate: Weak<RefCell<dyn MenuDelegate>>,
+    ) -> Self {
         unsafe {
             let menu: id = NSMenu::alloc(nil).initWithTitle_(*to_nsstring(""));
             let () = msg_send![menu, setAutoenablesItems: NO];
@@ -179,13 +185,13 @@ impl PlatformMenu {
             let () = msg_send![menu, setDelegate:*target];
 
             Self {
-                context,
                 handle,
                 menu: StrongPtr::new(menu),
                 previous_menu: RefCell::new(Default::default()),
                 id_to_menu_item: RefCell::new(HashMap::new()),
                 target,
                 weak_self: LateRefCell::new(),
+                delegate: delegate,
             }
         }
     }
@@ -299,9 +305,9 @@ impl PlatformMenu {
             .filter_map(|f| f.submenu)
             .collect();
 
-        if let Some(context) = self.context.get() {
+        if let Some(delegate) = self.delegate.upgrade() {
             for c in children {
-                let menu = context.menu_manager.borrow().get_platform_menu(c);
+                let menu = delegate.borrow().get_platform_menu(c);
                 if let Ok(menu) = menu {
                     menu.prepare_for_app_menu();
                 }
@@ -495,21 +501,18 @@ impl PlatformMenu {
     }
 
     fn menu_item_action(&self, item: id) {
-        if let Some(context) = self.context.get() {
+        if let Some(delegate) = self.delegate.upgrade() {
             let item_id = unsafe {
                 let object: id = msg_send![item, representedObject];
                 msg_send![object, longLongValue]
             };
-            context
-                .menu_manager
-                .borrow()
-                .on_menu_action(self.handle, item_id);
+            delegate.borrow().on_menu_action(self.handle, item_id);
         }
     }
 
     fn on_menu_will_open(&self) {
-        if let Some(context) = self.context.get() {
-            context.menu_manager.borrow().on_menu_open(self.handle);
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().on_menu_open(self.handle);
         }
     }
 

@@ -20,7 +20,8 @@ use super::{
         WindowGeometryRequest, WindowStyle,
     },
     platform::window::PlatformWindow,
-    Context, EngineHandle, WindowMethodCallReply, WindowMethodCallResult, WindowMethodInvoker,
+    Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
+    WindowMethodInvoker,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -179,6 +180,7 @@ impl Window {
             let menu = context
                 .menu_manager
                 .borrow()
+                .borrow()
                 .get_platform_menu(request.handle);
             match menu {
                 Ok(menu) => self
@@ -193,6 +195,7 @@ impl Window {
         if let Some(context) = self.context.get() {
             let menu = context
                 .menu_manager
+                .borrow()
                 .borrow()
                 .get_platform_menu(request.handle)?;
             self.platform_window()
@@ -213,7 +216,11 @@ impl Window {
         if let Some(context) = self.context.get() {
             match request.handle {
                 Some(handle) => {
-                    let menu = context.menu_manager.borrow().get_platform_menu(handle)?;
+                    let menu = context
+                        .menu_manager
+                        .borrow()
+                        .borrow()
+                        .get_platform_menu(handle)?;
                     self.platform_window()
                         .set_window_menu(Some(menu))
                         .map_err(|e| e.into())

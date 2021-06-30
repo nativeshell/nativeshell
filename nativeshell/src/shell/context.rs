@@ -33,7 +33,7 @@ pub struct ContextImpl {
     pub message_manager: LateRefCell<MessageManager>,
     pub window_method_channel: LateRefCell<WindowMethodChannel>,
     pub window_manager: LateRefCell<WindowManager>,
-    pub(crate) menu_manager: LateRefCell<MenuManager>,
+    pub(crate) menu_manager: LateRefCell<RegisteredMethodCallHandler<MenuManager>>,
     pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
 }
 
@@ -63,7 +63,7 @@ impl ContextImpl {
         self.window_method_channel
             .set(WindowMethodChannel::new(&context));
         self.window_manager.set(WindowManager::new(context));
-        self.menu_manager.set(MenuManager::new(context));
+        self.menu_manager.set(MenuManager::new(context.weak()));
         self.keyboard_map_manager
             .set(KeyboardMapManager::new(context.weak()));
 
