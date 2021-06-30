@@ -42,6 +42,8 @@ pub trait MenuDelegate {
     fn on_menu_open(&self, menu_handle: MenuHandle);
     fn on_menu_action(&self, menu_handle: MenuHandle, id: i64);
     fn get_platform_menu(&self, menu: MenuHandle) -> Result<Rc<PlatformMenu>>;
+    fn move_to_previous_menu(&self, menu_handle: MenuHandle);
+    fn move_to_next_menu(&self, menu_handle: MenuHandle);
 }
 
 impl MenuManager {
@@ -99,32 +101,6 @@ impl MenuManager {
             self.invoker_provider
                 .get_method_invoker_for_engine(e.engine)
         })
-    }
-
-    #[allow(dead_code)] // only used on windows
-    pub(crate) fn move_to_previous_menu(&self, menu_handle: MenuHandle) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_PREVIOUS_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
-                .ok_log();
-        }
-    }
-
-    #[allow(dead_code)] // only used on windows
-    pub(crate) fn move_to_next_menu(&self, menu_handle: MenuHandle) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_NEXT_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
-                .ok_log();
-        }
     }
 
     fn map_result<T>(result: Result<T>) -> WindowMethodCallResult
@@ -226,5 +202,29 @@ impl MenuDelegate for MenuManager {
             .get(&menu)
             .map(|c| c.platform_menu.clone())
             .ok_or(Error::InvalidMenuHandle)
+    }
+
+    fn move_to_previous_menu(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu_bar::MOVE_TO_PREVIOUS_MENU.into(),
+                    Value::Null,
+                    |_| {},
+                )
+                .ok_log();
+        }
+    }
+
+    fn move_to_next_menu(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu_bar::MOVE_TO_NEXT_MENU.into(),
+                    Value::Null,
+                    |_| {},
+                )
+                .ok_log();
+        }
     }
 }
