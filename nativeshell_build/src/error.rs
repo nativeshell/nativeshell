@@ -56,7 +56,7 @@ impl Display for BuildError {
             } => {
                 write!(
                     f,
-                    "External Tool Failed!\nStatus: {:?}\nCommand: {:?}\nStderr:\n{}\nStdout:\n{}",
+                    "External Tool Failed!\nStatus: {:?}\nCommand: {}\nStderr:\n{}\nStdout:\n{}",
                     status, command, stderr, stdout
                 )
             }
