@@ -1,7 +1,5 @@
 use std::ptr::null_mut;
 
-use crate::shell::ContextRef;
-
 use super::{
     all_bindings::*,
     dpi::become_dpi_aware,
@@ -10,7 +8,7 @@ use super::{
     util::direct_composition_supported,
 };
 
-pub fn init_platform(_context: &ContextRef) -> PlatformResult<()> {
+pub fn init_platform() -> PlatformResult<()> {
     unsafe {
         // Angle will try opening these with GetModuleHandleEx, which means they need to be
         // loaded first; Otherwise it falls back to d3dcompiler_47, which is not present on

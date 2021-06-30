@@ -15,6 +15,7 @@ use core_foundation::{
 use crate::{
     shell::{
         api_model::{Key, KeyboardMap},
+        keyboard_map_manager::KeyboardMapDelegate,
         platform::platform_impl::keyboard_map_sys::{
             altKey, kTISPropertyUnicodeKeyLayoutData, shiftKey, CFObject, TISGetInputSourceProperty,
         },
@@ -32,10 +33,10 @@ use super::keyboard_map_sys::{
 };
 
 pub struct PlatformKeyboardMap {
-    context: Context,
     weak_self: LateRefCell<Weak<PlatformKeyboardMap>>,
     observer: Cell<*const PlatformKeyboardMap>,
     current_layout: RefCell<Option<KeyboardMap>>,
+    delegate: Weak<RefCell<dyn KeyboardMapDelegate>>,
 }
 
 include!(std::concat!(
@@ -44,12 +45,12 @@ include!(std::concat!(
 ));
 
 impl PlatformKeyboardMap {
-    pub fn new(context: Context) -> Self {
+    pub fn new(_context: Context, delegate: Weak<RefCell<dyn KeyboardMapDelegate>>) -> Self {
         Self {
-            context,
             weak_self: LateRefCell::new(),
             observer: Cell::new(std::ptr::null_mut()),
             current_layout: RefCell::new(None),
+            delegate,
         }
     }
 
@@ -209,13 +210,8 @@ impl PlatformKeyboardMap {
     }
 
     fn on_layout_changed(&self) {
-        if let Some(context) = self.context.get() {
-            // clear cached layout
-            self.current_layout.borrow_mut().take();
-            context
-                .keyboard_map_manager
-                .borrow()
-                .keyboard_layout_changed();
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().keyboard_map_did_change();
         }
     }
 }

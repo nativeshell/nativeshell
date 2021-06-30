@@ -186,8 +186,8 @@ impl WindowMenu {
         });
 
         if res > 0 {
-            if let Some(context) = self.context.get() {
-                context.menu_manager.borrow().on_menu_action(
+            if let Some(delegate) = menu.delegate.upgrade() {
+                delegate.borrow().on_menu_action(
                     self.current_menu.borrow().as_ref().unwrap().request.handle,
                     res as i64,
                 );
@@ -363,15 +363,13 @@ impl WindowMenu {
                 false => (VK_LEFT, VK_RIGHT),
             };
 
-            if let Some(context) = self.context.get() {
+            if let Some(delegate) = current_menu.platform_menu.delegate.upgrade() {
                 if key == key_prev && current_menu.current_item_is_first {
-                    context
-                        .menu_manager
+                    delegate
                         .borrow()
                         .move_to_previous_menu(current_menu.platform_menu.handle);
                 } else if key == key_next && current_menu.current_item_is_last {
-                    context
-                        .menu_manager
+                    delegate
                         .borrow()
                         .move_to_next_menu(current_menu.platform_menu.handle);
                 }
@@ -434,6 +432,10 @@ impl WindowMenu {
     }
 
     fn on_init_menu(&self, menu: HMENU) {
+        if self.current_menu.borrow().is_none() {
+            return;
+        }
+
         let mut info = MENUINFO {
             cbSize: std::mem::size_of::<MENUINFO>() as u32,
             fMask: MIM_MENUDATA,
@@ -444,9 +446,12 @@ impl WindowMenu {
                 return;
             }
         }
+
+        let current_menu = Ref::map(self.current_menu.borrow(), |x| x.as_ref().unwrap());
+
         let handle = MenuHandle(info.dwMenuData as i64);
-        if let Some(context) = self.context.get() {
-            context.menu_manager.borrow_mut().on_menu_open(handle);
+        if let Some(delegate) = current_menu.platform_menu.delegate.upgrade() {
+            delegate.borrow().on_menu_open(handle);
         }
     }
 

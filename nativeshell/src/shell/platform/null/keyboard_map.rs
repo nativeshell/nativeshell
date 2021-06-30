@@ -1,11 +1,11 @@
-use std::rc::Weak;
+use std::{cell::RefCell, rc::Weak};
 
-use crate::shell::{api_model::KeyboardMap, Context};
+use crate::shell::{api_model::KeyboardMap, Context, KeyboardMapDelegate};
 
 pub struct PlatformKeyboardMap {}
 
 impl PlatformKeyboardMap {
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: Context, delegate: Weak<RefCell<dyn KeyboardMapDelegate>>) -> Self {
         Self {}
     }
 

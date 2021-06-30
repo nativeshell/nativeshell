@@ -19,7 +19,7 @@ use gtk::{
 use crate::{
     shell::{
         api_model::{Accelerator, CheckStatus, Menu, MenuItem},
-        Context, MenuHandle, MenuManager,
+        Context, MenuDelegate, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},
 };
@@ -43,11 +43,16 @@ pub struct PlatformMenu {
     on_selection_done: RefCell<Option<Box<dyn FnOnce(bool)>>>,
     ignore_activate: Cell<bool>,
     pending_selection_done: Cell<bool>,
+    delegate: Weak<RefCell<dyn MenuDelegate>>,
 }
 
 #[allow(unused_variables)]
 impl PlatformMenu {
-    pub fn new(context: Context, handle: MenuHandle) -> Self {
+    pub fn new(
+        context: Context,
+        handle: MenuHandle,
+        delegate: Weak<RefCell<dyn MenuDelegate>>,
+    ) -> Self {
         let m = gtk::Menu::new();
 
         Self {
@@ -61,6 +66,7 @@ impl PlatformMenu {
             on_selection_done: RefCell::new(None),
             ignore_activate: Cell::new(false),
             pending_selection_done: Cell::new(false),
+            delegate,
         }
     }
 
@@ -88,8 +94,8 @@ impl PlatformMenu {
         let weak = self.weak_self.borrow().clone();
         self.menu.connect_show(move |_| {
             if let Some(s) = weak.upgrade() {
-                if let Some(context) = s.context.get() {
-                    context.menu_manager.borrow().on_menu_open(s.handle);
+                if let Some(delegate) = s.delegate.upgrade() {
+                    delegate.borrow().on_menu_open(s.handle);
                 }
             }
         });
@@ -272,11 +278,8 @@ impl PlatformMenu {
 
         let entry = id_to_menu_item.iter().find(|e| e.1 == menu_item);
         if let Some(entry) = entry {
-            if let Some(context) = self.context.get() {
-                context
-                    .menu_manager
-                    .borrow()
-                    .on_menu_action(self.handle, *entry.0);
+            if let Some(delegate) = self.delegate.upgrade() {
+                delegate.borrow().on_menu_action(self.handle, *entry.0);
             }
         }
     }
@@ -482,17 +485,14 @@ impl PlatformMenu {
     }
 
     pub fn move_to_previous_menu(&self) {
-        if let Some(context) = self.context.get() {
-            context
-                .menu_manager
-                .borrow()
-                .move_to_previous_menu(self.handle);
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().move_to_previous_menu(self.handle);
         }
     }
 
     pub fn move_to_next_menu(&self) {
-        if let Some(context) = self.context.get() {
-            context.menu_manager.borrow().move_to_next_menu(self.handle);
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.borrow().move_to_next_menu(self.handle);
         }
     }
 }
@@ -503,6 +503,8 @@ impl PlatformMenuManager {
     pub fn new(_context: Context) -> Self {
         Self {}
     }
+
+    pub(crate) fn assign_weak_self(&self, _weak_self: Weak<PlatformMenuManager>) {}
 
     pub fn set_app_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)

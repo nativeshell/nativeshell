@@ -743,6 +743,7 @@ impl PlatformWindow {
             context
                 .menu_manager
                 .borrow()
+                .borrow()
                 .get_platform_menu_manager()
                 .set_menu_for_window(self.platform_window.clone(), menu);
         }
@@ -935,6 +936,7 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
             context
                 .menu_manager
                 .borrow()
+                .borrow()
                 .get_platform_menu_manager()
                 .window_will_close(state.platform_window.clone());
         }
@@ -948,6 +950,7 @@ extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
             context
                 .menu_manager
                 .borrow()
+                .borrow()
                 .get_platform_menu_manager()
                 .window_did_become_active(state.platform_window.clone());
         }
@@ -959,6 +962,7 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
         if let Some(context) = state.context.get() {
             context
                 .menu_manager
+                .borrow()
                 .borrow()
                 .get_platform_menu_manager()
                 .window_did_resign_active(state.platform_window.clone());

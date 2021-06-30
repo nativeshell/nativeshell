@@ -12,7 +12,7 @@ use super::{
 use crate::{
     shell::{
         api_model::{CheckStatus, Menu, MenuItem},
-        Context, MenuHandle, MenuManager,
+        Context, MenuDelegate, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult},
 };
@@ -22,6 +22,7 @@ pub struct PlatformMenu {
     pub(super) menu: HMENU,
     previous_menu: RefCell<Menu>,
     weak_self: RefCell<Weak<PlatformMenu>>,
+    pub(super) delegate: Weak<RefCell<dyn MenuDelegate>>,
 }
 
 pub struct PlatformMenuManager {}
@@ -31,13 +32,19 @@ impl PlatformMenuManager {
         Self {}
     }
 
+    pub(crate) fn assign_weak_self(&self, _weak_self: Weak<PlatformMenuManager>) {}
+
     pub fn set_app_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
         Err(PlatformError::NotAvailable)
     }
 }
 
 impl PlatformMenu {
-    pub fn new(_context: Context, handle: MenuHandle) -> Self {
+    pub fn new(
+        _context: Context,
+        handle: MenuHandle,
+        delegate: Weak<RefCell<dyn MenuDelegate>>,
+    ) -> Self {
         let menu = unsafe {
             let menu = CreatePopupMenu();
 
@@ -59,6 +66,7 @@ impl PlatformMenu {
             menu,
             previous_menu: RefCell::new(Default::default()),
             weak_self: RefCell::new(Weak::new()),
+            delegate,
         }
     }
 

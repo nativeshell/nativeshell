@@ -1,11 +1,15 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    rc::{Rc, Weak},
+};
 
 use crate::{
     codec::{
         value::{from_value, to_value},
         MethodCall, MethodCallReply, MethodInvoker, Value,
     },
-    util::OkLog,
+    util::{Late, OkLog},
     Error, Result,
 };
 
@@ -13,7 +17,8 @@ use super::{
     api_constants::*,
     api_model::{MenuAction, MenuCreateRequest, MenuDestroyRequest, MenuOpen, SetMenuRequest},
     platform::menu::{PlatformMenu, PlatformMenuManager},
-    Context, ContextRef, EngineHandle, WindowMethodCallResult,
+    Context, EngineHandle, MethodCallHandler, MethodInvokerProvider, RegisteredMethodCallHandler,
+    WindowMethodCallResult,
 };
 
 struct MenuEntry {
@@ -24,41 +29,36 @@ struct MenuEntry {
 pub struct MenuManager {
     context: Context,
     platform_menu_map: HashMap<MenuHandle, MenuEntry>,
-    platform_menu_manager: PlatformMenuManager,
+    platform_menu_manager: Rc<PlatformMenuManager>,
     next_handle: MenuHandle,
+    weak_self: Late<Weak<RefCell<MenuManager>>>,
+    invoker_provider: Late<MethodInvokerProvider>,
 }
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct MenuHandle(pub(crate) i64);
 
+pub trait MenuDelegate {
+    fn on_menu_open(&self, menu_handle: MenuHandle);
+    fn on_menu_action(&self, menu_handle: MenuHandle, id: i64);
+    fn get_platform_menu(&self, menu: MenuHandle) -> Result<Rc<PlatformMenu>>;
+    fn move_to_previous_menu(&self, menu_handle: MenuHandle);
+    fn move_to_next_menu(&self, menu_handle: MenuHandle);
+}
+
 impl MenuManager {
-    pub(super) fn new(context: &ContextRef) -> Self {
-        let context_weak = context.weak();
-        context
-            .message_manager
-            .borrow_mut()
-            .register_method_handler(channel::MENU_MANAGER, move |value, reply, engine| {
-                if let Some(context) = context_weak.get() {
-                    context
-                        .menu_manager
-                        .borrow_mut()
-                        .on_method_call(value, reply, engine);
-                }
-            });
-
+    pub(super) fn new(context: Context) -> RegisteredMethodCallHandler<Self> {
+        let platform_manager = Rc::new(PlatformMenuManager::new(context.clone()));
+        platform_manager.assign_weak_self(Rc::downgrade(&platform_manager));
         Self {
-            context: context.weak(),
+            context: context.clone(),
             platform_menu_map: HashMap::new(),
-            platform_menu_manager: PlatformMenuManager::new(context.weak()),
+            platform_menu_manager: platform_manager,
             next_handle: MenuHandle(1),
+            weak_self: Late::new(),
+            invoker_provider: Late::new(),
         }
-    }
-
-    pub fn get_platform_menu(&self, menu: MenuHandle) -> Result<Rc<PlatformMenu>> {
-        self.platform_menu_map
-            .get(&menu)
-            .map(|c| c.platform_menu.clone())
-            .ok_or(Error::InvalidMenuHandle)
+        .register(context, channel::MENU_MANAGER)
     }
 
     pub fn get_platform_menu_manager(&self) -> &PlatformMenuManager {
@@ -77,9 +77,10 @@ impl MenuManager {
         });
         let entry = self.platform_menu_map.entry(handle);
         let context = self.context.clone();
+        let weak_self = self.weak_self.clone();
         let platform_menu = entry
             .or_insert_with(|| {
-                let platform_menu = Rc::new(PlatformMenu::new(context, handle));
+                let platform_menu = Rc::new(PlatformMenu::new(context, handle, weak_self));
                 platform_menu.assign_weak_self(Rc::downgrade(&platform_menu));
                 MenuEntry {
                     engine,
@@ -96,73 +97,10 @@ impl MenuManager {
     }
 
     fn invoker_for_menu(&self, menu_handle: MenuHandle) -> Option<MethodInvoker<Value>> {
-        if let Some(context) = self.context.get() {
-            self.platform_menu_map.get(&menu_handle).and_then(|e| {
-                context
-                    .message_manager
-                    .borrow()
-                    .get_method_invoker(e.engine, channel::MENU_MANAGER)
-            })
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn on_menu_action(&self, menu_handle: MenuHandle, id: i64) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu::ON_ACTION.into(),
-                    to_value(&MenuAction {
-                        handle: menu_handle,
-                        id,
-                    })
-                    .unwrap(),
-                    |_| {},
-                )
-                .ok_log();
-        }
-    }
-
-    pub(crate) fn on_menu_open(&self, menu_handle: MenuHandle) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu::ON_OPEN.into(),
-                    to_value(&MenuOpen {
-                        handle: menu_handle,
-                    })
-                    .unwrap(),
-                    |_| {},
-                )
-                .ok_log();
-        }
-    }
-
-    #[allow(dead_code)] // only used on windows
-    pub(crate) fn move_to_previous_menu(&self, menu_handle: MenuHandle) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_PREVIOUS_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
-                .ok_log();
-        }
-    }
-
-    #[allow(dead_code)] // only used on windows
-    pub(crate) fn move_to_next_menu(&self, menu_handle: MenuHandle) {
-        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
-            invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_NEXT_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
-                .ok_log();
-        }
+        self.platform_menu_map.get(&menu_handle).and_then(|e| {
+            self.invoker_provider
+                .get_method_invoker_for_engine(e.engine)
+        })
     }
 
     fn map_result<T>(result: Result<T>) -> WindowMethodCallResult
@@ -171,7 +109,9 @@ impl MenuManager {
     {
         result.map(|v| to_value(v).unwrap()).map_err(|e| e.into())
     }
+}
 
+impl MethodCallHandler for MenuManager {
     fn on_method_call(
         &mut self,
         call: MethodCall<Value>,
@@ -214,5 +154,77 @@ impl MenuManager {
             }
             _ => {}
         };
+    }
+
+    fn assign_weak_self(&mut self, weak_self: Weak<RefCell<Self>>) {
+        self.weak_self.set(weak_self);
+    }
+
+    fn assign_invoker_provider(&mut self, provider: MethodInvokerProvider) {
+        self.invoker_provider.set(provider);
+    }
+}
+
+impl MenuDelegate for MenuManager {
+    fn on_menu_action(&self, menu_handle: MenuHandle, id: i64) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu::ON_ACTION.into(),
+                    to_value(&MenuAction {
+                        handle: menu_handle,
+                        id,
+                    })
+                    .unwrap(),
+                    |_| {},
+                )
+                .ok_log();
+        }
+    }
+
+    fn on_menu_open(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu::ON_OPEN.into(),
+                    to_value(&MenuOpen {
+                        handle: menu_handle,
+                    })
+                    .unwrap(),
+                    |_| {},
+                )
+                .ok_log();
+        }
+    }
+
+    fn get_platform_menu(&self, menu: MenuHandle) -> Result<Rc<PlatformMenu>> {
+        self.platform_menu_map
+            .get(&menu)
+            .map(|c| c.platform_menu.clone())
+            .ok_or(Error::InvalidMenuHandle)
+    }
+
+    fn move_to_previous_menu(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu_bar::MOVE_TO_PREVIOUS_MENU.into(),
+                    Value::Null,
+                    |_| {},
+                )
+                .ok_log();
+        }
+    }
+
+    fn move_to_next_menu(&self, menu_handle: MenuHandle) {
+        if let Some(invoker) = self.invoker_for_menu(menu_handle) {
+            invoker
+                .call_method(
+                    method::menu_bar::MOVE_TO_NEXT_MENU.into(),
+                    Value::Null,
+                    |_| {},
+                )
+                .ok_log();
+        }
     }
 }
