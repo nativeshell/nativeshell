@@ -231,7 +231,7 @@ impl PlatformKeyboardMap {
             '/' => '?',
             c => {
                 if c >= 'a' && c <= 'z' {
-                    let delta = 'A' as u8 as i32 - 'a' as u8 as i32;
+                    let delta = b'A' as i32 - b'a' as i32;
                     (c as u8 as i32 + delta) as u8 as char
                 } else {
                     c
@@ -241,7 +241,7 @@ impl PlatformKeyboardMap {
     }
 
     pub fn assign_weak_self(&self, weak: Weak<PlatformKeyboardMap>) {
-        self.weak_self.set(weak.clone());
+        self.weak_self.set(weak);
     }
 
     pub(crate) fn on_key_event(&self, event: &Event) {
