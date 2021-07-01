@@ -62,6 +62,8 @@ impl MethodCallHandler for KeyboardMapManager {
             self.context.clone(),
             delegate,
         )));
+        self.platform_map
+            .assign_weak_self(Rc::downgrade(&self.platform_map));
     }
 
     fn assign_invoker_provider(&mut self, provider: MethodInvokerProvider) {
