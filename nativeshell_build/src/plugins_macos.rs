@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{BufRead, BufReader, Write},
+    io::{self, BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -27,7 +27,9 @@ impl<'a> PluginsImpl<'a> {
         if !skip_build {
             self.write_dummy_xcode_project(&xcode)?;
             let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
-            self.write_podfile(&xcode, plugins, &symlinks_dir)?;
+            let podfile = xcode.join("PodFile");
+            self.write_podfile(&podfile, plugins, &symlinks_dir)
+                .wrap_error(FileOperation::Write, || podfile.into())?;
             self.install_cocoa_pods(&xcode)?;
         }
         let (frameworks_path, products_path) = self.build_pods(&xcode, skip_build)?;
@@ -56,21 +58,19 @@ impl<'a> PluginsImpl<'a> {
 
     fn write_podfile(
         &self,
-        path: &Path,
+        file: &Path,
         plugins: &[Plugin],
         symlinks_dir: &Path,
-    ) -> BuildResult<()> {
-        let mut file =
-            File::create(path.join("PodFile")).wrap_error(FileOperation::Create, || path.into())?;
+    ) -> io::Result<()> {
+        let mut file = File::create(file)?;
 
         write!(
             file,
             "ENV['COCOAPODS_DISABLE_STATS'] = 'true'\n\
             platform :osx, '{}'\n\
-            target 'DummyProject' do\n  use_frameworks!\n",
+            abstract_target 'NativeShellTarget' do\n  use_frameworks! :linkage=>:dynamic\n",
             Flutter::macosx_deployment_target()
-        )
-        .wrap_error(FileOperation::Write, || path.into())?;
+        )?;
 
         for plugin in plugins {
             let plugin_path = symlinks_dir.join(&plugin.name);
@@ -79,11 +79,14 @@ impl<'a> PluginsImpl<'a> {
                 "  pod '{}', :path => '{}', :binary => true",
                 plugin.name,
                 plugin_path.join(&plugin.platform_name).to_string_lossy()
-            )
-            .wrap_error(FileOperation::Write, || path.into())?;
+            )?;
         }
 
-        writeln!(file, "end").wrap_error(FileOperation::Write, || path.into())?;
+        writeln!(file, "  target 'DummyProject' do")?;
+        writeln!(file, "  end")?;
+        writeln!(file, "  target 'NativeShellPods' do")?;
+        writeln!(file, "  end")?;
+        writeln!(file, "end")?;
 
         Ok(())
     }
@@ -161,6 +164,9 @@ impl<'a> PluginsImpl<'a> {
         cargo_emit::rustc_link_search! {
             artifacts_dir.to_string_lossy() => "framework",
         };
+        cargo_emit::rustc_link_lib! {
+            "NativeShellPods" => "framework"
+        };
         for entry in fs::read_dir(frameworks_path)
             .wrap_error(FileOperation::ReadDir, || frameworks_path.into())?
         {
@@ -177,12 +183,6 @@ impl<'a> PluginsImpl<'a> {
                 fs::remove_file(&dst).wrap_error(FileOperation::Remove, || (&dst).into())?;
             }
             symlink(entry.path(), &dst)?;
-
-            if let Some(framework_name) = file_name.strip_suffix(".framework") {
-                cargo_emit::rustc_link_lib! {
-                    framework_name => "framework"
-                };
-            }
         }
         Ok(())
     }
