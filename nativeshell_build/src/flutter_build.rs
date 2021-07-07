@@ -70,6 +70,7 @@ impl FlutterOptions {
                 let executable = executable
                     .canonicalize()
                     .wrap_error(FileOperation::Canonicalize, || executable)?;
+                let executable = simplified(&&executable).into();
                 Ok(executable)
             }
         }
