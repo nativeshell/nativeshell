@@ -6,6 +6,7 @@ on:
 
 name: Check and Lint
 jobs:
+
   Formatting:
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +21,22 @@ jobs:
       with:
         command: fmt
         args: --all -- --check
-  Main:
+
+  Flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./nativeshell_dart
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v1
+        with:
+          channel: 'master'
+      - run: flutter pub get
+      - run: flutter format --output=none --set-exit-if-changed .
+      - run: flutter test
+
+  Rust:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
