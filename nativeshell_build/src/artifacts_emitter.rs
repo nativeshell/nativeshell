@@ -34,7 +34,7 @@ impl<'a> ArtifactsEmitter<'a> {
         let data_dir = self.artifacts_out_dir.join("data");
         if data_dir.exists() {
             std::fs::remove_dir_all(&data_dir)
-                .unwrap_or_else(|_| panic!("Failed to remove {:?}", data_dir));
+                .wrap_error(FileOperation::RemoveDir, || data_dir.clone())?;
         }
         let assets_dst_dir = mkdir(&data_dir, Some("flutter_assets"))?;
         let assets_src_dir = {

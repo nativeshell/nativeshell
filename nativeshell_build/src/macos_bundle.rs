@@ -63,7 +63,7 @@ impl MacOSBundle {
 
         if bundle_path.exists() {
             std::fs::remove_dir_all(&bundle_path)
-                .unwrap_or_else(|_| panic!("Failed to remove {:?}", bundle_path));
+                .wrap_error(FileOperation::RemoveDir, || bundle_path.clone())?;
         }
 
         mkdir::<_, PathBuf>(&bundle_path, None)?;

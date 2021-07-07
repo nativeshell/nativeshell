@@ -6,6 +6,7 @@ pub enum FileOperation {
     Copy,
     Move,
     Remove,
+    RemoveDir,
     Read,
     Write,
     Open,
