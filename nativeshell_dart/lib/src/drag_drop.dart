@@ -7,7 +7,6 @@ import 'package:flutter/rendering.dart';
 
 import 'api_constants.dart';
 import 'api_model.dart';
-import 'api_model_internal.dart';
 import 'util.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
