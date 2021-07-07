@@ -76,6 +76,7 @@ pub type FlBinaryMessengerMessageHandler = Option<
     ),
 >;
 
+#[link(name = "flutter_linux_gtk")]
 extern "C" {
     pub fn fl_dart_project_new() -> *mut GObject;
 
