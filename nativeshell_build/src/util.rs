@@ -1,4 +1,5 @@
 use std::{
+    env,
     fs::{self, canonicalize},
     path::{Path, PathBuf},
     process::Command,
@@ -80,12 +81,23 @@ pub(super) fn run_command(mut command: Command, command_name: &str) -> BuildResu
         .output()
         .wrap_error(FileOperation::Command, || command_name.into())?;
 
-    if !output.status.success() {
+    #[allow(unused_mut)]
+    let mut success = output.status.success();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // on windows we run flutter.bat through cmd /c, which unfortunately swallows
+    // the error code; So instead we check the output
+    #[cfg(target_os = "windows")]
+    {
+        if command_name == "flutter" {
+            success = stdout.trim_end().ends_with("exiting with code 0")
+        }
+    }
+    if !success {
         Err(BuildError::ToolError {
             command: format!("{:?}", command),
             status: output.status,
             stderr: String::from_utf8_lossy(&output.stderr).into(),
-            stdout: String::from_utf8_lossy(&output.stdout).into(),
+            stdout: stdout.into(),
         })
     } else {
         Ok(())
@@ -142,4 +154,19 @@ where
 {
     let file_name = src.as_ref().file_name().unwrap();
     copy(&src, dst.as_ref().join(file_name), allow_symlinks)
+}
+
+pub(super) fn find_executable<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
+    env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths)
+            .filter_map(|dir| {
+                let full_path = dir.join(&exe_name);
+                if full_path.is_file() {
+                    Some(full_path)
+                } else {
+                    None
+                }
+            })
+            .next()
+    })
 }

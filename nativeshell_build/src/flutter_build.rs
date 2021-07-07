@@ -13,7 +13,7 @@ use crate::{
     artifacts_emitter::ArtifactsEmitter,
     error::BuildError,
     plugins::Plugins,
-    util::{copy_to, get_artifacts_dir, run_command},
+    util::{copy_to, find_executable, get_artifacts_dir, run_command},
     BuildResult, FileOperation, IOResultExt,
 };
 
@@ -23,7 +23,15 @@ pub struct FlutterOptions {
     // lib/main.dart by default
     pub target_file: PathBuf,
 
+    // Custom Flutter location. If not specified, NativeShell build will try to find
+    // flutter executable in PATH and derive the location from there.
+    pub flutter_path: Option<PathBuf>,
+
+    // Name of local engine
     pub local_engine: Option<String>,
+
+    // Source path of local engine. If not specified, NativeShell will try to locate
+    // it relative to flutter path.
     pub local_engine_src_path: Option<PathBuf>,
 }
 
@@ -31,9 +39,67 @@ impl Default for FlutterOptions {
     fn default() -> Self {
         Self {
             target_file: "lib/main.dart".into(),
+            flutter_path: None,
             local_engine: None,
             local_engine_src_path: None,
         }
+    }
+}
+
+impl FlutterOptions {
+    pub(super) fn find_flutter_executable(&self) -> BuildResult<PathBuf> {
+        let executable = if cfg!(target_os = "windows") {
+            "flutter.bat"
+        } else {
+            "flutter"
+        };
+        match &self.flutter_path {
+            Some(path) => {
+                let out_dir: PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
+                let path = out_dir.join(path);
+                let executable = path.join("bin").join(executable);
+                if executable.exists() {
+                    Ok(executable)
+                } else {
+                    Err(BuildError::FlutterPathInvalidError { path: path.into() })
+                }
+            }
+            None => {
+                let executable =
+                    find_executable(executable).ok_or(BuildError::FlutterNotFoundError)?;
+                let executable = executable
+                    .canonicalize()
+                    .wrap_error(FileOperation::Canonicalize, || executable)?;
+                let executable = simplified(&&executable).into();
+                Ok(executable)
+            }
+        }
+    }
+
+    pub(super) fn find_flutter_bin(&self) -> BuildResult<PathBuf> {
+        let executable = self.find_flutter_executable()?;
+        Ok(executable.parent().unwrap().into())
+    }
+
+    pub(super) fn local_engine_src_path(&self) -> BuildResult<PathBuf> {
+        match &self.local_engine_src_path {
+            Some(path) => Ok(path.clone()),
+            None => self.find_local_engine_src_path(),
+        }
+    }
+
+    fn find_local_engine_src_path(&self) -> BuildResult<PathBuf> {
+        let bin = self.find_flutter_bin()?;
+        let path = bin
+            .parent()
+            .and_then(|p| p.parent())
+            .map(|p| p.join("engine").join("src"));
+        if let Some(path) = path {
+            if path.exists() {
+                return Ok(path);
+            }
+        }
+        Err(BuildError::FlutterLocalEngineNotFound)
     }
 }
 
@@ -74,7 +140,7 @@ impl Flutter {
     }
 
     fn do_flutter_pub_get(&self) -> BuildResult<()> {
-        let mut command = self.create_flutter_command();
+        let mut command = self.create_flutter_command()?;
         command.arg("pub").arg("get");
         self.run_flutter_command(command)
     }
@@ -294,13 +360,14 @@ impl Flutter {
         Ok(())
     }
 
-    fn create_flutter_command(&self) -> Command {
+    fn create_flutter_command(&self) -> BuildResult<Command> {
+        let executable = self.options.find_flutter_executable()?;
         if cfg!(target_os = "windows") {
             let mut c = Command::new("cmd");
-            c.args(&["/C", "flutter"]);
-            c
+            c.arg("/C").arg(executable);
+            Ok(c)
         } else {
-            Command::new("flutter")
+            Ok(Command::new(executable))
         }
     }
 
@@ -332,16 +399,15 @@ impl Flutter {
             )],
         };
 
-        let mut command = self.create_flutter_command();
+        let mut command = self.create_flutter_command()?;
         command.current_dir(&working_dir);
 
         if let Some(local_engine) = &self.options.local_engine {
             command.arg(format!("--local-engine={}", local_engine));
-        }
-        if let Some(local_src_engine_path) = &self.options.local_engine_src_path {
+
             command.arg(format!(
                 "--local-engine-src-path={}",
-                local_src_engine_path.to_str().unwrap()
+                self.options.local_engine_src_path()?.to_slash_lossy()
             ));
         }
         command
@@ -453,8 +519,9 @@ impl Flutter {
         if self.options.local_engine.is_some() {
             return Ok(());
         }
-        let engine_version = ArtifactsEmitter::find_flutter_bin()
-            .ok_or_else(|| BuildError::OtherError("Couldn't find Flutter installation".into()))?
+        let engine_version = self
+            .options
+            .find_flutter_bin()?
             .join("internal")
             .join("engine.version");
 
@@ -471,7 +538,7 @@ impl Flutter {
         }
 
         // need to run flutter precache
-        let mut command = self.create_flutter_command();
+        let mut command = self.create_flutter_command()?;
         command
             .arg("precache")
             .arg("-v")
