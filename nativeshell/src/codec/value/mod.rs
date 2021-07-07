@@ -3,11 +3,12 @@ mod serializer;
 
 use std::{convert::TryFrom, f64::NAN, fmt};
 
-use std::collections::HashMap;
-use std::hash::Hash;
+use std::{collections::HashMap, hash::Hash};
 
-pub use self::deserializer::{from_value, from_value_owned};
-pub use self::serializer::to_value;
+pub use self::{
+    deserializer::{from_value, from_value_owned},
+    serializer::to_value,
+};
 
 #[derive(Clone, Debug)]
 pub enum Value {

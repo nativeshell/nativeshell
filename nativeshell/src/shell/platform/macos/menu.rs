@@ -21,9 +21,8 @@ use objc::{
 };
 
 use crate::{
-    shell::api_model::{Menu, MenuItem, MenuItemRole},
     shell::{
-        api_model::{Accelerator, CheckStatus, MenuRole},
+        api_model::{Accelerator, CheckStatus, Menu, MenuItem, MenuItemRole, MenuRole},
         Context, Handle, MenuDelegate, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},

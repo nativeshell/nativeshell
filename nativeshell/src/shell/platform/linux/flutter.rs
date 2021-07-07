@@ -6,13 +6,13 @@ use std::{
 };
 
 use super::flutter_sys;
-use glib::Object;
-use glib::{translate::*, Bytes};
+use glib::{translate::*, Bytes, Object};
 use gtk::{Container, Widget};
 
-use glib::object::Cast;
-use glib::object::IsA;
-use glib::GString;
+use glib::{
+    object::{Cast, IsA},
+    GString,
+};
 
 glib::wrapper! {
     pub struct DartProject(Object<flutter_sys::FlDartProject,
