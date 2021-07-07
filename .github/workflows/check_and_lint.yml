@@ -6,7 +6,7 @@ on:
 
 name: Check and Lint
 jobs:
-  Check_Formatting:
+  Formatting:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
       with:
         command: fmt
         args: --all -- --check
-  Perform:
+  Main:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
