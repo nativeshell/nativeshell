@@ -21,18 +21,18 @@ use crate::{
 #[derive(Debug)]
 pub struct FlutterOptions<'a> {
     // lib/main.dart by default
-    pub target_file: PathBuf,
+    pub target_file: &'a Path,
 
     // Custom Flutter location. If not specified, NativeShell build will try to find
     // flutter executable in PATH and derive the location from there.
-    pub flutter_path: Option<PathBuf>,
+    pub flutter_path: Option<&'a Path>,
 
     // Name of local engine
-    pub local_engine: Option<String>,
+    pub local_engine: Option<&'a str>,
 
     // Source path of local engine. If not specified, NativeShell will try to locate
     // it relative to flutter path.
-    pub local_engine_src_path: Option<PathBuf>,
+    pub local_engine_src_path: Option<&'a Path>,
 
     // macOS: Allow specifying extra pods to be built in addition to pods from
     // Flutter plugins. For example: macos_extra_pods: &["pod 'Sparkle'"],
@@ -42,12 +42,22 @@ pub struct FlutterOptions<'a> {
 impl Default for FlutterOptions<'_> {
     fn default() -> Self {
         Self {
-            target_file: "lib/main.dart".into(),
+            target_file: "lib/main.dart".as_path(),
             flutter_path: None,
             local_engine: None,
             local_engine_src_path: None,
             macos_extra_pods: &[],
         }
+    }
+}
+
+pub trait AsPath {
+    fn as_path(&self) -> &Path;
+}
+
+impl AsPath for str {
+    fn as_path(&self) -> &Path {
+        &Path::new(self)
     }
 }
 
@@ -88,7 +98,7 @@ impl FlutterOptions<'_> {
 
     pub(super) fn local_engine_src_path(&self) -> BuildResult<PathBuf> {
         match &self.local_engine_src_path {
-            Some(path) => Ok(path.clone()),
+            Some(path) => Ok(path.into()),
             None => self.find_local_engine_src_path(),
         }
     }
