@@ -28,6 +28,11 @@ pub enum BuildError {
         stderr: String,
         stdout: String,
     },
+    FlutterNotFoundError,
+    FlutterPathInvalidError {
+        path: PathBuf,
+    },
+    FlutterLocalEngineNotFound,
     FileOperationError {
         operation: FileOperation,
         path: PathBuf,
@@ -94,6 +99,29 @@ impl Display for BuildError {
             }
             BuildError::OtherError(err) => {
                 write!(f, "{}", err)
+            }
+            BuildError::FlutterNotFoundError => {
+                write!(
+                    f,
+                    "Couldn't find Flutter installation. \
+                    Plase make sure 'flutter' executable is in PATH \
+                    or specify 'flutter_path' in FlutterOptions"
+                )
+            }
+            BuildError::FlutterPathInvalidError { path } => {
+                write!(
+                    f,
+                    "Flutter path {:?} does not point to a valid flutter installation",
+                    path
+                )
+            }
+            BuildError::FlutterLocalEngineNotFound => {
+                write!(
+                    f,
+                    "Could not find path for local Flutter engine. Either specify a valid \
+                        'local_engine_src_path', or make sure that engine project exists \
+                        alongside the Flutter project."
+                )
             }
         }
     }

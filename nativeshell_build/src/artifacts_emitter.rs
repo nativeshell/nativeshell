@@ -202,18 +202,21 @@ impl<'a> ArtifactsEmitter<'a> {
         }
     }
 
-    fn find_flutter_bundled_artifacts_location(&self) -> Option<PathBuf> {
-        self.build
+    fn find_flutter_bundled_artifacts_location(&self) -> BuildResult<PathBuf> {
+        Ok(self
+            .build
             .options
-            .find_flutter_bin()
-            .map(|p| p.join("cache").join("artifacts").join("engine"))
+            .find_flutter_bin()?
+            .join("cache")
+            .join("artifacts")
+            .join("engine"))
     }
 
     pub(super) fn find_artifacts_location(&self, build_mode: &str) -> BuildResult<PathBuf> {
-        let path: Option<PathBuf> = match self.build.options.local_engine.as_ref() {
+        let path = match self.build.options.local_engine.as_ref() {
             Some(local_engine) => {
-                let engine_src_path = self.build.options.local_engine_src_path();
-                engine_src_path.map(|p| p.join("out").join(local_engine))
+                let engine_src_path = self.build.options.local_engine_src_path()?;
+                engine_src_path.join("out").join(local_engine)
             }
             None => {
                 let platform = match self.build.target_platform.as_str() {
@@ -231,13 +234,9 @@ impl<'a> ArtifactsEmitter<'a> {
                     (platform, "debug") => platform.into(),
                     (platform, mode) => format!("{}-{}", platform, mode),
                 };
-                self.find_flutter_bundled_artifacts_location()
-                    .map(|p| p.join(engine))
+                self.find_flutter_bundled_artifacts_location()?.join(engine)
             }
         };
-
-        let path = path.ok_or_else(|| BuildError::OtherError(
-            "Coud not determine flutter artifacts location; Please make sure that flutter is in PATH".into()))?;
 
         if !path.exists() {
             Err(BuildError::OtherError(format!(
