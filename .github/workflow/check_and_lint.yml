@@ -1,0 +1,33 @@
+on:
+  pull_request:
+  push:
+  branches:
+    - main
+
+name: Check and Lint
+jobs:
+  perform:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+      - name: Install GTK
+        if: (matrix.os == 'ubuntu-latest')
+        run: sudo apt-get update && sudo apt-get install libgtk-3-dev
+      - uses: actions/checkout@v1
+      - name: Install clippy
+        run: rustup component add clippy
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
