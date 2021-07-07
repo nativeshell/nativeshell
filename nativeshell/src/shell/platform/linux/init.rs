@@ -3,7 +3,7 @@ use std::{ptr, rc::Weak};
 use gdk::Event;
 use glib::ObjectExt;
 
-use crate::shell::{platform::window::PlatformWindow};
+use crate::shell::platform::window::PlatformWindow;
 
 use super::error::{PlatformError, PlatformResult};
 

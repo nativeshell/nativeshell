@@ -4,7 +4,7 @@ use log::error;
 
 // Based on code from flutter-rs
 
-use super::{MessageCodec, MethodCall, MethodCallResult, MethodCodec, MethodCallError, Value};
+use super::{MessageCodec, MethodCall, MethodCallError, MethodCallResult, MethodCodec, Value};
 
 const VALUE_NULL: u8 = 0;
 const VALUE_TRUE: u8 = 1;

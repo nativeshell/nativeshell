@@ -141,9 +141,7 @@ extern "C" {
     ) -> FlutterDesktopViewRef;
 }
 extern "C" {
-    pub fn FlutterDesktopViewControllerForceRedraw(
-        controller: FlutterDesktopViewControllerRef,
-    );
+    pub fn FlutterDesktopViewControllerForceRedraw(controller: FlutterDesktopViewControllerRef);
 }
 extern "C" {
     pub fn FlutterDesktopViewControllerEnableDirectComposition(

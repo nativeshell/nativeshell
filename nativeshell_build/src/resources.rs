@@ -1,6 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use crate::{BuildResult, util::{get_absolute_path, get_artifacts_dir, mkdir, symlink}};
+use crate::{
+    util::{get_absolute_path, get_artifacts_dir, mkdir, symlink},
+    BuildResult,
+};
 
 pub struct Resources {
     pub(super) resources_dir: PathBuf,

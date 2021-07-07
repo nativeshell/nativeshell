@@ -65,7 +65,9 @@ pub fn generate_keyboard_map(platform_name: &str) -> anyhow::Result<()> {
 
     for v in physical_keys.values() {
         if let (Some(platform), Some(usb)) = (
-            v.scan_codes.get(physical_platform_name).and_then(first_number),
+            v.scan_codes
+                .get(physical_platform_name)
+                .and_then(first_number),
             v.scan_codes.get("usb").and_then(first_number),
         ) {
             let name = v.names.get("name").unwrap();
