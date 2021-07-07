@@ -15,7 +15,7 @@ use crate::{
 use super::Plugin;
 
 pub(super) struct PluginsImpl<'a> {
-    build: &'a Flutter,
+    build: &'a Flutter<'a>,
     artifacts_emitter: &'a ArtifactsEmitter<'a>,
 }
 
