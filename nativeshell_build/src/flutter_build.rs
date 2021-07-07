@@ -19,7 +19,7 @@ use crate::{
 
 // User configurable options during flutter build
 #[derive(Debug)]
-pub struct FlutterOptions {
+pub struct FlutterOptions<'a> {
     // lib/main.dart by default
     pub target_file: PathBuf,
 
@@ -33,20 +33,25 @@ pub struct FlutterOptions {
     // Source path of local engine. If not specified, NativeShell will try to locate
     // it relative to flutter path.
     pub local_engine_src_path: Option<PathBuf>,
+
+    // macOS: Allow specifying extra pods to be built in addition to pods from
+    // Flutter plugins. For example: macos_extra_pods: &["pod 'Sparkle'"],
+    pub macos_extra_pods: &'a [&'a str],
 }
 
-impl Default for FlutterOptions {
+impl Default for FlutterOptions<'_> {
     fn default() -> Self {
         Self {
             target_file: "lib/main.dart".into(),
             flutter_path: None,
             local_engine: None,
             local_engine_src_path: None,
+            macos_extra_pods: &[],
         }
     }
 }
 
-impl FlutterOptions {
+impl FlutterOptions<'_> {
     pub(super) fn find_flutter_executable(&self) -> BuildResult<PathBuf> {
         let executable = if cfg!(target_os = "windows") {
             "flutter.bat"
@@ -111,17 +116,17 @@ pub enum TargetOS {
 }
 
 #[derive(Debug)]
-pub struct Flutter {
+pub struct Flutter<'a> {
     pub(super) root_dir: PathBuf,
     pub(super) out_dir: PathBuf,
-    pub(super) options: FlutterOptions,
+    pub(super) options: FlutterOptions<'a>,
     pub(super) build_mode: String,
     pub(super) target_os: TargetOS,
     pub(super) target_platform: String,
     pub(super) darwin_arch: Option<String>,
 }
 
-impl Flutter {
+impl Flutter<'_> {
     pub fn build(options: FlutterOptions) -> BuildResult<()> {
         let build = Flutter::new(options);
         build.do_build()

@@ -38,7 +38,7 @@ pub(crate) struct Plugin {
 }
 
 pub(super) struct Plugins<'a> {
-    build: &'a Flutter,
+    build: &'a Flutter<'a>,
     artifacts_emitter: &'a ArtifactsEmitter<'a>, // need to get artifacts location
 }
 
@@ -53,20 +53,23 @@ impl<'a> Plugins<'a> {
     pub fn process(&self) -> BuildResult<()> {
         let plugins_path = self.build.root_dir.join(".flutter-plugins");
         let platform = plugins_impl::PluginsImpl::new(self.build, self.artifacts_emitter);
-        if plugins_path.exists() {
+        let (plugins, plugins_file_content) = if plugins_path.exists() {
             let plugins_file_content = fs::read_to_string(&plugins_path)
                 .wrap_error(crate::FileOperation::Read, || plugins_path.clone())?;
-            let plugins = self.load_plugins(&plugins_file_content)?;
-            if !plugins.is_empty() {
-                let skip_build = self.plugins_already_processed(&plugins_file_content)?;
-                platform.process(&plugins, skip_build)?;
-                self.mark_last_plugins(&plugins_file_content)?;
-            } else {
-                platform.write_empty_registrar()?;
-            }
+            (
+                self.load_plugins(&plugins_file_content)?,
+                plugins_file_content,
+            )
         } else {
-            platform.write_empty_registrar()?;
-        }
+            (Vec::new(), String::new())
+        };
+
+        let skip_build =
+            plugins.is_empty() || self.plugins_already_processed(&plugins_file_content)?;
+
+        platform.process(&plugins, skip_build)?;
+        self.mark_last_plugins(&plugins_file_content)?;
+
         Ok(())
     }
 

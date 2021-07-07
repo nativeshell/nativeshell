@@ -108,11 +108,6 @@ impl<'a> PluginsImpl<'a> {
         Ok(())
     }
 
-    pub fn write_empty_registrar(&self) -> BuildResult<()> {
-        self.write_plugin_registrar(&[])?;
-        Ok(())
-    }
-
     fn write_plugin_registrar(&self, plugins: &[Plugin]) -> BuildResult<()> {
         let path = self.build.out_dir.join("generated_plugins_registrar.rs");
         self._write_plugin_registrar(&path, plugins)
