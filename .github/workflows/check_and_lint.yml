@@ -7,7 +7,22 @@ on:
 name: Check and Lint
 jobs:
 
-  Formatting:
+  Flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./nativeshell_dart
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v1
+        with:
+          channel: 'master'
+      - run: flutter pub get
+      - run: flutter format --output=none --set-exit-if-changed .
+      - run: flutter analyze
+      # - run: flutter test
+
+  Rustfmt:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -21,20 +36,6 @@ jobs:
       with:
         command: fmt
         args: --all -- --check
-
-  Flutter:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./nativeshell_dart
-    steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v1
-        with:
-          channel: 'master'
-      - run: flutter pub get
-      - run: flutter format --output=none --set-exit-if-changed .
-      - run: flutter test
 
   Rust:
     runs-on: ${{ matrix.os }}
