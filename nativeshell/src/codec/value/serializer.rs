@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::{collections::HashMap, convert::TryFrom};
 
 use super::{Value, ValueError};
 

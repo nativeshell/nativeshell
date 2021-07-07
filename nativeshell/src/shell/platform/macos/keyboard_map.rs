@@ -1,8 +1,9 @@
 use std::{
     cell::{Cell, RefCell},
+    ffi::c_void,
     mem::ManuallyDrop,
+    os::raw::c_ulong,
     rc::Weak,
-    {ffi::c_void, os::raw::c_ulong},
 };
 
 use core_foundation::{

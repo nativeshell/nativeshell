@@ -9,22 +9,18 @@ use std::{
 
 use cocoa::{
     appkit::{
-        NSEvent, NSEventType, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+        NSEvent, NSEventType, NSScreen, NSView, NSWindow, NSWindowCollectionBehavior,
+        NSWindowStyleMask, NSWindowTabbingMode,
     },
     base::{id, nil, BOOL, NO, YES},
-    foundation::{NSArray, NSInteger, NSPoint, NSRect, NSSize, NSString, NSUInteger},
-};
-use cocoa::{
-    appkit::{NSScreen, NSWindowTabbingMode},
-    foundation::NSProcessInfo,
+    foundation::{
+        NSArray, NSInteger, NSPoint, NSProcessInfo, NSRect, NSSize, NSString, NSUInteger,
+    },
 };
 
 use objc::{
     declare::ClassDecl,
-    rc::{StrongPtr, WeakPtr},
-};
-use objc::{
-    rc::autoreleasepool,
+    rc::{autoreleasepool, StrongPtr, WeakPtr},
     runtime::{Class, Object, Sel},
 };
 

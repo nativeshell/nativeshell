@@ -4,10 +4,9 @@ use byte_slice_cast::AsByteSlice;
 use log::warn;
 use widestring::WideCString;
 
-use crate::{codec::Value, shell::ContextOptions};
 use crate::{
-    codec::{MessageCodec, StandardMethodCodec},
-    shell::api_constants::*,
+    codec::{MessageCodec, StandardMethodCodec, Value},
+    shell::{api_constants::*, ContextOptions},
 };
 
 use super::{all_bindings::*, drag_util::DataUtil};

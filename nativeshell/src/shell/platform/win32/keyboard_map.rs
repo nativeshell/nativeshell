@@ -1,14 +1,16 @@
 use super::all_bindings::*;
-use std::cell::Cell;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::mem;
-use std::rc::Weak;
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    mem,
+    rc::Weak,
+};
 
-use crate::shell::api_model::Key;
-use crate::shell::KeyboardMapDelegate;
 use crate::{
-    shell::{api_model::KeyboardMap, Context},
+    shell::{
+        api_model::{Key, KeyboardMap},
+        Context, KeyboardMapDelegate,
+    },
     util::{LateRefCell, OkLog},
 };
 
