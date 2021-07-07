@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{self, BufRead, BufReader, Write},
+    io::{self, BufRead, BufReader},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub(super) struct PluginsImpl<'a> {
-    build: &'a Flutter,
+    build: &'a Flutter<'a>,
 }
 
 impl<'a> PluginsImpl<'a> {
@@ -22,12 +22,21 @@ impl<'a> PluginsImpl<'a> {
         Self { build }
     }
 
-    pub fn process(&self, plugins: &[Plugin], skip_build: bool) -> BuildResult<()> {
+    pub fn process(&self, plugins: &[Plugin], _skip_build: bool) -> BuildResult<()> {
+        // Nothing to do here
+        if plugins.is_empty() && self.build.options.macos_extra_pods.is_empty() {
+            self.write_plugin_registrar(&HashMap::new())?;
+            return Ok(());
+        }
+
         let xcode = mkdir(&self.build.out_dir, Some("xcode"))?;
+        let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
+        let podfile = xcode.join("PodFile");
+        let skip_build = self
+            .write_podfile(&podfile, plugins, &symlinks_dir)
+            .wrap_error(FileOperation::Write, || podfile.clone())?;
         if !skip_build {
             self.write_dummy_xcode_project(&xcode)?;
-            let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
-            let podfile = xcode.join("PodFile");
             self.write_podfile(&podfile, plugins, &symlinks_dir)
                 .wrap_error(FileOperation::Write, || podfile.into())?;
             self.install_cocoa_pods(&xcode)?;
@@ -37,10 +46,6 @@ impl<'a> PluginsImpl<'a> {
         let classes = self.get_plugin_classes(plugins, &products_path)?;
         self.write_plugin_registrar(&classes)?;
         Ok(())
-    }
-
-    pub fn write_empty_registrar(&self) -> BuildResult<()> {
-        self.write_plugin_registrar(&HashMap::new())
     }
 
     fn create_plugin_symlinks(&self, path: &Path, plugins: &[Plugin]) -> BuildResult<PathBuf> {
@@ -56,39 +61,52 @@ impl<'a> PluginsImpl<'a> {
         Ok(symlinks_dir)
     }
 
+    // return true if build can be skipped
     fn write_podfile(
         &self,
         file: &Path,
         plugins: &[Plugin],
         symlinks_dir: &Path,
-    ) -> io::Result<()> {
-        let mut file = File::create(file)?;
-
+    ) -> io::Result<bool> {
+        let mut contents = String::new();
+        use std::fmt::Write;
         write!(
-            file,
+            contents,
             "ENV['COCOAPODS_DISABLE_STATS'] = 'true'\n\
             platform :osx, '{}'\n\
             abstract_target 'NativeShellTarget' do\n  use_frameworks! :linkage=>:dynamic\n",
             Flutter::macosx_deployment_target()
-        )?;
+        )
+        .unwrap();
 
         for plugin in plugins {
             let plugin_path = symlinks_dir.join(&plugin.name);
             writeln!(
-                file,
+                contents,
                 "  pod '{}', :path => '{}', :binary => true",
                 plugin.name,
                 plugin_path.join(&plugin.platform_name).to_string_lossy()
-            )?;
+            )
+            .unwrap();
         }
 
-        writeln!(file, "  target 'DummyProject' do")?;
-        writeln!(file, "  end")?;
-        writeln!(file, "  target 'NativeShellPods' do")?;
-        writeln!(file, "  end")?;
-        writeln!(file, "end")?;
+        for pod in self.build.options.macos_extra_pods {
+            writeln!(contents, "  {}", pod).unwrap();
+        }
 
-        Ok(())
+        writeln!(contents, "  target 'DummyProject' do").unwrap();
+        writeln!(contents, "  end").unwrap();
+        writeln!(contents, "  target 'NativeShellPods' do").unwrap();
+        writeln!(contents, "  end").unwrap();
+        writeln!(contents, "end").unwrap();
+
+        if file.exists() && fs::read_to_string(&file)? == contents {
+            return Ok(true);
+        }
+
+        fs::write(file, contents)?;
+
+        Ok(false)
     }
 
     fn install_cocoa_pods(&self, path: &Path) -> BuildResult<()> {
@@ -244,6 +262,7 @@ impl<'a> PluginsImpl<'a> {
         classes: &HashMap<String, String>,
     ) -> std::io::Result<()> {
         let mut file = File::create(path)?;
+        use std::io::Write;
         writeln!(
             file,
             "fn flutter_get_plugins() -> Vec<nativeshell::shell::platform::engine::PlatformPlugin> {{"

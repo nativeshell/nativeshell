@@ -15,7 +15,7 @@ use crate::{
 use super::Plugin;
 
 pub(super) struct PluginsImpl<'a> {
-    build: &'a Flutter,
+    build: &'a Flutter<'a>,
     artifacts_emitter: &'a ArtifactsEmitter<'a>,
 }
 
@@ -105,11 +105,6 @@ impl<'a> PluginsImpl<'a> {
 
         self.write_plugin_registrar(plugins)?;
 
-        Ok(())
-    }
-
-    pub fn write_empty_registrar(&self) -> BuildResult<()> {
-        self.write_plugin_registrar(&[])?;
         Ok(())
     }
 

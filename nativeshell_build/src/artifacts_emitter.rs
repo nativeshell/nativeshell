@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub(super) struct ArtifactsEmitter<'a> {
-    build: &'a Flutter,
+    build: &'a Flutter<'a>,
     flutter_out_dir: PathBuf,
     flutter_build_dir: PathBuf,
     artifacts_out_dir: PathBuf,
