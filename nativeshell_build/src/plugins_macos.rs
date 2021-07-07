@@ -38,7 +38,7 @@ impl<'a> PluginsImpl<'a> {
         if !skip_build {
             self.write_dummy_xcode_project(&xcode)?;
             self.write_podfile(&podfile, plugins, &symlinks_dir)
-                .wrap_error(FileOperation::Write, || podfile.into())?;
+                .wrap_error(FileOperation::Write, || podfile)?;
             self.install_cocoa_pods(&xcode)?;
         }
         let (frameworks_path, products_path) = self.build_pods(&xcode, skip_build)?;

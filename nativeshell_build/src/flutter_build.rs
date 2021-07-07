@@ -76,7 +76,7 @@ impl FlutterOptions<'_> {
                 if executable.exists() {
                     Ok(executable)
                 } else {
-                    Err(BuildError::FlutterPathInvalidError { path: path.into() })
+                    Err(BuildError::FlutterPathInvalidError { path })
                 }
             }
             None => {
