@@ -1,5 +1,5 @@
 use std::{
-    env, fs,
+    fs,
     path::{Path, PathBuf},
 };
 
@@ -202,54 +202,17 @@ impl<'a> ArtifactsEmitter<'a> {
         }
     }
 
-    fn find_executable<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
-        env::var_os("PATH").and_then(|paths| {
-            env::split_paths(&paths)
-                .filter_map(|dir| {
-                    let full_path = dir.join(&exe_name);
-                    if full_path.is_file() {
-                        Some(full_path)
-                    } else {
-                        None
-                    }
-                })
-                .next()
-        })
-    }
-
-    pub(super) fn find_flutter_bin() -> Option<PathBuf> {
-        let executable = if cfg!(target_os = "windows") {
-            "flutter.bat"
-        } else {
-            "flutter"
-        };
-        let exe_path = Self::find_executable(executable).and_then(|p| p.canonicalize().ok());
-        exe_path.and_then(|p| p.parent().map(Path::to_owned))
-    }
-
-    fn find_flutter_bundled_artifacts_location() -> Option<PathBuf> {
-        Self::find_flutter_bin().map(|p| p.join("cache").join("artifacts").join("engine"))
-    }
-
-    pub(super) fn find_local_engine_src_path() -> Option<PathBuf> {
-        Self::find_flutter_bin()
-            .and_then(|p| {
-                p.parent()
-                    .map(Path::to_owned)
-                    .and_then(|p| p.parent().map(Path::to_owned))
-            })
-            .map(|p| p.join("engine").join("src"))
+    fn find_flutter_bundled_artifacts_location(&self) -> Option<PathBuf> {
+        self.build
+            .options
+            .find_flutter_bin()
+            .map(|p| p.join("cache").join("artifacts").join("engine"))
     }
 
     pub(super) fn find_artifacts_location(&self, build_mode: &str) -> BuildResult<PathBuf> {
         let path: Option<PathBuf> = match self.build.options.local_engine.as_ref() {
             Some(local_engine) => {
-                let engine_src_path = self
-                    .build
-                    .options
-                    .local_engine_src_path
-                    .clone()
-                    .or_else(Self::find_local_engine_src_path);
+                let engine_src_path = self.build.options.local_engine_src_path();
                 engine_src_path.map(|p| p.join("out").join(local_engine))
             }
             None => {
@@ -268,7 +231,8 @@ impl<'a> ArtifactsEmitter<'a> {
                     (platform, "debug") => platform.into(),
                     (platform, mode) => format!("{}-{}", platform, mode),
                 };
-                Self::find_flutter_bundled_artifacts_location().map(|p| p.join(engine))
+                self.find_flutter_bundled_artifacts_location()
+                    .map(|p| p.join(engine))
             }
         };
 

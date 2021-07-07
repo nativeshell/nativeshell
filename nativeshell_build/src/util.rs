@@ -1,4 +1,5 @@
 use std::{
+    env,
     fs::{self, canonicalize},
     path::{Path, PathBuf},
     process::Command,
@@ -142,4 +143,19 @@ where
 {
     let file_name = src.as_ref().file_name().unwrap();
     copy(&src, dst.as_ref().join(file_name), allow_symlinks)
+}
+
+pub(super) fn find_executable<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
+    env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths)
+            .filter_map(|dir| {
+                let full_path = dir.join(&exe_name);
+                if full_path.is_file() {
+                    Some(full_path)
+                } else {
+                    None
+                }
+            })
+            .next()
+    })
 }
