@@ -6,7 +6,21 @@ on:
 
 name: Check and Lint
 jobs:
-  perform:
+  Check_Formatting:
+  runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v2
+  - uses: actions-rs/toolchain@v1
+    with:
+      profile: minimal
+      toolchain: stable
+      override: true
+  - run: rustup component add rustfmt
+  - uses: actions-rs/cargo@v1
+    with:
+      command: fmt
+      args: --all -- --check
+  Perform:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -19,7 +33,7 @@ jobs:
       - name: Install GTK
         if: (matrix.os == 'ubuntu-latest')
         run: sudo apt-get update && sudo apt-get install libgtk-3-dev
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install clippy
         run: rustup component add clippy
       - name: Run cargo clippy
