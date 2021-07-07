@@ -44,7 +44,8 @@ impl FlutterOptions {
         } else {
             "flutter"
         };
-        find_executable(executable).and_then(|p| p.canonicalize().ok())
+        find_executable(executable)
+            .and_then(|p| p.canonicalize().map(|p| simplified(&p).into()).ok())
     }
 
     pub(super) fn find_flutter_bin(&self) -> Option<PathBuf> {
