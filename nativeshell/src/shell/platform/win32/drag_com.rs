@@ -318,7 +318,7 @@ impl EnumFORMATETC {
             self.index += 1;
             offset += 1;
         }
-        if pcelt_fetched != std::ptr::null_mut() {
+        if !pcelt_fetched.is_null() {
             unsafe {
                 *pcelt_fetched = offset as u32;
             }

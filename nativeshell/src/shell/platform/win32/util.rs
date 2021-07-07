@@ -28,7 +28,7 @@ pub fn get_raw_ptr<T>(t: &T) -> usize {
 ///
 /// ptr must point to a valid COM object instance
 pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T> {
-    if ptr == std::ptr::null_mut() {
+    if ptr.is_null() {
         None
     } else {
         struct ComObject(windows::RawPtr);
