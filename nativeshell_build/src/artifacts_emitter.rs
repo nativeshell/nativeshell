@@ -231,7 +231,7 @@ impl<'a> ArtifactsEmitter<'a> {
         Self::find_flutter_bin().map(|p| p.join("cache").join("artifacts").join("engine"))
     }
 
-    fn find_local_engine_src_path() -> Option<PathBuf> {
+    pub(super) fn find_local_engine_src_path() -> Option<PathBuf> {
         Self::find_flutter_bin()
             .and_then(|p| {
                 p.parent()

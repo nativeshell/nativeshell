@@ -337,12 +337,18 @@ impl Flutter {
 
         if let Some(local_engine) = &self.options.local_engine {
             command.arg(format!("--local-engine={}", local_engine));
-        }
-        if let Some(local_src_engine_path) = &self.options.local_engine_src_path {
-            command.arg(format!(
-                "--local-engine-src-path={}",
-                local_src_engine_path.to_str().unwrap()
-            ));
+
+            let src_path = &self
+                .options
+                .local_engine_src_path
+                .clone()
+                .or_else(ArtifactsEmitter::find_local_engine_src_path);
+            if let Some(src_path) = src_path {
+                command.arg(format!(
+                    "--local-engine-src-path={}",
+                    src_path.to_slash_lossy()
+                ));
+            }
         }
         command
             .arg("assemble")
