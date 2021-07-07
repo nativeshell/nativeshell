@@ -1,8 +1,8 @@
 on:
   pull_request:
   push:
-  branches:
-    - main
+    branches:
+      - main
 
 name: Check and Lint
 jobs:
