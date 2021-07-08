@@ -13,6 +13,10 @@ jobs:
       matrix:
         platform:
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-latest, }
+        project:
+          - project1
+          - project2
     runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Install GTK
@@ -29,22 +33,13 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
-        working-directory: ./build_test/project1
+        working-directory: ./build_test/${{ matrix.project }}
       - run: cargo build --target=${{ matrix.platform.target }}
-        working-directory: ./build_test/project1
+        working-directory: ./build_test/${{ matrix.project }}
       - run: cargo build --target=${{ matrix.platform.target }} --release
-        working-directory: ./build_test/project1
+        working-directory: ./build_test/${{ matrix.project }}
       - run: cargo build --target=${{ matrix.platform.target }} --release
-        working-directory: ./build_test/project1
+        working-directory: ./build_test/${{ matrix.project }}
         env:
           FLUTTER_PROFILE: 1
-      - run: flutter pub get
-        working-directory: ./build_test/project2
-      - run: cargo build --target=${{ matrix.platform.target }}
-        working-directory: ./build_test/project2
-      - run: cargo build --target=${{ matrix.platform.target }} --release
-        working-directory: ./build_test/project2
-      - run: cargo build --target=${{ matrix.platform.target }} --release
-        working-directory: ./build_test/project2
-        env:
-          FLUTTER_PROFILE: 1
+
