@@ -80,6 +80,14 @@ impl FlutterOptions<'_> {
                 }
             }
             None => {
+                // Try FLUTER_ROOT if available
+                let flutter_root = std::env::var("FLUTTER_ROOT").ok();
+                if let Some(flutter_root) = flutter_root {
+                    let executable = Path::new(&flutter_root).join("bin").join(executable);
+                    if executable.exists() {
+                        return Ok(executable);
+                    }
+                }
                 let executable =
                     find_executable(executable).ok_or(BuildError::FlutterNotFoundError)?;
                 let executable = executable

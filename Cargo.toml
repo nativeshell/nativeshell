@@ -4,3 +4,8 @@ members = [
     "nativeshell_build",
     "nativeshell",
 ]
+
+exclude = [
+    "build_test/project1",
+    "build_test/project2",
+]
