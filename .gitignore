@@ -6,3 +6,5 @@
 build
 Cargo.lock
 pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies

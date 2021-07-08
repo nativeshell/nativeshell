@@ -1,0 +1,15 @@
+[package]
+name = "build_test1"
+version = "0.1.0"
+authors = ["Matej Knopp <matej.knopp@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+cargo-emit = "0.1"
+nativeshell_build = { path = "../../nativeshell_build" }
+
+[dependencies]
+nativeshell = "0.1.7"
+env_logger = "0.8.3"
