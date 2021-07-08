@@ -55,4 +55,3 @@ jobs:
         env:
           FLUTTER_PROFILE: 1
 
-
