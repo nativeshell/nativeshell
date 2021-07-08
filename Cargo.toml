@@ -3,6 +3,6 @@
 members = [
     "nativeshell_build",
     "nativeshell",
-    "build_test/project1",
-    "build_test/project2",
+    # "build_test/project1",
+    # "build_test/project2",
 ]
