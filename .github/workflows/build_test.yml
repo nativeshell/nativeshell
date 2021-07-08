@@ -13,7 +13,7 @@ jobs:
       matrix:
         platform:
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, }
-      runs-on: ${{ matrix.platform.os }}
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Install GTK
         if: (matrix.platform/os == 'ubuntu-latest')
