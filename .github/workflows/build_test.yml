@@ -29,10 +29,10 @@ jobs:
             cargo_args:
             flutter_profile: 0
           - configuration: release
-            cargo_args: --relase
+            cargo_args: --release
             flutter_profile: 0
           - configuration: profile
-            cargo_args: --relase
+            cargo_args: --release
             flutter_profile: 1
 
     runs-on: ${{ matrix.platform.os }}
