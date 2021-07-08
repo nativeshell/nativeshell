@@ -25,5 +25,5 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: flutter pub get
+      - run: $FLUTTER_ROOT/bin/flutter pub get
         working-directory: ./build_test project1
