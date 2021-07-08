@@ -19,16 +19,16 @@ jobs:
         if: (matrix.platform.os == 'ubuntu-latest')
         run: sudo apt-get update && sudo apt-get install libgtk-3-dev
       - uses: actions/checkout@v2
-      - name: Cache cargo folder
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo
-          key: cargo-${{ matrix.platform.target }}
       - uses: subosito/flutter-action@v1
         with:
           channel: 'master'
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - run: flutter config --enable-windows-desktop
+      - run: flutter config --enable-linux-desktop
+      - run: flutter config --enable-macos-desktop
       - run: flutter pub get
+        working-directory: ./build_test/project1
+      - run: cargo build
         working-directory: ./build_test/project1
