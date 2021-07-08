@@ -30,5 +30,21 @@ jobs:
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
         working-directory: ./build_test/project1
-      - run: cargo build
+      - run: cargo build --target=${{ matrix.platform.target }}
         working-directory: ./build_test/project1
+      - run: cargo build --target=${{ matrix.platform.target }} --release
+        working-directory: ./build_test/project1
+      - run: cargo build --target=${{ matrix.platform.target }} --release
+        working-directory: ./build_test/project1
+        env:
+          FLUTTER_PROFILE: 1
+      - run: flutter pub get
+        working-directory: ./build_test/project2
+      - run: cargo build --target=${{ matrix.platform.target }}
+        working-directory: ./build_test/project2
+      - run: cargo build --target=${{ matrix.platform.target }} --release
+        working-directory: ./build_test/project2
+      - run: cargo build --target=${{ matrix.platform.target }} --release
+        working-directory: ./build_test/project2
+        env:
+          FLUTTER_PROFILE: 1
