@@ -20,6 +20,21 @@ jobs:
         project:
           - project1
           - project2
+        configuration:
+          - debug
+          - release
+          - profile
+        include:
+          - configuration: debug
+            cargo_args:
+            flutter_profile: 0
+          - configuration: release
+            cargo_args: --relase
+            flutter_profile: 0
+          - configuration: profile
+            cargo_args: --relase
+            flutter_profile: 1
+
     runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Install GTK
@@ -38,12 +53,9 @@ jobs:
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
         working-directory: ./build_test/${{ matrix.project }}
-      - run: cargo build --target=${{ matrix.platform.target }}
-        working-directory: ./build_test/${{ matrix.project }}
-      - run: cargo build --target=${{ matrix.platform.target }} --release
-        working-directory: ./build_test/${{ matrix.project }}
-      - run: cargo build --target=${{ matrix.platform.target }} --release
+      - run: cargo build --target=${{ matrix.platform.target }} ${{ matrix.cargo_args }}
         working-directory: ./build_test/${{ matrix.project }}
         env:
-          FLUTTER_PROFILE: 1
+          FLUTTER_PROFILE: ${{ matrix.flutter_profile }}
+
 
