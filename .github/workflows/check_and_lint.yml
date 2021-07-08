@@ -52,6 +52,11 @@ jobs:
         if: (matrix.os == 'ubuntu-latest')
         run: sudo apt-get update && sudo apt-get install libgtk-3-dev
       - uses: actions/checkout@v2
+      - name: Cache cargo folder
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo
+          key: cargo-${{ matrix.os }}
       - name: Install clippy
         run: rustup component add clippy
       - name: Run cargo clippy
