@@ -23,17 +23,11 @@ jobs:
         configuration:
           - debug
           - release
-          - profile
         include:
           - configuration: debug
             cargo_args:
-            flutter_profile: 0
           - configuration: release
             cargo_args: --release
-            flutter_profile: 0
-          - configuration: profile
-            cargo_args: --release
-            flutter_profile: 1
 
     runs-on: ${{ matrix.platform.os }}
     steps:
@@ -57,5 +51,10 @@ jobs:
         working-directory: ./build_test/${{ matrix.project }}
         env:
           FLUTTER_PROFILE: ${{ matrix.flutter_profile }}
+      - if: (matrix.configuration == 'release')
+        run: cargo build --target=${{ matrix.platform.target }} ${{ matrix.cargo_args }}
+        working-directory: ./build_test/${{ matrix.project }}
+        env:
+          FLUTTER_PROFILE: 1
 
 
