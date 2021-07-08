@@ -29,6 +29,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - run: rustup target add ${{ matrix.platform.target }}
       - run: flutter config --enable-windows-desktop
       - run: flutter config --enable-linux-desktop
       - run: flutter config --enable-macos-desktop
