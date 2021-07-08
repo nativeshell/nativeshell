@@ -49,8 +49,6 @@ jobs:
         working-directory: ./build_test/${{ matrix.project }}
       - run: cargo build --target=${{ matrix.platform.target }} ${{ matrix.cargo_args }}
         working-directory: ./build_test/${{ matrix.project }}
-        env:
-          FLUTTER_PROFILE: ${{ matrix.flutter_profile }}
       - if: (matrix.configuration == 'release')
         run: cargo build --target=${{ matrix.platform.target }} ${{ matrix.cargo_args }}
         working-directory: ./build_test/${{ matrix.project }}
