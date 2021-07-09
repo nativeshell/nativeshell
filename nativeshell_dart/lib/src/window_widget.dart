@@ -62,8 +62,8 @@ abstract class WindowState {
     await window.show();
   }
 
-  // Updates window constraints; Called for manually sized windows when intrinsic
-  // content size changes.
+  // Updates window constraints; Called for windows sized with
+  // WindowSizing.atLeastIntrinsicSize when intrinsic content size changes.
   Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       minContentSize: intrinsicContentSize,
@@ -373,7 +373,7 @@ class _RenderWindowLayout extends RenderProxyBox {
       size = _sanitizeAndSnapToPixelBoundary(child!.size);
     }
     await builtWindow.initializeWindow(size);
-    if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
+    if (builtWindow.windowSizingMode == WindowSizingMode.atLeastIntrinsicSize) {
       await builtWindow.updateWindowConstraints(size);
     }
     await win.readyToShow();
