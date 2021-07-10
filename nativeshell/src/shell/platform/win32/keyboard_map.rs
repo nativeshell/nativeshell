@@ -133,13 +133,17 @@ impl PlatformKeyboardMap {
             key_state[VK_MENU as usize] = 128;
         }
 
+        // According to documentation, since Windows 10 version 1607 if bit 2 is
+        // set the call will not change keyboard state.
+        let flags = 0x04;
+
         let res = ToUnicodeEx(
             vc,
             sc,
             key_state.as_ptr(),
             PWSTR(buf.as_mut_ptr()),
             buf.len() as i32,
-            0,
+            flags,
             hkl,
         );
 
@@ -153,7 +157,7 @@ impl PlatformKeyboardMap {
                 key_state.as_ptr(),
                 PWSTR(buf.as_mut_ptr()),
                 buf.len() as i32,
-                0,
+                flags,
                 hkl,
             );
             if res >= 0 {
