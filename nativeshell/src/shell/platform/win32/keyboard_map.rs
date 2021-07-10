@@ -147,13 +147,13 @@ impl PlatformKeyboardMap {
             hkl,
         );
 
-        // Clear keyboard buffer
+        // Clear keyboard state
         loop {
             let key_state = &mut [0u8; 256];
             let buf = &mut [0u16, 10];
             let res = ToUnicodeEx(
-                vc,
-                sc,
+                VK_SPACE,
+                MapVirtualKeyW(VK_SPACE, MAPVK_VK_TO_VSC),
                 key_state.as_ptr(),
                 PWSTR(buf.as_mut_ptr()),
                 buf.len() as i32,
