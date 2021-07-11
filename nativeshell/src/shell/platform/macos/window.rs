@@ -628,6 +628,17 @@ impl PlatformWindow {
         });
     }
 
+    pub fn on_layout(&self) {
+        if unsafe { NSWindow::inLiveResize(*self.platform_window) } == YES {
+            if let Some(context) = self.context.get() {
+                // Neither run loop nor main dispatch queue are running during
+                // window resizing; So we poll the run loop manually to keep things
+                // updated.
+                context.run_loop.borrow().platform_run_loop.poll();
+            }
+        }
+    }
+
     pub fn should_send_event(&self, event: StrongPtr) -> bool {
         let event_type = unsafe { NSEvent::eventType(*event) };
         if event_type == NSMouseEntered || event_type == NSMouseExited {
@@ -762,10 +773,6 @@ unsafe impl Sync for WindowClass {}
 struct WindowDelegateClass(*const Class);
 unsafe impl Sync for WindowDelegateClass {}
 
-extern "C" fn accepts_first_mouse(_this: &Object, _sel: Sel, _event: id) -> BOOL {
-    YES
-}
-
 lazy_static! {
     static ref WINDOW_CLASS: WindowClass = unsafe {
         // FlutterView doesn't override acceptsFirstMouse: so we do it here
@@ -781,6 +788,9 @@ lazy_static! {
         let mut decl = ClassDecl::new("IMFlutterWindow", window_superclass).unwrap();
 
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+
+        decl.add_method(sel!(layoutIfNeeded), layout_if_needed as extern "C" fn(&mut Object, Sel));
+
         decl.add_method(
             sel!(sendEvent:),
             send_event as extern "C" fn(&mut Object, Sel, id),
@@ -940,6 +950,10 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
     });
 }
 
+extern "C" fn accepts_first_mouse(_this: &Object, _sel: Sel, _event: id) -> BOOL {
+    YES
+}
+
 extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, _delegate| {
         if let Some(context) = state.context.get() {
@@ -964,6 +978,16 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
                 .window_did_resign_active(state.platform_window.clone());
         }
     });
+}
+
+extern "C" fn layout_if_needed(this: &mut Object, _sel: Sel) {
+    unsafe {
+        with_state(this, move |state| {
+            state.on_layout();
+        });
+        let superclass = superclass(this);
+        let () = msg_send![super(this, superclass), layoutIfNeeded];
+    }
 }
 
 extern "C" fn send_event(this: &mut Object, _: Sel, e: id) {
