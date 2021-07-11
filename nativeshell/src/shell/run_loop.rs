@@ -6,7 +6,7 @@ use super::{
 };
 
 pub struct RunLoop {
-    platform_run_loop: Rc<PlatformRunLoop>,
+    pub(super) platform_run_loop: Rc<PlatformRunLoop>,
 }
 
 impl RunLoop {
