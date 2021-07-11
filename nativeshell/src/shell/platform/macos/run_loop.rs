@@ -137,7 +137,7 @@ impl State {
         let state = unsafe { Arc::from_raw(state) };
         let _ = ManuallyDrop::new(state.clone()); // increase ref count
         let _ = ManuallyDrop::new(state); // counter Arc::from_raw
-        return data;
+        data
     }
 
     extern "C" fn release(data: *const c_void) {
