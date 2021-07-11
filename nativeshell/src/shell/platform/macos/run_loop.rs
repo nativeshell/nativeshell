@@ -1,45 +1,180 @@
 use std::{
-    cell::{Cell, RefCell},
+    cell::Cell,
     collections::HashMap,
-    rc::Rc,
-    time::Duration,
+    mem::ManuallyDrop,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
-use block::ConcreteBlock;
 use cocoa::{
     appkit::{
         NSApplication, NSApplicationActivationPolicy::NSApplicationActivationPolicyRegular,
         NSEventType::NSApplicationDefined,
     },
     base::{id, nil, YES},
-    foundation::{NSPoint, NSRunLoop},
+    foundation::NSPoint,
 };
 
-use dispatch::ffi::{
-    dispatch_after_f, dispatch_async_f, dispatch_get_main_queue, dispatch_time, DISPATCH_TIME_NOW,
+use core_foundation::{
+    base::TCFType,
+    date::CFAbsoluteTimeGetCurrent,
+    runloop::{
+        kCFRunLoopCommonModes, CFRunLoopAddTimer, CFRunLoopGetMain, CFRunLoopRemoveTimer,
+        CFRunLoopTimer, CFRunLoopTimerContext, CFRunLoopTimerRef,
+    },
 };
+use libc::c_void;
 
 pub type HandleType = usize;
 pub const INVALID_HANDLE: HandleType = 0;
 
 type Callback = Box<dyn FnOnce()>;
 
+struct Timer {
+    scheduled: Instant,
+    callback: Callback,
+}
+
+struct State {
+    callbacks: Vec<Callback>,
+    timers: HashMap<HandleType, Timer>,
+    timer: Option<CFRunLoopTimer>,
+}
+
+unsafe impl Send for State {}
+
+struct StatePendingExecution {
+    callbacks: Vec<Callback>,
+    timers: Vec<Timer>,
+}
+
+//
+// This is bit more complicated than just using dispatch_after and dispatch_async.
+// Main reason for it is that we need to allow manual polling for scheduled events.
+// This is because during window resizing neither dispatch queue nor run loop are
+// running so we need to process events manually.
+//
+
+impl State {
+    fn new() -> Self {
+        Self {
+            callbacks: Vec::new(),
+            timers: HashMap::new(),
+            timer: None,
+        }
+    }
+
+    fn get_pending_execution(&mut self) -> StatePendingExecution {
+        let now = Instant::now();
+        let pending: Vec<HandleType> = self
+            .timers
+            .iter()
+            .filter(|v| v.1.scheduled <= now)
+            .map(|v| *v.0)
+            .collect();
+
+        StatePendingExecution {
+            callbacks: self.callbacks.drain(0..).collect(),
+            timers: pending
+                .iter()
+                .map(|h| self.timers.remove(&h).unwrap())
+                .collect(),
+        }
+    }
+
+    fn unschedule(&mut self) {
+        if let Some(timer) = self.timer.take() {
+            unsafe {
+                CFRunLoopRemoveTimer(
+                    CFRunLoopGetMain(),
+                    timer.as_concrete_TypeRef(),
+                    kCFRunLoopCommonModes,
+                )
+            };
+        }
+    }
+
+    fn next_instant(&self) -> Instant {
+        if !self.callbacks.is_empty() {
+            Instant::now()
+        } else {
+            let min = self.timers.values().map(|x| x.scheduled).min();
+            min.unwrap_or_else(|| Instant::now() + Duration::from_secs(60 * 60))
+        }
+    }
+
+    fn schedule(&mut self, state: Arc<Mutex<State>>) {
+        self.unschedule();
+
+        let next = self.next_instant();
+        let pending = next.saturating_duration_since(Instant::now());
+        let fire_date = unsafe { CFAbsoluteTimeGetCurrent() } + pending.as_secs_f64();
+
+        let mutex = Arc::as_ptr(&state);
+
+        let mut context = CFRunLoopTimerContext {
+            version: 0,
+            info: mutex as *mut c_void,
+            retain: Some(Self::retain),
+            release: Some(Self::release),
+            copyDescription: None,
+        };
+
+        let timer =
+            CFRunLoopTimer::new(fire_date, 0.0, 0, 0, Self::on_timer, &mut context as *mut _);
+        self.timer = Some(timer.clone());
+        unsafe {
+            CFRunLoopAddTimer(
+                CFRunLoopGetMain(),
+                timer.as_concrete_TypeRef(),
+                kCFRunLoopCommonModes,
+            )
+        };
+    }
+
+    extern "C" fn retain(data: *const c_void) -> *const c_void {
+        let state = data as *const Mutex<State>;
+        let state = unsafe { Arc::from_raw(state) };
+        let _ = ManuallyDrop::new(state.clone()); // increase ref count
+        let _ = ManuallyDrop::new(state); // counter Arc::from_raw
+        data
+    }
+
+    extern "C" fn release(data: *const c_void) {
+        let state = data as *const Mutex<State>;
+        unsafe { Arc::from_raw(state) }; // decrease ref count
+    }
+
+    extern "C" fn on_timer(_timer: CFRunLoopTimerRef, data: *mut c_void) {
+        let state = data as *const Mutex<State>;
+        let state = unsafe { Arc::from_raw(state) };
+        Self::poll(state.clone());
+        let _ = ManuallyDrop::new(state);
+    }
+
+    fn poll(state: Arc<Mutex<State>>) {
+        let execution = state.lock().unwrap().get_pending_execution();
+        for c in execution.callbacks {
+            c();
+        }
+        for t in execution.timers {
+            (t.callback)();
+        }
+        let state_clone = state.clone();
+        state.lock().unwrap().schedule(state_clone);
+    }
+}
+
 pub struct PlatformRunLoop {
     next_handle: Cell<HandleType>,
-    callbacks: Rc<RefCell<HashMap<usize, Callback>>>,
+    state: Arc<Mutex<State>>,
 }
 
-struct CallbackData {
-    handle: HandleType,
-    callbacks: Rc<RefCell<HashMap<usize, Callback>>>,
-}
-
-#[allow(unused_variables)]
 impl PlatformRunLoop {
     pub fn new() -> Self {
         Self {
             next_handle: Cell::new(INVALID_HANDLE + 1),
-            callbacks: Rc::new(RefCell::new(HashMap::new())),
+            state: Arc::new(Mutex::new(State::new())),
         }
     }
 
@@ -50,7 +185,10 @@ impl PlatformRunLoop {
     }
 
     pub fn unschedule(&self, handle: HandleType) {
-        self.callbacks.borrow_mut().remove(&handle);
+        let state_clone = self.state.clone();
+        let mut state = self.state.lock().unwrap();
+        state.timers.remove(&handle);
+        state.schedule(state_clone);
     }
 
     pub fn schedule<F>(&self, in_time: Duration, callback: F) -> HandleType
@@ -58,48 +196,25 @@ impl PlatformRunLoop {
         F: FnOnce() + 'static,
     {
         let handle = self.next_handle();
-        self.callbacks
-            .borrow_mut()
-            .insert(handle, Box::new(callback));
 
-        let data = Box::new(CallbackData {
+        let state_clone = self.state.clone();
+        let mut state = self.state.lock().unwrap();
+
+        state.timers.insert(
             handle,
-            callbacks: self.callbacks.clone(),
-        });
+            Timer {
+                scheduled: Instant::now() + in_time,
+                callback: Box::new(callback),
+            },
+        );
 
-        let delta = in_time.as_nanos() as i64;
-        unsafe {
-            if delta > 0 {
-                dispatch_after_f(
-                    dispatch_time(DISPATCH_TIME_NOW, delta),
-                    dispatch_get_main_queue(),
-                    Box::into_raw(data) as *mut _,
-                    Self::on_callback,
-                );
-            } else {
-                // as a special case, with in_time == 0, schedule the callback
-                // to be run on directly on NSRunLoop instead of dispatch queue; This
-                // is necessary for tasks that run inner run loop (i.e. popup menu,
-                // modal dialogs, etc) to not block the dispatch queue
-                let data = Box::into_raw(data) as *mut _;
-                let cb = move || {
-                    Self::on_callback(data);
-                };
-                let runloop: id = NSRunLoop::currentRunLoop();
-                let block = ConcreteBlock::new(cb).copy();
-                let () = msg_send![runloop, performBlock:&*block];
-            }
-        }
+        state.schedule(state_clone);
 
         handle
     }
 
-    extern "C" fn on_callback(user_data: *mut ::std::os::raw::c_void) {
-        let data: Box<CallbackData> = unsafe { Box::from_raw(user_data as *mut _) };
-        let entry = data.callbacks.borrow_mut().remove(&data.handle);
-        if let Some(entry) = entry {
-            entry();
-        }
+    pub fn poll(&self) {
+        State::poll(self.state.clone());
     }
 
     pub fn run(&self) {
@@ -112,6 +227,8 @@ impl PlatformRunLoop {
     }
 
     pub fn stop(&self) {
+        self.state.lock().unwrap().unschedule();
+
         unsafe {
             let app = NSApplication::sharedApplication(nil);
             app.stop_(nil);
@@ -128,21 +245,21 @@ impl PlatformRunLoop {
                 data2: 0
             ];
 
-            // // To stop event loop immediately, we need to post event.
+            // To stop event loop immediately, we need to post event.
             let () = msg_send![app, postEvent: dummy_event atStart: YES];
         }
     }
 
     pub fn new_sender(&self) -> PlatformRunLoopSender {
-        PlatformRunLoopSender {}
+        PlatformRunLoopSender {
+            state: self.state.clone(),
+        }
     }
 }
 
 #[derive(Clone)]
-pub struct PlatformRunLoopSender {}
-
-struct SenderCallbackData {
-    callback: Callback,
+pub struct PlatformRunLoopSender {
+    state: Arc<Mutex<State>>,
 }
 
 #[allow(unused_variables)]
@@ -151,21 +268,10 @@ impl PlatformRunLoopSender {
     where
         F: FnOnce() + 'static + Send,
     {
-        let data = Box::new(SenderCallbackData {
-            callback: Box::new(callback),
-        });
+        let state_clone = self.state.clone();
+        let mut state = self.state.lock().unwrap();
 
-        unsafe {
-            dispatch_async_f(
-                dispatch_get_main_queue(),
-                Box::into_raw(data) as *mut _,
-                Self::on_callback,
-            );
-        }
-    }
-
-    extern "C" fn on_callback(user_data: *mut ::std::os::raw::c_void) {
-        let data: Box<SenderCallbackData> = unsafe { Box::from_raw(user_data as *mut _) };
-        (data.callback)();
+        state.callbacks.push(Box::new(callback));
+        state.schedule(state_clone);
     }
 }
