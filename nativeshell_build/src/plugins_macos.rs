@@ -83,7 +83,7 @@ impl<'a> PluginsImpl<'a> {
             let plugin_path = symlinks_dir.join(&plugin.name);
             writeln!(
                 contents,
-                "  pod '{}', :path => '{}', :binary => true",
+                "  pod '{}', :path => '{}'",
                 plugin.name,
                 plugin_path.join(&plugin.platform_name).to_string_lossy()
             )
