@@ -30,17 +30,25 @@ Prerequisites:
 
 Clone and run examples:
 
-```
+```bash
 git clone https://github.com/nativeshell/examples.git
 cd examples
 cargo run
 ```
 
-For Apple Silicon Macs, you might need to run the example using the flag to force x86_64 architecture
+For Apple Silicon Macs, you might need to run the example using the flag to force x86_64 architecture:
 
-```
+```bash
 rustup target add x86_64-apple-darwin
 cargo run --target=x86_64-apple-darwin
+```
+
+Alternatively you can use environment variables:
+```bash
+# Recommended if using rust-analyzer to minimize redundant rebuilds
+export CARGO_TARGET_DIR=target/x86_64
+export CARGO_BUILD_TARGET=x86_64-apple-darwin
+cargo run
 ```
 
 For more information read the [introductory post](https://matejknopp.com/post/introducing-nativeshell/) or go to [nativeshell.dev](https://nativeshell.dev).
