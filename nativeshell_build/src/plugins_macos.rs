@@ -32,14 +32,20 @@ impl<'a> PluginsImpl<'a> {
         let xcode = mkdir(&self.build.out_dir, Some("xcode"))?;
         let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
         let podfile = xcode.join("PodFile");
-        let skip_build = self
+        let build_ok = xcode.join("build_ok");
+        let mut skip_build = self
             .write_podfile(&podfile, plugins, &symlinks_dir)
             .wrap_error(FileOperation::Write, || podfile.clone())?;
+        skip_build &= build_ok.exists();
         if !skip_build {
+            if build_ok.exists() {
+                fs::remove_file(&build_ok).wrap_error(FileOperation::Remove, || build_ok.clone())?
+            }
             self.write_dummy_xcode_project(&xcode)?;
             self.write_podfile(&podfile, plugins, &symlinks_dir)
                 .wrap_error(FileOperation::Write, || podfile)?;
             self.install_cocoa_pods(&xcode)?;
+            fs::write(&build_ok, "").wrap_error(FileOperation::Write, || build_ok.clone())?;
         }
         let (frameworks_path, products_path) = self.build_pods(&xcode, skip_build)?;
         self.link_and_emit_frameworks(&frameworks_path)?;
