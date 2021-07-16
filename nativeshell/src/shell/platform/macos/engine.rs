@@ -7,11 +7,13 @@ use crate::shell::platform::platform_impl::utils::{class_from_string, to_nsstrin
 use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::{PlatformError, PlatformResult},
+    texture::PlatformTextureRegistry,
 };
 
 pub struct PlatformEngine {
-    handle: StrongPtr,
+    pub(super) handle: StrongPtr,
     pub(super) view_controller: StrongPtr,
+    texture_registry: PlatformTextureRegistry,
 }
 
 pub struct PlatformPlugin {
@@ -42,11 +44,17 @@ impl PlatformEngine {
                 }
             }
 
+            let engine = StrongPtr::retain(engine);
             Self {
-                handle: StrongPtr::retain(engine),
+                handle: engine.clone(),
                 view_controller,
+                texture_registry: PlatformTextureRegistry::new(engine),
             }
         })
+    }
+
+    pub(crate) fn texture_registry(&self) -> &PlatformTextureRegistry {
+        &self.texture_registry
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {

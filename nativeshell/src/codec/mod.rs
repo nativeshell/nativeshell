@@ -12,6 +12,7 @@ pub use message_channel::*;
 pub use method_channel::*;
 pub use standard_codec::*;
 
+#[derive(Debug)]
 pub struct MethodCall<V> {
     pub method: String,
     pub args: V,
