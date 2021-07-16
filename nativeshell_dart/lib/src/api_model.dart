@@ -195,6 +195,7 @@ class WindowStyle {
     this.canMinimize = true,
     this.canMaximize = true,
     this.canFullScreen = true,
+    this.trafficLightOffset,
   });
 
   final WindowFrame frame;
@@ -205,6 +206,10 @@ class WindowStyle {
   final bool canMaximize; // ignored on mac
   final bool canFullScreen;
 
+  // macOS only and only applicable for WindowFrame.noTitle;
+  // Controls the offset of window traffic light.
+  final Offset? trafficLightOffset;
+
   dynamic serialize() => {
         'frame': enumToString(frame),
         'canResize': canResize,
@@ -212,6 +217,7 @@ class WindowStyle {
         'canMinimize': canMinimize,
         'canMaximize': canMaximize,
         'canFullScreen': canFullScreen,
+        'trafficLightOffset': trafficLightOffset?.serialize(),
       };
 
   static WindowStyle deserialize(dynamic value) {

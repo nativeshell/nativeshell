@@ -9,8 +9,8 @@ use std::{
 
 use cocoa::{
     appkit::{
-        NSEvent, NSEventType, NSScreen, NSView, NSWindow, NSWindowCollectionBehavior,
-        NSWindowStyleMask, NSWindowTabbingMode,
+        NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable, NSViewWidthSizable, NSWindow,
+        NSWindowCollectionBehavior, NSWindowStyleMask, NSWindowTabbingMode,
     },
     base::{id, nil, BOOL, NO, YES},
     foundation::{
@@ -64,11 +64,16 @@ pub struct PlatformWindow {
     drag_context: LateRefCell<DragContext>,
     last_event: RefCell<HashMap<u64, StrongPtr>>,
     ignore_enter_leave_until: Cell<f64>,
+    window_buttons: StrongPtr,
 }
 
 #[link(name = "AppKit", kind = "framework")]
 extern "C" {
     pub static NSPasteboardTypeFileURL: id;
+}
+
+extern "C" {
+    fn im_link_objc_dummy_method();
 }
 
 impl PlatformWindow {
@@ -101,6 +106,9 @@ impl PlatformWindow {
 
             window.setDelegate_(*platform_delegate);
 
+            let window_buttons: id = msg_send![class!(IMWindowButtons), new];
+            let window_buttons = StrongPtr::new(window_buttons);
+
             Self {
                 context,
                 platform_window: window,
@@ -114,6 +122,7 @@ impl PlatformWindow {
                 last_event: RefCell::new(HashMap::new()),
                 drag_context: LateRefCell::new(),
                 ignore_enter_leave_until: Cell::new(0.0),
+                window_buttons,
             }
         })
     }
@@ -122,19 +131,36 @@ impl PlatformWindow {
         self.weak_self.set(weak.clone());
 
         unsafe {
+            // dummy method to force rust to link macos_extra.a
+            im_link_objc_dummy_method();
+
             let state_ptr = weak.clone().into_raw() as *mut c_void;
             (**self.platform_delegate).set_ivar("imState", state_ptr);
 
             let state_ptr = weak.clone().into_raw() as *mut c_void;
             (**self.platform_window).set_ivar("imState", state_ptr);
 
-            let () =
-                msg_send![*self.platform_window, setContentViewController: *engine.view_controller];
+            let flutter_view: id = msg_send![*engine.view_controller, view];
+
+            let view: id = msg_send![class!(IMFlippedView), alloc];
+            let view: id = msg_send![view, init];
+
+            let () = msg_send![*self.platform_window, setContentView: view];
+            let () = msg_send![view, addSubview: flutter_view];
+
+            // Add traffic light
+            let () = msg_send![view, addSubview: *self.window_buttons];
 
             let () = msg_send![*engine.view_controller, setMouseTrackingMode: 3]; // always track mouse
 
             // Temporarily set non empty window size so that flutter engine doesn't complain
             NSWindow::setContentSize_(*self.platform_window, Size::wh(1.0, 1.0).into());
+
+            let () = msg_send![flutter_view, setFrame: NSRect::new(
+                NSPoint::new(0.0, 0.0),
+                NSSize::new(1.0, 1.0)
+            )];
+            NSView::setAutoresizingMask_(flutter_view, NSViewWidthSizable | NSViewHeightSizable);
         }
 
         if let Some(context) = self.context.get() {
@@ -368,6 +394,13 @@ impl PlatformWindow {
 
             if style.frame == WindowFrame::NoTitle {
                 mask |= NSWindowStyleMask::NSFullSizeContentViewWindowMask;
+                let () = msg_send![*self.window_buttons, setEnabled: YES];
+                if let Some(offset) = &style.traffic_light_offset {
+                    let offset: NSPoint = offset.into();
+                    let () = msg_send![*self.window_buttons, setOrigin: offset];
+                }
+            } else {
+                let () = msg_send![*self.window_buttons, setEnabled: NO];
             }
 
             if style.frame != WindowFrame::NoFrame {
