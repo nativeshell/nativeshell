@@ -207,7 +207,7 @@ class WindowStyle {
   final bool canFullScreen;
 
   // macOS only and only applicable for WindowFrame.noTitle;
-  // Controls the offset of window's traffic light.
+  // Controls the offset of window traffic light.
   final Offset? trafficLightOffset;
 
   dynamic serialize() => {
