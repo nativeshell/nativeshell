@@ -114,6 +114,18 @@ fn main() {
         );
     }
 
+    #[cfg(target_os = "macos")]
+    {
+        let files = ["src/shell/platform/macos/window_buttons.m"];
+        let mut build = cc::Build::new();
+        for file in files.iter() {
+            build.file(file);
+            cargo_emit::rerun_if_changed!(file);
+        }
+        build.flag("-fobjc-arc");
+        build.compile("macos_extra");
+    }
+
     cargo_emit::rerun_if_env_changed!("FLUTTER_PROFILE");
     if Flutter::build_mode() == "profile" {
         cargo_emit::rustc_cfg!("flutter_profile");
