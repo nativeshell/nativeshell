@@ -1,17 +1,38 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    marker::PhantomData,
+    sync::{Arc, Mutex},
+};
 
-use io_surface::IOSurface;
+use super::{
+    platform::texture::{PlatformTexture, TexturePayload, PIXEL_BUFFER_FORMAT},
+    Context, EngineHandle,
+};
 
-use super::{platform::texture::PlatformTexture, Context, EngineHandle};
-
-pub struct Texture {
+pub struct Texture<Payload> {
     context: Context,
     engine: EngineHandle,
     id: i64,
     texture: Arc<Mutex<PlatformTexture>>,
+    _phantom: PhantomData<Payload>,
 }
 
-impl Texture {
+pub enum PixelBufferFormat {
+    BGRA,
+}
+
+pub struct PixelBuffer {
+    pub width: i32,
+    pub height: i32,
+    pub data: Vec<u8>,
+}
+
+impl PixelBuffer {
+    pub fn format() -> PixelBufferFormat {
+        PIXEL_BUFFER_FORMAT
+    }
+}
+
+impl<Payload: TexturePayload> Texture<Payload> {
     pub fn new(context: Context, engine: EngineHandle) -> Option<Self> {
         if let Some(context) = context.get() {
             let manager = context.engine_manager.borrow();
@@ -25,6 +46,7 @@ impl Texture {
                     engine,
                     id,
                     texture,
+                    _phantom: PhantomData::<Payload> {},
                 });
             }
         }
@@ -35,9 +57,9 @@ impl Texture {
         self.id
     }
 
-    pub fn update(&self, surface: IOSurface) {
+    pub fn update(&self, payload: Payload) {
         let mut texture = self.texture.lock().unwrap();
-        texture.set_surface(surface);
+        texture.set_payload(payload);
         if let Some(context) = self.context.get() {
             let manager = context.engine_manager.borrow();
             let engine_ref = manager.get_engine(self.engine);
@@ -49,7 +71,7 @@ impl Texture {
     }
 }
 
-impl Drop for Texture {
+impl<T> Drop for Texture<T> {
     fn drop(&mut self) {
         if let Some(context) = self.context.get() {
             let manager = context.engine_manager.borrow();

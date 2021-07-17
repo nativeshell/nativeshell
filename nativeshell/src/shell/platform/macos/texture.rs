@@ -5,10 +5,13 @@ use std::{
 
 use cocoa::base::id;
 use core_foundation::{
-    base::{CFAllocatorRef, TCFType},
+    base::{CFAllocatorRef, CFType, TCFType},
     dictionary::CFDictionaryRef,
 };
-use io_surface::{IOSurface, IOSurfaceRef};
+use io_surface::{
+    kIOSurfaceBytesPerElement, kIOSurfaceBytesPerRow, kIOSurfaceHeight, kIOSurfacePixelFormat,
+    kIOSurfaceWidth, IOSurface, IOSurfaceRef,
+};
 use libc::c_void;
 use log::warn;
 
@@ -18,9 +21,31 @@ use objc::{
     runtime::{Class, Object, Sel},
 };
 
+use crate::shell::{PixelBuffer, PixelBufferFormat};
+
 pub struct PlatformTexture {
     pub texture: StrongPtr,
     pub surface: Option<IOSurface>,
+}
+
+pub trait TexturePayload {
+    fn into_iosurface(self) -> IOSurface;
+}
+
+impl TexturePayload for IOSurface {
+    fn into_iosurface(self) -> IOSurface {
+        self
+    }
+}
+
+pub(crate) const PIXEL_BUFFER_FORMAT: PixelBufferFormat = PixelBufferFormat::BGRA;
+
+impl TexturePayload for PixelBuffer {
+    fn into_iosurface(self) -> IOSurface {
+        let surface = init_surface(self.width, self.height);
+        surface.upload(&self.data);
+        surface
+    }
 }
 
 impl PlatformTexture {
@@ -41,8 +66,8 @@ impl PlatformTexture {
         res
     }
 
-    pub fn set_surface(&mut self, surface: IOSurface) {
-        self.surface.replace(surface);
+    pub fn set_payload<T: TexturePayload>(&mut self, payload: T) {
+        self.surface.replace(payload.into_iosurface());
     }
 
     fn copy_pixel_buffer(&self) -> CVPixelBufferRef {
@@ -153,4 +178,41 @@ extern "C" fn dealloc(this: &Object, _: Sel) {
             Arc::from_raw(ptr);
         }
     }
+}
+
+const fn as_u32_be(array: &[u8; 4]) -> u32 {
+    ((array[0] as u32) << 24)
+        + ((array[1] as u32) << 16)
+        + ((array[2] as u32) << 8)
+        + ((array[3] as u32) << 0)
+}
+
+fn init_surface(width: i32, height: i32) -> IOSurface {
+    use core_foundation::{dictionary::CFDictionary, number::CFNumber, string::CFString};
+
+    let k_width: CFString = unsafe { TCFType::wrap_under_get_rule(kIOSurfaceWidth) };
+    let v_width: CFNumber = width.into();
+
+    let k_height: CFString = unsafe { TCFType::wrap_under_get_rule(kIOSurfaceHeight) };
+    let v_height: CFNumber = height.into();
+
+    let k_bytes_per_row: CFString = unsafe { TCFType::wrap_under_get_rule(kIOSurfaceBytesPerRow) };
+    let v_bytes_per_row: CFNumber = (width * 4).into();
+
+    let k_pixel_format: CFString = unsafe { TCFType::wrap_under_get_rule(kIOSurfacePixelFormat) };
+    let v_pixel_format: CFNumber = (as_u32_be(b"BGRA") as i32).into();
+
+    let k_bytes_per_elem: CFString =
+        unsafe { TCFType::wrap_under_get_rule(kIOSurfaceBytesPerElement) };
+    let v_bytes_per_elem: CFNumber = 4.into();
+
+    let pairs: Vec<(CFString, CFType)> = vec![
+        (k_width, v_width.as_CFType()),
+        (k_height, v_height.as_CFType()),
+        (k_bytes_per_row, v_bytes_per_row.as_CFType()),
+        (k_bytes_per_elem, v_bytes_per_elem.as_CFType()),
+        (k_pixel_format, v_pixel_format.as_CFType()),
+    ];
+
+    io_surface::new(&CFDictionary::from_CFType_pairs(pairs.as_slice()))
 }
