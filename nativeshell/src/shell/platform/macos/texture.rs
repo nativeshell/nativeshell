@@ -26,25 +26,26 @@ use crate::shell::{PixelBuffer, PixelBufferFormat};
 pub struct PlatformTexture {
     pub texture: StrongPtr,
     pub surface: Option<IOSurface>,
+    pub pending_buffer: Option<PixelBuffer>,
 }
 
 pub trait TexturePayload {
-    fn into_iosurface(self) -> IOSurface;
+    fn set_payload(texture: &mut PlatformTexture, payload: Self);
 }
 
 impl TexturePayload for IOSurface {
-    fn into_iosurface(self) -> IOSurface {
-        self
+    fn set_payload(texture: &mut PlatformTexture, payload: Self) {
+        texture.pending_buffer.take();
+        texture.surface = Some(payload);
     }
 }
 
 pub(crate) const PIXEL_BUFFER_FORMAT: PixelBufferFormat = PixelBufferFormat::BGRA;
 
 impl TexturePayload for PixelBuffer {
-    fn into_iosurface(self) -> IOSurface {
-        let surface = init_surface(self.width, self.height);
-        surface.upload(&self.data);
-        surface
+    fn set_payload(texture: &mut PlatformTexture, payload: Self) {
+        texture.pending_buffer.replace(payload);
+        texture.surface.take();
     }
 }
 
@@ -58,6 +59,7 @@ impl PlatformTexture {
         let res = Arc::new(Mutex::new(Self {
             texture: texture.clone(),
             surface: None,
+            pending_buffer: None,
         }));
         let ptr = Arc::into_raw(res.clone());
         unsafe {
@@ -67,10 +69,17 @@ impl PlatformTexture {
     }
 
     pub fn set_payload<T: TexturePayload>(&mut self, payload: T) {
-        self.surface.replace(payload.into_iosurface());
+        T::set_payload(self, payload);
     }
 
-    fn copy_pixel_buffer(&self) -> CVPixelBufferRef {
+    fn copy_pixel_buffer(&mut self) -> CVPixelBufferRef {
+        let buffer = self.pending_buffer.take();
+        if let Some(buffer) = buffer {
+            let surface = init_surface(buffer.width, buffer.height);
+            surface.upload(&buffer.data);
+            self.surface = Some(surface);
+        }
+
         let mut buffer: CVPixelBufferRef = std::ptr::null_mut();
         if let Some(surface) = &self.surface {
             unsafe {
@@ -106,7 +115,7 @@ impl PlatformTextureRegistry {
         Self { registry }
     }
 
-    pub fn register_texture(&self, texture: Arc<Mutex<PlatformTexture>>) -> i64 {
+    pub fn register_texture<T: TexturePayload>(&self, texture: Arc<Mutex<PlatformTexture>>) -> i64 {
         let texture = {
             let texture = texture.lock().unwrap();
             texture.texture.clone()
@@ -156,7 +165,7 @@ extern "C" fn copy_pixel_buffer(this: &Object, _: Sel) -> CVPixelBufferRef {
         let ptr = ptr as *const Mutex<PlatformTexture>;
         ManuallyDrop::new(Arc::from_raw(ptr))
     };
-    let texture = state.lock().unwrap();
+    let mut texture = state.lock().unwrap();
     texture.copy_pixel_buffer() as *mut c_void
 }
 
