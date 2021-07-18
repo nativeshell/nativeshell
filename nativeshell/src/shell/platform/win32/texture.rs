@@ -98,7 +98,7 @@ impl PlatformTextureRegistry {
     }
 
     pub fn register_texture<T: TexturePayload>(&self, texture: Arc<Mutex<PlatformTexture>>) -> i64 {
-        let info = T::registration_info(texture.clone());
+        let info = T::registration_info(texture);
 
         unsafe {
             FlutterDesktopTextureRegistrarRegisterExternalTexture(self.registrar, &info as *const _)
