@@ -29,9 +29,10 @@ impl PlatformEngine {
                 }
             }
         }
+        let texture_registrar = view.get_engine().get_texture_registrar();
         PlatformEngine {
             view,
-            texture_registry: PlatformTextureRegistry::new(),
+            texture_registry: PlatformTextureRegistry::new(texture_registrar),
         }
     }
 

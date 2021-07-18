@@ -76,7 +76,9 @@ extern "C" fn pixel_buffer_callback(
     let mutex = user_data as *const Mutex<PlatformTexture>;
     let mutex = unsafe { &*mutex };
     let mut texture = mutex.lock().unwrap();
-    texture.pixel_buffer = texture.pending_pixel_buffer.take();
+    if let Some(buffer) = texture.pending_pixel_buffer.take() {
+        texture.pixel_buffer.replace(buffer);
+    }
     if let Some(pixel_buffer) = &texture.pixel_buffer {
         texture.flutter_pixel_buffer = Some(FlutterDesktopPixelBuffer {
             buffer: pixel_buffer.data.as_ptr(),

@@ -24,6 +24,10 @@ pub enum PixelBufferFormat {
     RGBA,
 }
 
+// PixelBuffer texture payload
+//
+// Supported on all platforms, although the pixel format may vary.
+// See PixelBuffer::FORMAT.
 pub struct PixelBuffer {
     pub width: i32,
     pub height: i32,
@@ -32,6 +36,16 @@ pub struct PixelBuffer {
 
 impl PixelBuffer {
     pub const FORMAT: PixelBufferFormat = PIXEL_BUFFER_FORMAT;
+}
+
+// OpenGL texture payload
+//
+// Supported on Linux
+pub struct GLTexture {
+    pub target: u32, // texture target (i.e. GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE)
+    pub name: u32,   // OpenGL texture name
+    pub width: i32,
+    pub height: i32,
 }
 
 impl<Payload: TexturePayload> Texture<Payload> {

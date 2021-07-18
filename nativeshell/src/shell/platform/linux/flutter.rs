@@ -83,12 +83,22 @@ glib::wrapper! {
 
 pub trait EngineExt: 'static {
     fn get_binary_messenger(&self) -> BinaryMessenger;
+    fn get_texture_registrar(&self) -> TextureRegistrar;
 }
 
 impl<O: IsA<Engine>> EngineExt for O {
     fn get_binary_messenger(&self) -> BinaryMessenger {
         unsafe {
             Object::from_glib_none(flutter_sys::fl_engine_get_binary_messenger(
+                self.as_ref().to_glib_none().0,
+            ))
+            .unsafe_cast()
+        }
+    }
+
+    fn get_texture_registrar(&self) -> TextureRegistrar {
+        unsafe {
+            Object::from_glib_none(flutter_sys::fl_engine_get_texture_registrar(
                 self.as_ref().to_glib_none().0,
             ))
             .unsafe_cast()
@@ -249,6 +259,61 @@ impl<O: IsA<BinaryMessenger>> BinaryMessengerExt for O {
                 None,
                 std::ptr::null_mut(),
             );
+        }
+    }
+}
+
+//
+//
+//
+
+glib::wrapper! {
+    pub struct TextureRegistrar(Object<flutter_sys::FlTextureRegistrar, flutter_sys::FlTextureRegistrarClass>);
+
+    match fn {
+        type_ => || gobject_sys::g_object_get_type(),
+    }
+}
+
+glib::wrapper! {
+    pub struct Texture(Object<flutter_sys::FlTexture, flutter_sys::FlTextureClass>);
+
+    match fn {
+        type_ => || flutter_sys::fl_texture_get_type(),
+    }
+}
+
+pub trait TextureRegistrarExt: 'static {
+    fn register_texture<T: IsA<Texture>>(&self, texture: T) -> i64;
+    fn mark_texture_frame_available(&self, texture_id: i64);
+    fn unregister_texture(&self, texture_id: i64);
+}
+
+impl<O: IsA<TextureRegistrar>> TextureRegistrarExt for O {
+    fn register_texture<T: IsA<Texture>>(&self, texture: T) -> i64 {
+        unsafe {
+            flutter_sys::fl_texture_registrar_register_texture(
+                self.as_ref().to_glib_none().0,
+                texture.as_ref().to_glib_none().0,
+            )
+        }
+    }
+
+    fn mark_texture_frame_available(&self, texture_id: i64) {
+        unsafe {
+            flutter_sys::fl_texture_registrar_mark_texture_frame_available(
+                self.as_ref().to_glib_none().0,
+                texture_id,
+            )
+        }
+    }
+
+    fn unregister_texture(&self, texture_id: i64) {
+        unsafe {
+            flutter_sys::fl_texture_registrar_unregister_texture(
+                self.as_ref().to_glib_none().0,
+                texture_id,
+            )
         }
     }
 }
