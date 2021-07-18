@@ -31,9 +31,7 @@ pub struct PixelBuffer {
 }
 
 impl PixelBuffer {
-    pub fn format() -> PixelBufferFormat {
-        PIXEL_BUFFER_FORMAT
-    }
+    pub const FORMAT: PixelBufferFormat = PIXEL_BUFFER_FORMAT;
 }
 
 impl<Payload: TexturePayload> Texture<Payload> {
