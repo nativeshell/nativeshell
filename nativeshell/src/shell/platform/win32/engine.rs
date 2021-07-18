@@ -1,18 +1,10 @@
 use std::{ffi::CString, ptr};
 
-use super::{
-    binary_messenger::PlatformBinaryMessenger,
-    error::PlatformResult,
-    flutter_sys::{
-        FlutterDesktopEngineCreate, FlutterDesktopEngineDestroy, FlutterDesktopEngineGetMessenger,
-        FlutterDesktopEngineGetPluginRegistrar, FlutterDesktopEngineProperties,
-        FlutterDesktopEngineRef,
-    },
-    util::to_utf16,
-};
+use super::{binary_messenger::PlatformBinaryMessenger, error::PlatformResult, flutter_sys::{FlutterDesktopEngineCreate, FlutterDesktopEngineDestroy, FlutterDesktopEngineGetMessenger, FlutterDesktopEngineGetPluginRegistrar, FlutterDesktopEngineGetTextureRegistrar, FlutterDesktopEngineProperties, FlutterDesktopEngineRef}, texture::PlatformTextureRegistry, util::to_utf16};
 
 pub struct PlatformEngine {
     pub(super) handle: FlutterDesktopEngineRef,
+    texture_registry: PlatformTextureRegistry,
 }
 
 pub struct PlatformPlugin {
@@ -46,7 +38,16 @@ impl PlatformEngine {
                 }
             }
         }
-        Self { handle: engine }
+        Self {
+            handle: engine,
+            texture_registry: PlatformTextureRegistry::new(unsafe {
+                FlutterDesktopEngineGetTextureRegistrar(engine)
+            }),
+        }
+    }
+
+    pub(crate) fn texture_registry(&self) -> &PlatformTextureRegistry {
+        &self.texture_registry
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {

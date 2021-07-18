@@ -230,3 +230,71 @@ extern "C" {
 extern "C" {
     pub fn FlutterDesktopResyncOutputStreams();
 }
+
+extern "C" {
+    pub fn FlutterDesktopEngineGetTextureRegistrar(
+        engine: FlutterDesktopEngineRef,
+    ) -> FlutterDesktopTextureRegistrarRef;
+}
+
+// bindgen.exe flutter_plugin_registrar.h --whitelist-type Flutter.* --whitelist-function Flutter.* --no-layout-tests --no-prepend-enum-name -- -x c++
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FlutterDesktopTextureRegistrar {
+    _unused: [u8; 0],
+}
+pub type FlutterDesktopTextureRegistrarRef = *mut FlutterDesktopTextureRegistrar;
+#[allow(non_upper_case_globals)]
+pub const kFlutterDesktopPixelBufferTexture: FlutterDesktopTextureType = 0;
+pub type FlutterDesktopTextureType = ::std::os::raw::c_int;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FlutterDesktopPixelBuffer {
+    pub buffer: *const u8,
+    pub width: size_t,
+    pub height: size_t,
+}
+pub type FlutterDesktopPixelBufferTextureCallback = ::std::option::Option<
+    unsafe extern "C" fn(
+        width: size_t,
+        height: size_t,
+        user_data: *mut ::std::os::raw::c_void,
+    ) -> *const FlutterDesktopPixelBuffer,
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FlutterDesktopPixelBufferTextureConfig {
+    pub callback: FlutterDesktopPixelBufferTextureCallback,
+    pub user_data: *mut ::std::os::raw::c_void,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FlutterDesktopTextureInfo {
+    pub type_: FlutterDesktopTextureType,
+    pub __bindgen_anon_1: FlutterDesktopTextureInfo__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union FlutterDesktopTextureInfo__bindgen_ty_1 {
+    pub pixel_buffer_config: FlutterDesktopPixelBufferTextureConfig,
+    _bindgen_union_align: [u64; 2usize],
+}
+extern "C" {
+    pub fn FlutterDesktopTextureRegistrarRegisterExternalTexture(
+        texture_registrar: FlutterDesktopTextureRegistrarRef,
+        info: *const FlutterDesktopTextureInfo,
+    ) -> i64;
+}
+extern "C" {
+    pub fn FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+        texture_registrar: FlutterDesktopTextureRegistrarRef,
+        texture_id: i64,
+    ) -> bool;
+}
+extern "C" {
+    pub fn FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+        texture_registrar: FlutterDesktopTextureRegistrarRef,
+        texture_id: i64,
+    ) -> bool;
+}

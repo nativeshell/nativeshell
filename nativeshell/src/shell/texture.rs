@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::{Error, Result};
+
 use super::{
     platform::texture::{PlatformTexture, TexturePayload, PIXEL_BUFFER_FORMAT},
     Context, EngineHandle,
@@ -16,8 +18,10 @@ pub struct Texture<Payload> {
     _phantom: PhantomData<Payload>,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub enum PixelBufferFormat {
     BGRA,
+    RGBA,
 }
 
 pub struct PixelBuffer {
@@ -33,24 +37,27 @@ impl PixelBuffer {
 }
 
 impl<Payload: TexturePayload> Texture<Payload> {
-    pub fn new(context: Context, engine: EngineHandle) -> Option<Self> {
+    pub fn new(context: Context, engine: EngineHandle) -> Result<Self> {
         if let Some(context) = context.get() {
             let manager = context.engine_manager.borrow();
             let engine_ref = manager.get_engine(engine);
             if let Some(engine_ref) = engine_ref {
                 let registry = engine_ref.platform_engine.texture_registry();
                 let texture = PlatformTexture::new();
-                let id = registry.register_texture(texture.clone());
-                return Some(Texture {
+                let id = registry.register_texture::<Payload>(texture.clone());
+                return Ok(Texture {
                     context: context.weak(),
                     engine,
                     id,
                     texture,
                     _phantom: PhantomData::<Payload> {},
                 });
+            } else {
+                return Err(Error::InvalidEngineHandle);
             }
+        } else {
+            Err(Error::InvalidContext)
         }
-        None
     }
 
     pub fn id(&self) -> i64 {
@@ -58,8 +65,10 @@ impl<Payload: TexturePayload> Texture<Payload> {
     }
 
     pub fn update(&self, payload: Payload) {
-        let mut texture = self.texture.lock().unwrap();
-        texture.set_payload(payload);
+        {
+            let mut texture = self.texture.lock().unwrap();
+            texture.set_payload(payload);
+        }
         if let Some(context) = self.context.get() {
             let manager = context.engine_manager.borrow();
             let engine_ref = manager.get_engine(self.engine);
