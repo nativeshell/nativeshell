@@ -10,14 +10,6 @@ use super::{
     Context, EngineHandle,
 };
 
-pub struct Texture<Payload> {
-    context: Context,
-    engine: EngineHandle,
-    id: i64,
-    texture: Arc<Mutex<PlatformTexture>>,
-    _phantom: PhantomData<Payload>,
-}
-
 #[allow(clippy::upper_case_acronyms)]
 pub enum PixelBufferFormat {
     BGRA,
@@ -46,6 +38,24 @@ pub struct GLTexture {
     pub name: u32,   // OpenGL texture name
     pub width: i32,
     pub height: i32,
+}
+
+// Texture
+//
+// Supported payload types:
+// - PixelBuffer (all platforms)
+// - IOSurface (macOS)
+// - GLTexture (Linux)
+//
+// Usage:
+//   let texture = Texture::<PixelBuffer>::new(context, engine).unwrap();
+//   texture.update(PixelBuffer{...});
+pub struct Texture<Payload> {
+    context: Context,
+    engine: EngineHandle,
+    id: i64,
+    texture: Arc<Mutex<PlatformTexture>>,
+    _phantom: PhantomData<Payload>,
 }
 
 impl<Payload: TexturePayload> Texture<Payload> {
