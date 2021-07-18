@@ -13,6 +13,7 @@ pub mod menu;
 pub mod menu_item;
 pub mod run_loop;
 pub mod size_widget;
+pub mod texture;
 pub mod utils;
 pub mod window;
 pub mod window_menu;
