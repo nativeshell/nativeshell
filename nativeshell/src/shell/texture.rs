@@ -67,15 +67,15 @@ impl<Payload: TexturePayload> Texture<Payload> {
                 let registry = engine_ref.platform_engine.texture_registry();
                 let texture = PlatformTexture::new();
                 let id = registry.register_texture::<Payload>(texture.clone());
-                return Ok(Texture {
+                Ok(Texture {
                     context: context.weak(),
                     engine,
                     id,
                     texture,
                     _phantom: PhantomData::<Payload> {},
-                });
+                })
             } else {
-                return Err(Error::InvalidEngineHandle);
+                Err(Error::InvalidEngineHandle)
             }
         } else {
             Err(Error::InvalidContext)
