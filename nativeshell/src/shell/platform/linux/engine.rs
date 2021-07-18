@@ -10,19 +10,6 @@ pub struct PlatformEngine {
     pub(super) view: flutter::View,
 }
 
-#[repr(C)]
-struct _FlEngine {
-    _parent_instance: gobject_sys::GObject,
-    _thread: isize,
-    _project: isize,
-    _renderer: isize,
-    _binary_messenger: isize,
-    _settings_plugin: isize,
-    _task_runner: isize,
-    _aot_data: isize,
-    _engine: isize,
-}
-
 pub struct PlatformPlugin {
     pub name: String,
     pub register_func: Option<unsafe extern "C" fn(registrar: *mut std::os::raw::c_void)>,
