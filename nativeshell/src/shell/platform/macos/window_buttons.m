@@ -1,6 +1,10 @@
 #import <Cocoa/Cocoa.h>
 
-@interface IMContentView : NSView
+@interface IMContentView : NSView {
+  CGPoint lastHitTestScreen;
+  CGPoint lastHitTestWindow;
+}
+
 @end
 
 @implementation IMContentView
@@ -18,6 +22,32 @@
 
 - (BOOL)isOpaque {
   return YES;
+}
+
+- (CGPoint)lastHitTestScreen {
+  return lastHitTestScreen;
+}
+
+- (CGPoint)lastHitTestWindow {
+  return lastHitTestWindow;
+}
+
+- (NSView *)hitTest:(NSPoint)point {
+  NSView *res = [super hitTest:point];
+
+  // hit test window in flipped coordinates (0,0 - top left)
+  lastHitTestWindow = [self convertPoint:point toView:nil];
+
+  CGPoint windowFlipped = lastHitTestWindow;
+  windowFlipped.y = self.window.frame.size.height - windowFlipped.y;
+  CGPoint screen = [self.window convertPointToScreen:windowFlipped];
+
+  // Flip screen to 0,0 - top left
+  NSRect screen_frame = self.window.screen.frame;
+  screen.y = screen_frame.size.height - screen.y + screen_frame.origin.y;
+  lastHitTestScreen = screen;
+
+  return res;
 }
 
 - (void)mouseDown:(NSEvent *)event {
