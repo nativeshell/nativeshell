@@ -65,6 +65,7 @@ pub struct PlatformWindow {
     last_event: RefCell<HashMap<u64, StrongPtr>>,
     ignore_enter_leave_until: Cell<f64>,
     window_buttons: StrongPtr,
+    flutter_view: LateRefCell<StrongPtr>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -123,6 +124,7 @@ impl PlatformWindow {
                 drag_context: LateRefCell::new(),
                 ignore_enter_leave_until: Cell::new(0.0),
                 window_buttons,
+                flutter_view: LateRefCell::new(),
             }
         })
     }
@@ -141,6 +143,7 @@ impl PlatformWindow {
             (**self.platform_window).set_ivar("imState", state_ptr);
 
             let flutter_view: id = msg_send![*engine.view_controller, view];
+            self.flutter_view.set(StrongPtr::retain(flutter_view));
 
             let view: id = msg_send![class!(IMContentView), alloc];
             let view: id = msg_send![view, init];
@@ -455,13 +458,14 @@ impl PlatformWindow {
     fn show_when_ready(weak_self: Weak<PlatformWindow>, attempt: i32) {
         if let Some(s) = weak_self.upgrade() {
             autoreleasepool(|| unsafe {
-                let view = NSWindow::contentView(*s.platform_window);
-                let subviews: id = msg_send![view, subviews];
+                let view = s.flutter_view.borrow().clone();
+
+                let subviews: id = msg_send![*view, subviews];
                 let view = {
                     if subviews.count() > 0 {
                         subviews.objectAtIndex(0)
                     } else {
-                        view
+                        *view
                     }
                 };
 
@@ -481,7 +485,7 @@ impl PlatformWindow {
                             panic!("Expected IOSurface content");
                         }
                         let scale = NSWindow::backingScaleFactor(*s.platform_window);
-                        let content_size = NSView::frame(NSWindow::contentView(*s.platform_window));
+                        let content_size = NSView::frame(*s.flutter_view.borrow().clone());
 
                         let expected_width = scale * content_size.size.width;
                         let expected_height = scale * content_size.size.height;
