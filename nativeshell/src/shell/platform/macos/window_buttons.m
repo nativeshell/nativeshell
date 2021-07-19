@@ -1,12 +1,27 @@
 #import <Cocoa/Cocoa.h>
 
-@interface IMFlippedView : NSView
+@interface IMContentView : NSView
 @end
 
-@implementation IMFlippedView
+@implementation IMContentView
 
 - (BOOL)isFlipped {
   return YES;
+}
+
+// These three methods are necessary to disable default window server titlebar
+// dragging when titlebar is hidden.
+
+- (BOOL)acceptsFirstResponder {
+  return YES;
+}
+
+- (BOOL)isOpaque {
+  return YES;
+}
+
+- (void)mouseDown:(NSEvent *)event {
+  [super mouseDown:event];
 }
 
 @end

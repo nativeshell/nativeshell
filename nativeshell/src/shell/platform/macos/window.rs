@@ -142,7 +142,7 @@ impl PlatformWindow {
 
             let flutter_view: id = msg_send![*engine.view_controller, view];
 
-            let view: id = msg_send![class!(IMFlippedView), alloc];
+            let view: id = msg_send![class!(IMContentView), alloc];
             let view: id = msg_send![view, init];
 
             let () = msg_send![*self.platform_window, setContentView: view];
@@ -385,10 +385,8 @@ impl PlatformWindow {
             let mut mask: NSWindowStyleMask = NSWindowStyleMask::NSBorderlessWindowMask;
 
             if style.frame == WindowFrame::Regular {
-                NSWindow::setMovable_(*self.platform_window, YES);
                 NSWindow::setTitlebarAppearsTransparent_(*self.platform_window, NO);
             } else {
-                NSWindow::setMovable_(*self.platform_window, NO);
                 NSWindow::setTitlebarAppearsTransparent_(*self.platform_window, YES);
             }
 
