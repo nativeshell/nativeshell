@@ -62,6 +62,13 @@ abstract class WindowState {
     await window.show();
   }
 
+  // Called when user requests closing the window. Default implementation calls
+  // window.close() to close the window. Omitting the window.close() call will
+  // prevent user from closing the window.
+  Future<void> windowCloseRequested() async {
+    await window.close();
+  }
+
   // Updates window constraints; Called for windows sized with
   // WindowSizing.atLeastIntrinsicSize when intrinsic content size changes.
   Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
@@ -104,7 +111,7 @@ abstract class WindowState {
   static T of<T extends WindowState>(BuildContext context) {
     final res = context
         .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
-        ?.context;
+        ?.windowState;
     assert(res is T, 'Window context of requested type not found in hierarchy');
     return res as T;
   }
@@ -113,7 +120,7 @@ abstract class WindowState {
   static T? maybeOf<T extends WindowState>(BuildContext context) {
     final res = context
         .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
-        ?.context;
+        ?.windowState;
     res is T ? res : null;
   }
 
@@ -155,28 +162,32 @@ class WindowWidget extends StatefulWidget {
 enum _Status { notInitialized, initializing, initialized }
 
 class _WindowWidgetState extends State<WindowWidget> {
-  WindowState? _windowContext;
+  WindowState? _windowState;
 
   @override
   Widget build(BuildContext context) {
     _maybeInitialize();
     if (status == _Status.initialized) {
       final window = WindowManager.instance.currentWindow;
-      _windowContext ??= widget.onCreateState(window.initData);
+      final emptyBefore = _windowState == null;
+      _windowState ??= widget.onCreateState(window.initData);
+      if (emptyBefore) {
+        WindowManager.instance.haveWindowState(_windowState!);
+      }
 
       return Listener(
         onPointerDown: _onWindowTap,
         child: Container(
           color: Color(0x00000000),
           child: _WindowStateWidget(
-            context: _windowContext!,
+            windowState: _windowState!,
             child: _WindowLayout(
-              builtWindow: _windowContext!,
+              builtWindow: _windowState!,
               child: _WindowLayoutInner(
-                builtWindow: _windowContext!,
+                windowState: _windowState!,
                 child: Builder(
                   builder: (context) {
-                    return _windowContext!.build(context);
+                    return _windowState!.build(context);
                   },
                 ),
               ),
@@ -203,8 +214,8 @@ class _WindowWidgetState extends State<WindowWidget> {
 
   void _onWindowTap(PointerDownEvent e) {
     for (final cb in List<ValueChanged<PointerDownEvent>>.from(
-        _windowContext!._tapCallbacks)) {
-      if (_windowContext!._tapCallbacks.contains(cb)) {
+        _windowState!._tapCallbacks)) {
+      if (_windowState!._tapCallbacks.contains(cb)) {
         cb(e);
       }
     }
@@ -213,11 +224,11 @@ class _WindowWidgetState extends State<WindowWidget> {
 
 // Used by Window.of(context)
 class _WindowStateWidget extends InheritedWidget {
-  final WindowState context;
+  final WindowState windowState;
 
   _WindowStateWidget({
     required Widget child,
-    required this.context,
+    required this.windowState,
   }) : super(child: child);
 
   @override
@@ -227,31 +238,31 @@ class _WindowStateWidget extends InheritedWidget {
 }
 
 class _WindowLayoutInner extends SingleChildRenderObjectWidget {
-  final WindowState builtWindow;
+  final WindowState windowState;
 
-  const _WindowLayoutInner({required Widget child, required this.builtWindow})
+  const _WindowLayoutInner({required Widget child, required this.windowState})
       : super(child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _RenderWindowLayoutInner(builtWindow);
+    return _RenderWindowLayoutInner(windowState);
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayoutInner renderObject) {
-    renderObject.builtWindow = builtWindow;
+    renderObject.windowState = windowState;
   }
 }
 
 class _RenderWindowLayoutInner extends RenderProxyBox {
-  _RenderWindowLayoutInner(this.builtWindow);
+  _RenderWindowLayoutInner(this.windowState);
 
-  WindowState builtWindow;
+  WindowState windowState;
 
   @override
   void performLayout() {
-    if (builtWindow.windowSizingMode != WindowSizingMode.sizeToContents) {
+    if (windowState.windowSizingMode != WindowSizingMode.sizeToContents) {
       super.performLayout();
     } else {
       final constraints = this.constraints.loosen();
@@ -282,7 +293,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
       _geometryPending = true;
     } else {
       _geometryInProgress = true;
-      await builtWindow.updateWindowSize(_sanitizeAndSnapToPixelBoundary(size));
+      await windowState.updateWindowSize(_sanitizeAndSnapToPixelBoundary(size));
       _geometryInProgress = false;
       if (_geometryPending) {
         _geometryPending = false;
