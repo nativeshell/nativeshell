@@ -96,10 +96,10 @@ fn main() {
                 GetMenuItemInfoW, GetCursorPos, EndMenu, GetSubMenu, GetMenuItemCount, HiliteMenuItem,
                 RegisterClassW, UnregisterClassW, PostMessageW, SendMessageW,
                 GetMessageW, PeekMessageW, TranslateMessage, DispatchMessageW, DestroyWindow, CreateWindowExW,
-                DefWindowProcW, SetWindowLongW, GetWindowLongW, ShowWindow, SetProcessDPIAware,
+                DefWindowProcW, SetWindowLongW, GetWindowLongW, ShowWindow, SetProcessDPIAware, IsWindowVisible,
                 SetWindowPos, GetWindowRect, GetClientRect, SetParent, GetParent, MoveWindow, SetForegroundWindow,
                 SetTimer, SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx, FindWindowW, SetWindowTextW,
-                GetGUIThreadInfo, WindowFromPoint, LoadCursorW,
+                GetGUIThreadInfo, WindowFromPoint, LoadCursorW, GetWindowPlacement, SetWindowPlacement,
                 // Structures
                 CREATESTRUCTW, MSG, WINDOWPOS, NCCALCSIZE_PARAMS,
                 // Constants

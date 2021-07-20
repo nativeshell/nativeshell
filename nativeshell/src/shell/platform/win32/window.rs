@@ -288,6 +288,14 @@ impl PlatformWindow {
         self.state.borrow().set_title(title)
     }
 
+    pub fn save_position_to_string(&self) -> PlatformResult<String> {
+        self.state.borrow().save_position_to_string()
+    }
+
+    pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
+        self.state.borrow().restore_position_from_string(position)
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         self.state.borrow().set_style(style)?;
         self.force_redraw();
