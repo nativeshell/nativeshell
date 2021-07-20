@@ -12,11 +12,8 @@ fn main() {
                 // Structs
                 POINTL,
                 // Constants
-                S_OK, S_FALSE, E_NOINTERFACE,
+                S_OK, S_FALSE, E_NOINTERFACE, E_NOTIMPL,
                 BOOL, DRAGDROP_S_CANCEL, DRAGDROP_S_DROP, DRAGDROP_S_USEDEFAULTCURSORS,
-            },
-            Windows::Win32::Graphics::DirectDraw::{
-                E_NOTIMPL,
             },
             Windows::Win32::Graphics::Dwm:: {
                 DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DwmFlush,

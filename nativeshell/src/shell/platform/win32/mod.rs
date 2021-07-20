@@ -28,7 +28,7 @@ mod bindings {
 mod all_bindings {
     pub use super::bindings::Windows::Win32::{
         Foundation::*,
-        Graphics::{DirectDraw::*, Dwm::*, Gdi::*},
+        Graphics::{Dwm::*, Gdi::*},
         Storage::StructuredStorage::*,
         System::{
             Com::*, DataExchange::*, Diagnostics::Debug::*, LibraryLoader::*, Memory::*,

@@ -585,7 +585,7 @@ impl DataObject {
         _pformatect_in: *mut FORMATETC,
         _pformatetc_out: *mut FORMATETC,
     ) -> ::windows::HRESULT {
-        HRESULT(E_NOTIMPL as u32)
+        E_NOTIMPL
     }
 
     fn set_data(
@@ -693,18 +693,18 @@ impl DataObject {
         _p_adv_sink: ::std::option::Option<IAdviseSink>,
         _pdw_connection: *mut u32,
     ) -> ::windows::HRESULT {
-        HRESULT(E_NOTIMPL as u32)
+        E_NOTIMPL
     }
 
     fn d_unadvise(&self, _dw_connection: u32) -> ::windows::HRESULT {
-        HRESULT(E_NOTIMPL as u32)
+        E_NOTIMPL
     }
 
     fn enum_d_advise(
         &self,
         _ppenum_advise: *mut ::std::option::Option<IEnumSTATDATA>,
     ) -> ::windows::HRESULT {
-        HRESULT(E_NOTIMPL as u32)
+        E_NOTIMPL
     }
 
     unsafe extern "system" fn _query_interface(
