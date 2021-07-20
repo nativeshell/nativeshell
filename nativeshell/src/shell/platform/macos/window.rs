@@ -452,7 +452,7 @@ impl PlatformWindow {
     pub fn save_position_to_string(&self) -> PlatformResult<String> {
         unsafe {
             let string: id = msg_send![*self.platform_window, stringWithSavedFrame];
-            return Ok(from_nsstring(string));
+            Ok(from_nsstring(string))
         }
     }
 
