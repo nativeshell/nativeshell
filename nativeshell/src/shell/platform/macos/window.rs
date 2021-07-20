@@ -449,6 +449,21 @@ impl PlatformWindow {
         Ok(())
     }
 
+    pub fn save_position_to_string(&self) -> PlatformResult<String> {
+        unsafe {
+            let string: id = msg_send![*self.platform_window, stringWithSavedFrame];
+            return Ok(from_nsstring(string));
+        }
+    }
+
+    pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
+        unsafe {
+            let position = to_nsstring(&position);
+            let () = msg_send![*self.platform_window, setFrameFromString:*position];
+        }
+        Ok(())
+    }
+
     pub fn is_modal(&self) -> bool {
         self.modal_close_callback.borrow().is_some()
     }

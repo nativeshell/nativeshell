@@ -88,6 +88,14 @@ class Window {
     return _invokeMethod(Methods.windowSetStyle, style.serialize());
   }
 
+  Future<String> savePositionToString() async {
+    return await _invokeMethod(Methods.windowSavePositionToString);
+  }
+
+  Future<void> restorePositionFromString(String position) async {
+    return _invokeMethod(Methods.windowRestorePositionFromString, position);
+  }
+
   static LocalWindow of(BuildContext context) => WindowState.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
