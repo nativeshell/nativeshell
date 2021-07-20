@@ -69,6 +69,9 @@ pub(crate) mod method {
         // MacOS only - associates given menu with current windon; The menu will
         // be displayed  when window gets active
         pub const SET_WINDOW_MENU: &str = "Window.setWindowMenu";
+
+        pub const SAVE_POSITION_TO_STRING: &str = "Window.savePositionToString";
+        pub const RESTORE_POSITION_FROM_STRING: &str = "Window.restorePositionFromString";
     }
 
     pub mod drop_target {

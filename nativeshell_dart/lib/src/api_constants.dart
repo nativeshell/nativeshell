@@ -46,6 +46,10 @@ class Methods {
   static final windowShowSystemMenu = 'Window.showSystemMenu';
   static final windowSetWindowMenu = 'Window.setWindowMenu';
 
+  static final windowSavePositionToString = 'Window.savePositionToString';
+  static final windowRestorePositionFromString =
+      'Window.restorePositionFromString';
+
   // Drop Target
   static final dropTargetDraggingUpdated = 'DropTarget.draggingUpdated';
   static final dropTargetDraggingExited = 'DropTarget.draggingExited';

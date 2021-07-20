@@ -83,6 +83,14 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
+    pub fn save_position_to_string(&self) -> PlatformResult<String> {
+        Ok(String::new())
+    }
+
+    pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
+        Ok(())
+    }
+
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }

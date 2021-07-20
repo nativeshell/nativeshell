@@ -7,6 +7,7 @@ pub enum PlatformError {
     SendMessageFailure { channel: String },
     WindowsError(windows::Error),
     NotAvailable,
+    OtherError { error: String },
 }
 
 pub type PlatformResult<T> = Result<T, PlatformError>;
@@ -26,6 +27,9 @@ impl Display for PlatformError {
             PlatformError::WindowsError(error) => error.fmt(f),
             PlatformError::NotAvailable => {
                 write!(f, "Feature is not available")
+            }
+            PlatformError::OtherError { error } => {
+                write!(f, "{}", error)
             }
         }
     }

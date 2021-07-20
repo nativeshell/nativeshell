@@ -5,6 +5,7 @@ pub enum PlatformError {
     NotImplemented,
     UnknownError,
     GLibError { message: String },
+    OtherError { error: String },
 }
 
 pub type PlatformResult<T> = Result<T, PlatformError>;
@@ -20,6 +21,9 @@ impl Display for PlatformError {
             }
             PlatformError::GLibError { message } => {
                 write!(f, "GLibError: {}", message)
+            }
+            PlatformError::OtherError { error } => {
+                write!(f, "{}", error)
             }
         }
     }

@@ -160,6 +160,18 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn save_position_to_string(&self) -> Result<String> {
+        self.platform_window()
+            .save_position_to_string()
+            .map_err(|e| e.into())
+    }
+
+    fn restore_position_from_string(&self, position: String) -> Result<()> {
+        self.platform_window()
+            .restore_position_from_string(position)
+            .map_err(|e| e.into())
+    }
+
     fn perform_window_drag(&self) -> Result<()> {
         self.platform_window()
             .perform_window_drag()
@@ -297,6 +309,14 @@ impl Window {
             }
             method::window::SET_TITLE => {
                 return Self::reply(reply, &arg, |title| self.set_title(title));
+            }
+            method::window::SAVE_POSITION_TO_STRING => {
+                return Self::reply(reply, &arg, |()| self.save_position_to_string());
+            }
+            method::window::RESTORE_POSITION_FROM_STRING => {
+                return Self::reply(reply, &arg, |position: String| {
+                    self.restore_position_from_string(position)
+                });
             }
             method::window::PERFORM_WINDOW_DRAG => {
                 return Self::reply(reply, &arg, |()| self.perform_window_drag());

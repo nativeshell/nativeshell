@@ -1,5 +1,6 @@
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
+    mem,
     rc::{Rc, Weak},
 };
 
@@ -8,6 +9,7 @@ use crate::{
         api_model::{
             WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
         },
+        platform::error::PlatformError,
         IPoint, IRect, ISize, Point, Rect, Size,
     },
     util::OkLog,
@@ -18,7 +20,7 @@ use super::{
     display::Displays,
     error::PlatformResult,
     flutter_sys::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
-    util::{clamp, BoolResultExt, GET_X_LPARAM, GET_Y_LPARAM},
+    util::{as_u8_slice, clamp, BoolResultExt, GET_X_LPARAM, GET_Y_LPARAM},
 };
 
 pub struct WindowBaseState {
@@ -29,6 +31,7 @@ pub struct WindowBaseState {
     max_content_size: RefCell<Size>,
     delegate: Weak<dyn WindowDelegate>,
     style: RefCell<WindowStyle>,
+    pending_show_cmd: Cell<SHOW_WINDOW_CMD>,
 }
 
 const LARGE_SIZE: f64 = 64.0 * 1024.0;
@@ -43,6 +46,7 @@ impl WindowBaseState {
             min_content_size: RefCell::new(Size::wh(0.0, 0.0)),
             max_content_size: RefCell::new(Size::wh(LARGE_SIZE, LARGE_SIZE)),
             style: Default::default(),
+            pending_show_cmd: Cell::new(SW_SHOW),
         }
     }
 
@@ -55,10 +59,15 @@ impl WindowBaseState {
         F: FnOnce() + 'static,
     {
         unsafe {
-            ShowWindow(self.hwnd, SW_SHOW); // false is not an error
+            ShowWindow(self.hwnd, self.pending_show_cmd.get()); // false is not an error
         }
+        self.pending_show_cmd.set(SW_SHOW);
         callback();
         Ok(())
+    }
+
+    pub fn is_visible(&self) -> PlatformResult<bool> {
+        unsafe { Ok(IsWindowVisible(self.hwnd).into()) }
     }
 
     pub fn set_geometry(
@@ -438,6 +447,49 @@ impl WindowBaseState {
 
             self.update_dwm_frame()?;
         }
+        Ok(())
+    }
+
+    pub fn save_position_to_string(&self) -> PlatformResult<String> {
+        unsafe {
+            let mut placement = WINDOWPLACEMENT {
+                length: mem::size_of::<WINDOWPLACEMENT>() as u32,
+                ..Default::default()
+            };
+            if GetWindowPlacement(self.hwnd, &mut placement as *mut _).as_bool() {
+                let buffer = as_u8_slice(&placement);
+                Ok(base64::encode(buffer))
+            } else {
+                Ok(String::new())
+            }
+        }
+    }
+
+    pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
+        let buffer = base64::decode(&position).map_err(|e| PlatformError::OtherError {
+            error: format!("{}", e),
+        })?;
+        if buffer.len() != mem::size_of::<WINDOWPLACEMENT>() {
+            return Err(PlatformError::OtherError {
+                error: "Invalid placement string".into(),
+            });
+        }
+        let placement = buffer.as_ptr() as *mut WINDOWPLACEMENT;
+        unsafe {
+            let placement = &mut *placement;
+            if placement.length != mem::size_of::<WINDOWPLACEMENT>() as u32 {
+                return Err(PlatformError::OtherError {
+                    error: "Invalid placement string".into(),
+                });
+            }
+            if !self.is_visible()? {
+                self.pending_show_cmd.set(placement.showCmd);
+
+                placement.showCmd = SW_HIDE;
+            }
+            SetWindowPlacement(self.hwnd, placement as *const _);
+        }
+
         Ok(())
     }
 

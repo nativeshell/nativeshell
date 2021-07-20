@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, WMDecoration, WMFunction};
+use gdk::{Event, EventType, EventWindowState, WMDecoration, WMFunction};
 use glib::{Cast, ObjectExt};
 use gtk::{
     prelude::{ContainerExt, GtkWindowExt, OverlayExt, WidgetExt},
@@ -37,6 +37,14 @@ use super::{
 
 pub type PlatformWindowType = gtk::Window;
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
+struct WindowState {
+    width: i32,
+    height: i32,
+    is_maximized: bool,
+    is_fullscreen: bool,
+}
+
 pub struct PlatformWindow {
     context: Context,
     pub(super) window: gtk::Window,
@@ -58,6 +66,7 @@ pub struct PlatformWindow {
     pub(super) window_menu: LateRefCell<WindowMenu>,
     pub(super) drop_context: LateRefCell<DropContext>,
     drag_context: LateRefCell<DragContext>,
+    window_state: RefCell<WindowState>,
 }
 
 impl PlatformWindow {
@@ -87,6 +96,7 @@ impl PlatformWindow {
             window_menu: LateRefCell::new(),
             drop_context: LateRefCell::new(),
             drag_context: LateRefCell::new(),
+            window_state: RefCell::new(Default::default()),
         }
     }
 
@@ -117,28 +127,16 @@ impl PlatformWindow {
         let weak_clone = weak.clone();
         self.window.connect_size_allocate(move |_, _| {
             if let Some(s) = weak_clone.upgrade() {
-                s.window_size_in_progress.set(false);
-                if s.pending_geometry_request.borrow().is_some() {
-                    // This must be done after Gtk allocation is done, so schedule it on next
-                    // run loop turn
-                    let weak_clone = weak_clone.clone();
-                    if let Some(context) = s.context.get() {
-                        context
-                            .run_loop
-                            .borrow()
-                            .schedule_now(move || {
-                                if let Some(s) = weak_clone.upgrade() {
-                                    if let Some(req) =
-                                        s.pending_geometry_request.borrow_mut().take()
-                                    {
-                                        s._set_geometry(req, false);
-                                    }
-                                }
-                            })
-                            .detach();
-                    }
-                }
+                s.on_size_allocate();
             }
+        });
+
+        let weak_clone = weak.clone();
+        self.window.connect_window_state_event(move |_, state| {
+            if let Some(s) = weak_clone.upgrade() {
+                s.on_window_state_changed(state);
+            }
+            Inhibit(false)
         });
 
         self.window.realize();
@@ -172,6 +170,44 @@ impl PlatformWindow {
         self.connect_drag_drop_events();
 
         self.schedule_first_frame_notification();
+    }
+
+    fn on_size_allocate(&self) {
+        let mut state = self.window_state.borrow_mut();
+        if !state.is_maximized && !state.is_fullscreen {
+            let size = self.window.size();
+            state.width = size.0;
+            state.height = size.1;
+        }
+        self.window_size_in_progress.set(false);
+        if self.pending_geometry_request.borrow().is_some() {
+            // This must be done after Gtk allocation is done, so schedule it on next
+            // run loop turn
+            let weak_self = self.weak_self.borrow().clone();
+            if let Some(context) = self.context.get() {
+                context
+                    .run_loop
+                    .borrow()
+                    .schedule_now(move || {
+                        if let Some(s) = weak_self.upgrade() {
+                            if let Some(req) = s.pending_geometry_request.borrow_mut().take() {
+                                s._set_geometry(req, false);
+                            }
+                        }
+                    })
+                    .detach();
+            }
+        }
+    }
+
+    fn on_window_state_changed(&self, state: &EventWindowState) {
+        let mut window_state = self.window_state.borrow_mut();
+        window_state.is_maximized = state
+            .new_window_state()
+            .contains(gdk::WindowState::MAXIMIZED);
+        window_state.is_fullscreen = state
+            .new_window_state()
+            .contains(gdk::WindowState::FULLSCREEN);
     }
 
     fn connect_drag_drop_events(&self) {
@@ -540,6 +576,28 @@ impl PlatformWindow {
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         self.window.set_title(&title);
+        Ok(())
+    }
+
+    pub fn save_position_to_string(&self) -> PlatformResult<String> {
+        let state = self.window_state.borrow();
+        Ok(serde_json::to_string(&*state).unwrap())
+    }
+
+    pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
+        let state: WindowState =
+            serde_json::from_str(&position).map_err(|_| PlatformError::OtherError {
+                error: "Invalid window position string".into(),
+            })?;
+
+        self.window.resize(state.width, state.height);
+        if state.is_maximized {
+            self.window.maximize();
+        }
+        if state.is_fullscreen {
+            self.window.fullscreen();
+        }
+
         Ok(())
     }
 
