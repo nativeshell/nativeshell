@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nativeshell/nativeshell.dart';
 
 import 'key_interceptor.dart';
 import 'api_constants.dart';
@@ -103,6 +104,10 @@ class WindowManager {
 
   Window? getWindow(WindowHandle handle) => _windows[handle];
 
+  void haveWindowState(WindowState state) {
+    (currentWindow as _LocalWindow)._currentState = state;
+  }
+
   void _onMessage(WindowMessage message) {
     var window = _windows[message.sourceWindowHandle];
     if (window == null) {
@@ -126,11 +131,24 @@ class WindowManager {
 }
 
 class _LocalWindow extends LocalWindow {
-  _LocalWindow(WindowHandle handle,
-      {WindowHandle? parentWindow, dynamic initData})
-      : super(handle, parentWindow: parentWindow, initData: initData);
+  _LocalWindow(
+    WindowHandle handle, {
+    WindowHandle? parentWindow,
+    dynamic initData,
+  }) : super(handle, parentWindow: parentWindow, initData: initData);
+
+  WindowState? _currentState;
 
   final _dropTarget = DropTarget();
+
+  @override
+  Future<void> onCloseRequested() async {
+    if (_currentState != null) {
+      await _currentState!.windowCloseRequested();
+    } else {
+      await close();
+    }
+  }
 }
 
 int _pauseCount = 0;

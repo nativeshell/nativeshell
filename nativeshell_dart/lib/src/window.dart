@@ -158,7 +158,7 @@ class Window {
 }
 
 // Window that belongs to current isolate
-class LocalWindow extends Window {
+abstract class LocalWindow extends Window {
   LocalWindow(
     WindowHandle handle, {
     WindowHandle? parentWindow,
@@ -169,7 +169,7 @@ class LocalWindow extends Window {
   @override
   void onMessage(String message, dynamic arguments) {
     if (message == Events.windowCloseRequest) {
-      close();
+      onCloseRequested();
     }
     super.onMessage(message, arguments);
   }
@@ -184,6 +184,8 @@ class LocalWindow extends Window {
   Future<void> readyToShow() async {
     await _invokeMethod(Methods.windowReadyToShow);
   }
+
+  Future<void> onCloseRequested();
 
   Future<PopupMenuResponse> showPopupMenu(
     Menu menu,
