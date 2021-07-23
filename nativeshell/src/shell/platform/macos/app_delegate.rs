@@ -101,7 +101,7 @@ impl ApplicationDelegateManager {
         let object = autoreleasepool(|| unsafe {
             let object: id = msg_send![APPLICATION_DELEGATE_CLASS.0, new];
             let weak = Rc::downgrade(&state);
-            let state_ptr = weak.clone().into_raw() as *mut c_void;
+            let state_ptr = weak.into_raw() as *mut c_void;
             (*object).set_ivar("imState", state_ptr);
             let app = NSApplication::sharedApplication(nil);
             let () = msg_send![app, setDelegate: object];
@@ -381,7 +381,7 @@ extern "C" fn open_files(this: &Object, _sel: Sel, _sender: id, files: id) {
     unsafe {
         for i in 0..NSArray::count(files) {
             let string = from_nsstring(NSArray::objectAtIndex(files, i));
-            if let Some(url) = Url::parse(&string).ok() {
+            if let Ok(url) = Url::parse(&string) {
                 urls.push(url);
             }
         }
@@ -399,7 +399,7 @@ extern "C" fn open_urls(this: &Object, _sel: Sel, _sender: id, urls: id) {
             let string: id = msg_send![url, absoluteString];
             let string = from_nsstring(string);
 
-            if let Some(url) = Url::parse(&string).ok() {
+            if let Ok(url) = Url::parse(&string) {
                 u.push(url);
             }
         }
