@@ -1,3 +1,4 @@
+pub mod app_delegate;
 pub mod binary_messenger;
 pub mod bundle;
 mod drag_context;

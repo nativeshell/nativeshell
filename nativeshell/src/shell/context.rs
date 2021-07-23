@@ -3,7 +3,10 @@ use std::rc::{Rc, Weak};
 use crate::{util::LateRefCell, Error, Result};
 
 use super::{
-    platform::{drag_data::DragDataAdapter, engine::PlatformPlugin, init::init_platform},
+    platform::{
+        app_delegate::ApplicationDelegateManager, drag_data::DragDataAdapter,
+        engine::PlatformPlugin, init::init_platform,
+    },
     EngineManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler,
     RunLoop, WindowManager, WindowMethodChannel,
 };
@@ -33,6 +36,7 @@ pub struct ContextImpl {
     pub message_manager: LateRefCell<MessageManager>,
     pub window_method_channel: LateRefCell<WindowMethodChannel>,
     pub window_manager: LateRefCell<WindowManager>,
+    pub application_delegate_manager: LateRefCell<ApplicationDelegateManager>,
     pub(crate) menu_manager: LateRefCell<RegisteredMethodCallHandler<MenuManager>>,
     pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
 }
@@ -46,6 +50,7 @@ impl ContextImpl {
             message_manager: LateRefCell::new(),
             window_method_channel: LateRefCell::new(),
             window_manager: LateRefCell::new(),
+            application_delegate_manager: LateRefCell::new(),
             menu_manager: LateRefCell::new(),
             keyboard_map_manager: LateRefCell::new(),
         });
@@ -63,6 +68,8 @@ impl ContextImpl {
         self.window_method_channel
             .set(WindowMethodChannel::new(&context));
         self.window_manager.set(WindowManager::new(context));
+        self.application_delegate_manager
+            .set(ApplicationDelegateManager::new(context));
         self.menu_manager.set(MenuManager::new(context.weak()));
         self.keyboard_map_manager
             .set(KeyboardMapManager::new(context.weak()));
