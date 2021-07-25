@@ -1,5 +1,6 @@
+use core::panic;
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     mem::ManuallyDrop,
     rc::{Rc, Weak},
 };
@@ -85,6 +86,20 @@ pub trait ApplicationDelegate {
 struct DelegateState {
     _context: Context,
     delegate: RefCell<Option<Rc<RefCell<dyn ApplicationDelegate>>>>,
+    in_handler: Cell<bool>,
+    execute_after: RefCell<Option<Box<dyn FnOnce()>>>,
+}
+
+impl DelegateState {
+    pub fn execute_after_handler<F: FnOnce() + 'static>(&self, f: F) {
+        if !self.in_handler.get() {
+            panic!("execute_after_handler must be called during handler invocation.");
+        }
+        if self.execute_after.borrow().is_some() {
+            panic!("execute_after_handler has already been called for this handler invocation.");
+        }
+        self.execute_after.borrow_mut().replace(Box::new(f));
+    }
 }
 
 pub struct ApplicationDelegateManager {
@@ -97,6 +112,8 @@ impl ApplicationDelegateManager {
         let state = Rc::new(DelegateState {
             _context: context.weak(),
             delegate: RefCell::new(None),
+            in_handler: Cell::new(false),
+            execute_after: RefCell::new(None),
         });
         let object = autoreleasepool(|| unsafe {
             let object: id = msg_send![APPLICATION_DELEGATE_CLASS.0, new];
@@ -122,6 +139,14 @@ impl ApplicationDelegateManager {
 
     pub fn set_delegate_ref<D: ApplicationDelegate + 'static>(&self, delegate: Rc<RefCell<D>>) {
         self.state.delegate.borrow_mut().replace(delegate);
+    }
+
+    // Executes the callback right after current handler returns, in same
+    // run loop turn as current handler, but without the handler borrowed.
+    // This is useful for situations where the callback might run nested
+    // run-loop.
+    pub fn execute_after_handler<F: FnOnce() + 'static>(&self, f: F) {
+        self.state.execute_after_handler(f);
     }
 }
 
@@ -440,9 +465,15 @@ where
     F: FnOnce(&mut dyn ApplicationDelegate),
 {
     with_state(this, |state| {
+        state.in_handler.set(true);
         if let Some(delegate) = state.delegate.borrow().as_ref() {
             let delegate = &mut *delegate.borrow_mut();
             callback(delegate);
+        }
+        state.in_handler.set(false);
+        let cb = state.execute_after.borrow_mut().take();
+        if let Some(cb) = cb {
+            cb();
         }
     });
 }
@@ -454,9 +485,14 @@ where
 {
     let mut res = None::<R>;
     with_state(this, |state| {
+        state.in_handler.set(true);
         if let Some(delegate) = state.delegate.borrow().as_ref() {
             let delegate = &mut *delegate.borrow_mut();
             res.replace(callback(delegate));
+        }
+        state.in_handler.set(false);
+        if let Some(cb) = state.execute_after.borrow_mut().take() {
+            cb();
         }
     });
     res.unwrap_or_else(default)
