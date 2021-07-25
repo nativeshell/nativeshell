@@ -84,7 +84,7 @@ pub trait ApplicationDelegate {
 
 struct DelegateState {
     _context: Context,
-    delegate: RefCell<Option<Box<dyn ApplicationDelegate>>>,
+    delegate: RefCell<Option<Rc<RefCell<dyn ApplicationDelegate>>>>,
 }
 
 pub struct ApplicationDelegateManager {
@@ -114,7 +114,14 @@ impl ApplicationDelegateManager {
     }
 
     pub fn set_delegate<D: ApplicationDelegate + 'static>(&self, delegate: D) {
-        self.state.delegate.borrow_mut().replace(Box::new(delegate));
+        self.state
+            .delegate
+            .borrow_mut()
+            .replace(Rc::new(RefCell::new(delegate)));
+    }
+
+    pub fn set_delegate_ref<D: ApplicationDelegate + 'static>(&self, delegate: Rc<RefCell<D>>) {
+        self.state.delegate.borrow_mut().replace(delegate);
     }
 }
 
@@ -432,9 +439,10 @@ fn with_delegate<F>(this: &Object, callback: F)
 where
     F: FnOnce(&mut dyn ApplicationDelegate),
 {
-    with_state(this, move |state| {
-        if let Some(delegate) = state.delegate.borrow_mut().as_mut() {
-            callback(delegate.as_mut());
+    with_state(this, |state| {
+        if let Some(delegate) = state.delegate.borrow().as_ref() {
+            let delegate = &mut *delegate.borrow_mut();
+            callback(delegate);
         }
     });
 }
@@ -446,8 +454,9 @@ where
 {
     let mut res = None::<R>;
     with_state(this, |state| {
-        if let Some(delegate) = state.delegate.borrow_mut().as_mut() {
-            res.replace(callback(delegate.as_mut()));
+        if let Some(delegate) = state.delegate.borrow().as_ref() {
+            let delegate = &mut *delegate.borrow_mut();
+            res.replace(callback(delegate));
         }
     });
     res.unwrap_or_else(default)

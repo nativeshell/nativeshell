@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::shell::ContextRef;
 
 pub trait ApplicationDelegate {}
@@ -9,4 +11,5 @@ impl ApplicationDelegateManager {
         Self {}
     }
     pub fn set_delegate<D: ApplicationDelegate + 'static>(&self, _delegate: D) {}
+    pub fn set_delegate_ref<D: ApplicationDelegate + 'static>(&self, _delegate: Rc<RefCell<D>>) {}
 }
