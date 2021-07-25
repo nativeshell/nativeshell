@@ -89,7 +89,7 @@ impl<V> EventSender<V> {
         }
     }
 
-    pub fn post_event(&self, message: &V) -> Result<()> {
+    pub fn send_event(&self, message: &V) -> Result<()> {
         if let Some(context) = self.context.get() {
             let encoded = self.codec.encode_success_envelope(message);
             let engine_manager = context.engine_manager.borrow();

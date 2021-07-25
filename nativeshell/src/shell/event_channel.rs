@@ -26,7 +26,7 @@ impl EventSink {
                 .message_manager
                 .borrow()
                 .get_event_sender(self.engine_handle, &self.channel_name)
-                .post_event(message)
+                .send_event(message)
         } else {
             Err(Error::InvalidContext)
         }
