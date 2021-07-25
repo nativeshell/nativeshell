@@ -188,9 +188,7 @@ impl<'a> PluginsImpl<'a> {
         cargo_emit::rustc_link_search! {
             artifacts_dir.to_string_lossy() => "framework",
         };
-        cargo_emit::rustc_link_lib! {
-            "NativeShellPods" => "framework"
-        };
+
         for entry in fs::read_dir(frameworks_path)
             .wrap_error(FileOperation::ReadDir, || frameworks_path.into())?
         {
@@ -207,6 +205,12 @@ impl<'a> PluginsImpl<'a> {
                 fs::remove_file(&dst).wrap_error(FileOperation::Remove, || (&dst).into())?;
             }
             symlink(entry.path(), &dst)?;
+
+            if let Some(framework_name) = file_name.strip_suffix(".framework") {
+                cargo_emit::rustc_link_lib! {
+                    framework_name => "framework"
+                };
+            }
         }
         Ok(())
     }
