@@ -18,14 +18,12 @@ impl MethodInvokerProvider {
         &self,
         handle: EngineHandle,
     ) -> Option<MethodInvoker<Value>> {
-        if let Some(context) = self.context.get() {
+        self.context.get().map(|context| {
             context
                 .message_manager
                 .borrow()
                 .get_method_invoker(handle, &self.channel)
-        } else {
-            None
-        }
+        })
     }
 }
 

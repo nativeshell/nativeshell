@@ -6,10 +6,12 @@ pub mod value;
 
 mod message_channel;
 mod method_channel;
+mod sender;
 mod standard_codec;
 
 pub use message_channel::*;
 pub use method_channel::*;
+pub use sender::*;
 pub use standard_codec::*;
 
 pub struct MethodCall<V> {

@@ -1,8 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::codec::{
-    EngineMethodChannel, MessageChannel, MessageReply, MessageSender, MethodCall, MethodCallReply,
-    MethodInvoker, StandardMethodCodec, Value,
+    EngineMethodChannel, EventSender, MessageChannel, MessageReply, MessageSender, MethodCall,
+    MethodCallReply, MethodInvoker, StandardMethodCodec, Value,
 };
 
 use super::{Context, ContextRef, EngineHandle, EngineManager};
@@ -94,26 +94,31 @@ impl MessageManager {
         }
     }
 
-    pub fn get_message_sender(
-        &self,
-        engine: EngineHandle,
-        channel: &str,
-    ) -> Option<MessageSender<Value>> {
-        self.message_channels
-            .get(&engine)
-            .and_then(|e| e.get(channel))
-            .map(|e| e.sender().clone())
+    pub fn get_message_sender(&self, engine: EngineHandle, channel: &str) -> MessageSender<Value> {
+        MessageSender::new(
+            self.context.clone(),
+            engine,
+            channel.into(),
+            &StandardMethodCodec,
+        )
     }
 
-    pub fn get_method_invoker(
-        &self,
-        engine: EngineHandle,
-        channel: &str,
-    ) -> Option<MethodInvoker<Value>> {
-        self.method_channels
-            .get(&engine)
-            .and_then(|e| e.get(channel))
-            .map(|e| e.invoker().clone())
+    pub fn get_event_sender(&self, engine: EngineHandle, channel: &str) -> EventSender<Value> {
+        EventSender::new(
+            self.context.clone(),
+            engine,
+            channel.into(),
+            &StandardMethodCodec,
+        )
+    }
+
+    pub fn get_method_invoker(&self, engine: EngineHandle, channel: &str) -> MethodInvoker<Value> {
+        MethodInvoker::new(
+            self.context.clone(),
+            engine,
+            channel.into(),
+            &StandardMethodCodec,
+        )
     }
 
     pub(super) fn engine_created(&mut self, engine_manager: &EngineManager, engine: EngineHandle) {
