@@ -1,7 +1,6 @@
-use crate::{
-    shell::{BinaryMessengerReply, Context, ContextRef, EngineHandle, EngineManager},
-    Error, Result,
-};
+use std::marker::PhantomData;
+
+use crate::shell::{BinaryMessengerReply, Context, ContextRef, EngineHandle, EngineManager};
 
 use super::{MethodCall, MethodCallError, MethodCallResult, MethodCodec};
 
@@ -11,7 +10,9 @@ where
     V: 'static,
 {
     context: Context,
-    invoker: MethodInvoker<V>,
+    channel_name: String,
+    engine_handle: EngineHandle,
+    _data: PhantomData<V>,
 }
 
 impl<V> EngineMethodChannel<V> {
@@ -47,13 +48,10 @@ impl<V> EngineMethodChannel<V> {
         F: Fn(MethodCall<V>, MethodCallReply<V>) + 'static,
     {
         let res = EngineMethodChannel {
-            context: context.clone(),
-            invoker: MethodInvoker {
-                context,
-                engine_handle,
-                channel_name: channel_name.into(),
-                codec,
-            },
+            context,
+            channel_name: channel_name.into(),
+            engine_handle,
+            _data: PhantomData {},
         };
 
         let engine = engine_manager.get_engine(engine_handle);
@@ -69,59 +67,7 @@ impl<V> EngineMethodChannel<V> {
         }
         res
     }
-
-    pub fn invoker(&self) -> &MethodInvoker<V> {
-        &self.invoker
-    }
 }
-
-//
-//
-//
-
-// Cloneable invoker that can call channel methods
-#[derive(Clone)]
-pub struct MethodInvoker<V>
-where
-    V: 'static,
-{
-    context: Context,
-    engine_handle: EngineHandle,
-    channel_name: String,
-    codec: &'static dyn MethodCodec<V>,
-}
-
-impl<V> MethodInvoker<V> {
-    pub fn call_method<F>(&self, method: String, args: V, reply: F) -> Result<()>
-    where
-        F: FnOnce(MethodCallResult<V>) + 'static,
-    {
-        if let Some(context) = self.context.get() {
-            let encoded = self.codec.encode_method_call(&MethodCall { method, args });
-            let engine_manager = context.engine_manager.borrow();
-            let engine = engine_manager.get_engine(self.engine_handle);
-            if let Some(engine) = engine {
-                let codec = self.codec;
-                engine.binary_messenger().send_message(
-                    &self.channel_name,
-                    &encoded,
-                    move |message| {
-                        let message = codec.decode_envelope(message).unwrap();
-                        reply(message);
-                    },
-                )
-            } else {
-                Err(Error::InvalidEngineHandle)
-            }
-        } else {
-            Err(Error::InvalidContext)
-        }
-    }
-}
-
-//
-//
-//
 
 pub struct MethodCallReply<V>
 where
@@ -154,11 +100,11 @@ impl<V> Drop for EngineMethodChannel<V> {
     fn drop(&mut self) {
         if let Some(context) = self.context.get() {
             let engine_manager = context.engine_manager.borrow();
-            let engine = engine_manager.get_engine(self.invoker.engine_handle);
+            let engine = engine_manager.get_engine(self.engine_handle);
             if let Some(engine) = engine {
                 engine
                     .binary_messenger()
-                    .unregister_channel_handler(&self.invoker.channel_name);
+                    .unregister_channel_handler(&self.channel_name);
             }
         }
     }

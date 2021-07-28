@@ -18,14 +18,12 @@ impl MethodInvokerProvider {
         &self,
         handle: EngineHandle,
     ) -> Option<MethodInvoker<Value>> {
-        if let Some(context) = self.context.get() {
+        self.context.get().map(|context| {
             context
                 .message_manager
                 .borrow()
                 .get_method_invoker(handle, &self.channel)
-        } else {
-            None
-        }
+        })
     }
 }
 
@@ -63,8 +61,11 @@ pub struct RegisteredMethodCallHandler<T: MethodCallHandler> {
 // Active method call handler
 impl<T: MethodCallHandler> RegisteredMethodCallHandler<T> {
     fn new(context: Context, channel: &str, handler: T) -> Self {
+        Self::new_ref(context, channel, Rc::new(RefCell::new(handler)))
+    }
+
+    fn new_ref(context: Context, channel: &str, handler: Rc<RefCell<T>>) -> Self {
         let context_ref = context.get().unwrap();
-        let handler = Rc::new(RefCell::new(handler));
 
         handler
             .borrow_mut()

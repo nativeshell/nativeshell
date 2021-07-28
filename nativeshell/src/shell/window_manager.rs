@@ -196,7 +196,7 @@ impl WindowManager {
             let manager = context.message_manager.borrow();
             self.windows
                 .get(&handle)
-                .and_then(|w| manager.get_message_sender(w.engine_handle, channel_name))
+                .map(|w| manager.get_message_sender(w.engine_handle, channel_name))
         } else {
             None
         }
