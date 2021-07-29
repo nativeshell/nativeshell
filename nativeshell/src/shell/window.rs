@@ -132,6 +132,10 @@ impl Window {
         self.platform_window().hide().map_err(|e| e.into())
     }
 
+    fn activate(&self) -> Result<()> {
+        self.platform_window().activate().map_err(|e| e.into())
+    }
+
     fn set_geometry(&self, geometry: WindowGeometryRequest) -> Result<WindowGeometryFlags> {
         self.platform_window()
             .set_geometry(geometry)
@@ -294,6 +298,9 @@ impl Window {
             }
             method::window::HIDE => {
                 return Self::reply(reply, &arg, |()| self.hide());
+            }
+            method::window::ACTIVATE => {
+                return Self::reply(reply, &arg, |()| self.activate());
             }
             method::window::SET_GEOMETRY => {
                 return Self::reply(reply, &arg, |geometry| self.set_geometry(geometry));

@@ -7,16 +7,9 @@ use std::{
     time::Duration,
 };
 
-use cocoa::{
-    appkit::{
-        CGPoint, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable, NSViewWidthSizable,
-        NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask, NSWindowTabbingMode,
-    },
-    base::{id, nil, BOOL, NO, YES},
-    foundation::{
+use cocoa::{appkit::{CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable, NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask, NSWindowTabbingMode}, base::{id, nil, BOOL, NO, YES}, foundation::{
         NSArray, NSInteger, NSPoint, NSProcessInfo, NSRect, NSSize, NSString, NSUInteger,
-    },
-};
+    }};
 
 use core_foundation::base::CFRelease;
 use core_graphics::event::CGEventType;
@@ -599,6 +592,15 @@ impl PlatformWindow {
             }
         } else {
             self.show_when_ready.set(false);
+        }
+        Ok(())
+    }
+
+    pub fn activate(&self) -> PlatformResult<()> {
+        unsafe {
+            let app = NSApplication::sharedApplication(nil);
+            NSApplication::activateIgnoringOtherApps_(app, YES);
+            NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
         }
         Ok(())
     }
