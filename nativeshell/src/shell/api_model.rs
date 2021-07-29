@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::codec::Value;
 
-use super::{MenuHandle, Point, Rect, Size};
+use super::{HotKeyHandle, MenuHandle, Point, Rect, Size};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -339,4 +339,23 @@ pub struct Key {
 #[serde(rename_all = "camelCase")]
 pub struct KeyboardMap {
     pub keys: Vec<Key>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyCreateRequest {
+    pub accelerator: Accelerator,
+    pub platform_key: i64,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyDestroyRequest {
+    pub handle: HotKeyHandle,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HotKeyPressed {
+    pub handle: HotKeyHandle,
 }

@@ -7,8 +7,8 @@ use super::{
         app_delegate::ApplicationDelegateManager, drag_data::DragDataAdapter,
         engine::PlatformPlugin, init::init_platform,
     },
-    EngineManager, KeyboardMapManager, MenuManager, MessageManager, RegisteredMethodCallHandler,
-    RunLoop, WindowManager, WindowMethodChannel,
+    EngineManager, HotKeyManager, KeyboardMapManager, MenuManager, MessageManager,
+    RegisteredMethodCallHandler, RunLoop, WindowManager, WindowMethodChannel,
 };
 
 pub struct ContextOptions {
@@ -39,6 +39,7 @@ pub struct ContextImpl {
     pub application_delegate_manager: LateRefCell<ApplicationDelegateManager>,
     pub(crate) menu_manager: LateRefCell<RegisteredMethodCallHandler<MenuManager>>,
     pub(crate) keyboard_map_manager: LateRefCell<RegisteredMethodCallHandler<KeyboardMapManager>>,
+    pub(crate) hot_key_manager: LateRefCell<RegisteredMethodCallHandler<HotKeyManager>>,
 }
 
 impl ContextImpl {
@@ -53,6 +54,7 @@ impl ContextImpl {
             application_delegate_manager: LateRefCell::new(),
             menu_manager: LateRefCell::new(),
             keyboard_map_manager: LateRefCell::new(),
+            hot_key_manager: LateRefCell::new(),
         });
         let res = ContextRef { context: res };
         res.initialize(&res)?;
@@ -73,6 +75,7 @@ impl ContextImpl {
         self.menu_manager.set(MenuManager::new(context.weak()));
         self.keyboard_map_manager
             .set(KeyboardMapManager::new(context.weak()));
+        self.hot_key_manager.set(HotKeyManager::new(context.weak()));
 
         #[cfg(debug_assertions)]
         {

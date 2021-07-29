@@ -8,6 +8,7 @@ class Channels {
 
   static final menuManager = 'nativeshell/menu-manager';
   static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
+  static final hotKeyManager = 'nativeshell/hot-key-manager';
 }
 
 class Events {
@@ -73,6 +74,11 @@ class Methods {
   // KeyboardMap
   static final keyboardMapGet = 'KeyboardMap.get';
   static final keyboardMapOnChanged = 'KeyboardMap.onChanged';
+
+  // HotKey
+  static final hotKeyCreate = 'HotKey.create';
+  static final hotKeyDestroy = 'HotKey.destroy';
+  static final hotKeyOnPressed = 'HotKey.onPressed';
 }
 
 class Keys {
