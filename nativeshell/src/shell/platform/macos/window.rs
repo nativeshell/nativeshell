@@ -927,6 +927,11 @@ lazy_static! {
         );
 
         decl.add_method(
+            sel!(canBecomeKeyWindow),
+            can_become_key_window as extern "C" fn(&Object, Sel) -> BOOL,
+        );
+
+        decl.add_method(
             sel!(draggingEntered:),
             dragging_entered as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
         );
@@ -1126,6 +1131,11 @@ extern "C" fn layout_if_needed(this: &mut Object, _sel: Sel) {
         let superclass = superclass(this);
         let () = msg_send![super(this, superclass), layoutIfNeeded];
     }
+}
+
+extern "C" fn can_become_key_window(_this: &Object, _: Sel) -> BOOL {
+    // needed for frameless windows to accept keyboard input.
+    YES
 }
 
 extern "C" fn send_event(this: &mut Object, _: Sel, e: id) {
