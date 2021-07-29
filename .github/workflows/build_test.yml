@@ -25,7 +25,7 @@ jobs:
           - release
         include:
           - configuration: debug
-            cargo_args:
+            cargo_args: ""
           - configuration: release
             cargo_args: --release
 
