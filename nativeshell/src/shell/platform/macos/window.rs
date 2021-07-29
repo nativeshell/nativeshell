@@ -7,9 +7,17 @@ use std::{
     time::Duration,
 };
 
-use cocoa::{appkit::{CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable, NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask, NSWindowTabbingMode}, base::{id, nil, BOOL, NO, YES}, foundation::{
+use cocoa::{
+    appkit::{
+        CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
+        NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+        NSWindowTabbingMode,
+    },
+    base::{id, nil, BOOL, NO, YES},
+    foundation::{
         NSArray, NSInteger, NSPoint, NSProcessInfo, NSRect, NSSize, NSString, NSUInteger,
-    }};
+    },
+};
 
 use core_foundation::base::CFRelease;
 use core_graphics::event::CGEventType;
