@@ -10,7 +10,7 @@ pub(crate) mod channel {
         pub const DRAG_SOURCE: &str = ".window.drag-source";
     }
 
-    // Flutter channel for mananing platform menus
+    // Flutter channel for managing platform menus
     pub const MENU_MANAGER: &str = "nativeshell/menu-manager";
 
     // Flutter channel for keyboard layout notifications
