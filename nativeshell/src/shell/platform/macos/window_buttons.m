@@ -7,6 +7,13 @@
 
 @end
 
+@interface IMWindowButtons : NSView
+
+- (void)setEnabled:(BOOL)enabled;
+- (void)setOrigin:(NSPoint)origin;
+
+@end
+
 @implementation IMContentView
 
 - (BOOL)isFlipped {
@@ -18,6 +25,15 @@
 
 - (BOOL)acceptsFirstResponder {
   return YES;
+}
+
+- (BOOL)becomeFirstResponder {
+  for (NSView *view in self.subviews) {
+    if (![view isKindOfClass:[IMWindowButtons class]]) {
+      return [self.window makeFirstResponder:view];
+    }
+  }
+  return NO;
 }
 
 - (BOOL)isOpaque {
@@ -53,13 +69,6 @@
 - (void)mouseDown:(NSEvent *)event {
   [super mouseDown:event];
 }
-
-@end
-
-@interface IMWindowButtons : NSView
-
-- (void)setEnabled:(BOOL)enabled;
-- (void)setOrigin:(NSPoint)origin;
 
 @end
 
