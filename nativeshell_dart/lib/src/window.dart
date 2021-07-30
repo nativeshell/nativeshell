@@ -61,6 +61,10 @@ class Window {
     await _invokeMethod(Methods.windowHide);
   }
 
+  Future<void> activate() async {
+    await _invokeMethod(Methods.windowActivate);
+  }
+
   Future<GeometryFlags> setGeometry(Geometry request,
       [GeometryPreference preference =
           GeometryPreference.preferContent]) async {
