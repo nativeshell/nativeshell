@@ -75,7 +75,6 @@ impl PlatformHotKeyManager {
         self.hot_keys.borrow_mut().insert(handle, engine);
         unsafe {
             let vk = MapVirtualKeyW(virtual_key as u32, MAPVK_VSC_TO_VK);
-            println!("Register {:?} {:?}", modifiers, vk);
             RegisterHotKey(self.hwnd(), handle.0 as i32, modifiers, vk as u32);
         }
         Ok(())
