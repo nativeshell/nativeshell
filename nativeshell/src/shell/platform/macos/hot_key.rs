@@ -90,7 +90,7 @@ impl PlatformHotKeyManager {
         }
     }
 
-    pub(crate) fn create_hot_key(
+    pub fn create_hot_key(
         &self,
         accelerator: Accelerator,
         virtual_key: i64,
@@ -143,7 +143,7 @@ impl PlatformHotKeyManager {
         Ok(())
     }
 
-    pub(crate) fn destroy_hot_key(&self, handle: HotKeyHandle) -> PlatformResult<()> {
+    pub fn destroy_hot_key(&self, handle: HotKeyHandle) -> PlatformResult<()> {
         let mut hot_keys = self.hot_keys.borrow_mut();
 
         let hot_key_id = hot_keys.iter().find(|f| f.1.handle == handle).map(|e| *e.0);
@@ -158,7 +158,7 @@ impl PlatformHotKeyManager {
         Ok(())
     }
 
-    pub(crate) fn engine_destroyed(&self, engine: EngineHandle) -> PlatformResult<()> {
+    pub fn engine_destroyed(&self, engine: EngineHandle) -> PlatformResult<()> {
         let hot_keys: Vec<HotKeyHandle> = self
             .hot_keys
             .borrow()
