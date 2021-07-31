@@ -101,6 +101,14 @@ impl EngineManager {
         self.engines.keys().cloned().collect()
     }
 
+    pub fn shut_down(&mut self) -> Result<()> {
+        let engines = self.get_all_engines();
+        for engine in engines {
+            self.remove_engine(engine)?;
+        }
+        Ok(())
+    }
+
     // Posts message on all engines
     pub fn broadcast_message(&self, channel: &str, message: &[u8]) -> Result<()> {
         for engine in self.engines.values() {

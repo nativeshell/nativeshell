@@ -84,7 +84,7 @@ pub trait ApplicationDelegate {
 }
 
 struct DelegateState {
-    _context: Context,
+    context: Context,
     delegate: RefCell<Option<Rc<RefCell<dyn ApplicationDelegate>>>>,
     in_handler: Cell<bool>,
     execute_after: RefCell<Option<Box<dyn FnOnce()>>>,
@@ -110,7 +110,7 @@ pub struct ApplicationDelegateManager {
 impl ApplicationDelegateManager {
     pub fn new(context: &ContextRef) -> Self {
         let state = Rc::new(DelegateState {
-            _context: context.weak(),
+            context: context.weak(),
             delegate: RefCell::new(None),
             in_handler: Cell::new(false),
             execute_after: RefCell::new(None),
@@ -332,6 +332,11 @@ extern "C" fn should_terminate_after_last_window_closed(
 extern "C" fn will_terminate(this: &Object, _sel: Sel, _notification: id) {
     with_delegate(this, |delegate| {
         delegate.application_will_terminate();
+    });
+    with_state(this, |state| {
+        if let Some(context) = state.context.get() {
+            context.engine_manager.borrow_mut().shut_down().ok();
+        }
     });
 }
 

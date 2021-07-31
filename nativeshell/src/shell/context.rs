@@ -93,6 +93,12 @@ impl ContextImpl {
     }
 }
 
+impl Drop for ContextImpl {
+    fn drop(&mut self) {
+        self.engine_manager.borrow_mut().shut_down().ok();
+    }
+}
+
 // Non owning cloneable reference to a Context. Call Context::get() to access the context.
 #[derive(Clone)]
 pub struct Context {
