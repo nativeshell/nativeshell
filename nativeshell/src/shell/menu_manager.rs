@@ -97,7 +97,7 @@ impl MenuManager {
     }
 
     fn invoker_for_menu(&self, menu_handle: MenuHandle) -> Option<MethodInvoker<Value>> {
-        self.platform_menu_map.get(&menu_handle).and_then(|e| {
+        self.platform_menu_map.get(&menu_handle).map(|e| {
             self.invoker_provider
                 .get_method_invoker_for_engine(e.engine)
         })
