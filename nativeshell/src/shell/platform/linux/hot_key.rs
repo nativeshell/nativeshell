@@ -1,13 +1,15 @@
 use std::{cell::RefCell, rc::Weak};
 
-use crate::shell::{api_model::Accelerator, EngineHandle, HotKeyHandle, HotKeyManagerDelegate};
+use crate::shell::{
+    api_model::Accelerator, Context, EngineHandle, HotKeyHandle, HotKeyManagerDelegate,
+};
 
 use super::error::PlatformResult;
 
 pub(crate) struct PlatformHotKeyManager {}
 
 impl PlatformHotKeyManager {
-    pub fn new(delegate: Weak<RefCell<dyn HotKeyManagerDelegate>>) -> Self {
+    pub fn new(context: Context, delegate: Weak<RefCell<dyn HotKeyManagerDelegate>>) -> Self {
         Self {}
     }
 

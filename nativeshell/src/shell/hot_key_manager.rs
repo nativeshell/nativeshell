@@ -20,6 +20,7 @@ use super::{
 };
 
 pub struct HotKeyManager {
+    context: Context,
     platform_manager: Late<Rc<PlatformHotKeyManager>>,
     next_handle: HotKeyHandle,
     invoker_provider: Late<MethodInvokerProvider>,
@@ -35,6 +36,7 @@ pub trait HotKeyManagerDelegate {
 impl HotKeyManager {
     pub(super) fn new(context: Context) -> RegisteredMethodCallHandler<Self> {
         Self {
+            context: context.clone(),
             platform_manager: Late::new(),
             next_handle: HotKeyHandle(1),
             invoker_provider: Late::new(),
@@ -106,7 +108,10 @@ impl MethodCallHandler for HotKeyManager {
     fn assign_weak_self(&mut self, weak_self: std::rc::Weak<std::cell::RefCell<Self>>) {
         let delegate: Weak<RefCell<dyn HotKeyManagerDelegate>> = weak_self;
         self.platform_manager
-            .set(Rc::new(PlatformHotKeyManager::new(delegate)));
+            .set(Rc::new(PlatformHotKeyManager::new(
+                self.context.clone(),
+                delegate,
+            )));
         self.platform_manager
             .assign_weak_self(Rc::downgrade(&self.platform_manager));
     }

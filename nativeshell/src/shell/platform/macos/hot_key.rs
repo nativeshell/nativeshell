@@ -14,7 +14,7 @@ use crate::{
         platform::platform_impl::hot_key_sys::{
             kEventParamDirectObject, typeEventHotKeyID, GetEventParameter,
         },
-        EngineHandle, HotKeyHandle, HotKeyManagerDelegate,
+        Context, EngineHandle, HotKeyHandle, HotKeyManagerDelegate,
     },
     util::LateRefCell,
 };
@@ -45,7 +45,7 @@ pub(crate) struct PlatformHotKeyManager {
 }
 
 impl PlatformHotKeyManager {
-    pub fn new(delegate: Weak<RefCell<dyn HotKeyManagerDelegate>>) -> Self {
+    pub fn new(_context: Context, delegate: Weak<RefCell<dyn HotKeyManagerDelegate>>) -> Self {
         Self {
             delegate,
             weak_self: LateRefCell::new(),
