@@ -157,6 +157,25 @@ impl PlatformHotKeyManager {
 
         Ok(())
     }
+
+    pub(crate) fn engine_destroyed(&self, engine: EngineHandle) -> PlatformResult<()> {
+        let hot_keys: Vec<HotKeyHandle> = self
+            .hot_keys
+            .borrow()
+            .values()
+            .filter_map(|v| {
+                if v.engine == engine {
+                    Some(v.handle)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for key in hot_keys {
+            self.destroy_hot_key(key)?;
+        }
+        Ok(())
+    }
 }
 
 impl Drop for PlatformHotKeyManager {

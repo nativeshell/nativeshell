@@ -114,4 +114,8 @@ impl MethodCallHandler for HotKeyManager {
     fn assign_invoker_provider(&mut self, provider: MethodInvokerProvider) {
         self.invoker_provider.set(provider);
     }
+
+    fn on_engine_destroyed(&mut self, engine: EngineHandle) {
+        self.platform_manager.engine_destroyed(engine).ok_log();
+    }
 }
