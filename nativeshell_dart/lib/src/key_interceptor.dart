@@ -11,8 +11,9 @@ enum InterceptorStage {
 class KeyInterceptor {
   KeyInterceptor._() {
     WidgetsFlutterBinding.ensureInitialized();
-    _previousHandler = RawKeyboard.instance.keyEventHandler;
-    RawKeyboard.instance.keyEventHandler = _onRawKeyEvent;
+    _previousHandler =
+        ServicesBinding.instance!.keyEventManager.keyMessageHandler;
+    ServicesBinding.instance!.keyEventManager.keyMessageHandler = _onMessage;
   }
 
   void registerHandler(
@@ -42,19 +43,19 @@ class KeyInterceptor {
   final _handlersPre = <KeyInterceptorHandler>[];
   final _handlersPost = <KeyInterceptorHandler>[];
 
-  RawKeyEventHandler? _previousHandler;
+  KeyMessageHandler? _previousHandler;
 
-  bool _onRawKeyEvent(RawKeyEvent event) {
+  bool _onMessage(KeyMessage message) {
     for (final handler in List<KeyInterceptorHandler>.from(_handlersPre)) {
-      if (handler(event)) {
+      if (handler(message.rawEvent)) {
         return true;
       }
     }
-    if (_previousHandler != null && _previousHandler!(event)) {
+    if (_previousHandler != null && _previousHandler!(message)) {
       return true;
     }
     for (final handler in List<KeyInterceptorHandler>.from(_handlersPost)) {
-      if (handler(event)) {
+      if (handler(message.rawEvent)) {
         return true;
       }
     }
