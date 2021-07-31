@@ -3,7 +3,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use crate::codec::{MethodCall, MethodCallReply, MethodInvoker, Value};
+use crate::codec::{MethodCall, MethodCallReply, MethodInvoker, StandardMethodCodec, Value};
 
 use super::{Context, EngineHandle, Handle};
 
@@ -14,16 +14,13 @@ pub struct MethodInvokerProvider {
 }
 
 impl MethodInvokerProvider {
-    pub fn get_method_invoker_for_engine(
-        &self,
-        handle: EngineHandle,
-    ) -> Option<MethodInvoker<Value>> {
-        self.context.get().map(|context| {
-            context
-                .message_manager
-                .borrow()
-                .get_method_invoker(handle, &self.channel)
-        })
+    pub fn get_method_invoker_for_engine(&self, handle: EngineHandle) -> MethodInvoker<Value> {
+        MethodInvoker::new(
+            self.context.clone(),
+            handle,
+            self.channel.clone(),
+            &StandardMethodCodec,
+        )
     }
 }
 
