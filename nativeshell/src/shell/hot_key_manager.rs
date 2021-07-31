@@ -67,15 +67,14 @@ impl HotKeyManager {
 
 impl HotKeyManagerDelegate for HotKeyManager {
     fn on_hot_key_pressed(&self, handle: HotKeyHandle, engine: EngineHandle) {
-        if let Some(invoker) = self.invoker_provider.get_method_invoker_for_engine(engine) {
-            invoker
-                .call_method(
-                    method::hot_key::ON_PRESSED.into(),
-                    to_value(&HotKeyPressed { handle }).unwrap(),
-                    |_| {},
-                )
-                .ok_log();
-        }
+        let invoker = self.invoker_provider.get_method_invoker_for_engine(engine);
+        invoker
+            .call_method(
+                method::hot_key::ON_PRESSED.into(),
+                to_value(&HotKeyPressed { handle }).unwrap(),
+                |_| {},
+            )
+            .ok_log();
     }
 }
 
