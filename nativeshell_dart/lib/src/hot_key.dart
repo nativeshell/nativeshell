@@ -27,7 +27,7 @@ class HotKey {
   }
 
   void _checkDisposed() {
-    assert(!_disposed, 'StatusItem is already disposed.');
+    assert(!_disposed, 'HotKey is already disposed.');
   }
 
   bool _disposed = false;
