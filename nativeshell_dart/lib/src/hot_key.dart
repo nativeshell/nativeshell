@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:nativeshell/nativeshell.dart';
 import 'package:nativeshell/src/api_constants.dart';
 
+// Global HotKey
+// Registered callback will be invoked when accelerator is pressed regardless
+// of whether application has keyboard focus or not.
+// Supported on macOS and Windows.
 class HotKey {
   HotKey._({
     required this.handle,
