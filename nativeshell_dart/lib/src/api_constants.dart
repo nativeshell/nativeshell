@@ -31,6 +31,7 @@ class Methods {
   static final windowShowModal = 'Window.showModal';
   static final windowReadyToShow = 'Window.readyToShow';
   static final windowHide = 'Window.hide';
+  static final windowActivate = 'Window.activate';
   static final windowClose = 'Window.close';
   static final windowCloseWithResult = 'Window.closeWithResult';
 

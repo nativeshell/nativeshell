@@ -9,8 +9,9 @@ use std::{
 
 use cocoa::{
     appkit::{
-        CGPoint, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable, NSViewWidthSizable,
-        NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask, NSWindowTabbingMode,
+        CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
+        NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+        NSWindowTabbingMode,
     },
     base::{id, nil, BOOL, NO, YES},
     foundation::{
@@ -601,6 +602,15 @@ impl PlatformWindow {
             self.show_when_ready.set(false);
         }
         Ok(())
+    }
+
+    pub fn activate(&self) -> PlatformResult<bool> {
+        unsafe {
+            let app = NSApplication::sharedApplication(nil);
+            NSApplication::activateIgnoringOtherApps_(app, YES);
+            NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
+        }
+        Ok(true)
     }
 
     unsafe fn synthetize_mouse_up_event(&self) {

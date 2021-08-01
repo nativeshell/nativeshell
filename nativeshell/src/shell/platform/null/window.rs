@@ -57,6 +57,10 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
+    pub fn activate(&self) -> PlatformResult<bool> {
+        Err(PlatformError::NotImplemented)
+    }
+
     pub fn show_modal<F>(&self, done_callback: F)
     where
         F: FnOnce(PlatformResult<Value>) + 'static,

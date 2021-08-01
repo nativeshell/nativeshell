@@ -383,6 +383,11 @@ impl PlatformWindow {
         Ok(())
     }
 
+    pub fn activate(&self) -> PlatformResult<bool> {
+        self.window.present();
+        Ok(true)
+    }
+
     pub fn ready_to_show(&self) -> PlatformResult<()> {
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {

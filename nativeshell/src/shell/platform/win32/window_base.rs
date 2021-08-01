@@ -54,6 +54,10 @@ impl WindowBaseState {
         unsafe { ShowWindow(self.hwnd, SW_HIDE).as_platform_result() }
     }
 
+    pub fn activate(&self) -> PlatformResult<bool> {
+        unsafe { Ok(SetForegroundWindow(self.hwnd).into()) }
+    }
+
     pub fn show<F>(&self, callback: F) -> PlatformResult<()>
     where
         F: FnOnce() + 'static,
