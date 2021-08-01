@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:nativeshell/nativeshell.dart';
 
 import 'mutex.dart';
 import 'util.dart';
@@ -74,10 +75,21 @@ class MenuState {
         }
       }
 
+      // Listen for keyboard layout changes on top level menu. This is necessary
+      // to refresh menu if using accelerators with PhysicalKeys to display
+      // correct shortcut to user.
+      if (_materializeParent == null) {
+        KeyboardMap.onChange.addListener(_keyboardLayoutChanged);
+      }
+
       _currentHandle = await _materializer!
           .createOrUpdateMenuPost(this, _currentElements, handle);
       return _currentHandle!;
     }
+  }
+
+  void _keyboardLayoutChanged() {
+    update();
   }
 
   Future<void> _materializeSubmenu(
@@ -95,6 +107,10 @@ class MenuState {
   MenuMaterializer? _materializer;
 
   Future<void> _unmaterializeLocked() {
+    if (_materializeParent == null) {
+      assert(this == _transferTarget); // top level menu should not be traferred
+      KeyboardMap.onChange.removeListener(_keyboardLayoutChanged);
+    }
     return _transferTarget._doUnmaterialize();
   }
 
@@ -237,14 +253,21 @@ class MenuState {
         existing = currentByMenu.remove(i.submenu);
 
         // otherwise take item with same name but possible different submenu,
-        // as long as new item has not bee nmaterialized
+        // as long as new item has not been materialized
         if (i.submenu?.state.currentHandle == null) {
           existing ??= currentByItem.remove(i);
         }
       }
       if (existing != null) {
-        res.add(MenuElement(id: existing.id, item: i));
-        currentByItem.remove(i);
+        // We have existing item, but make sure that we can actually reuse it.
+        // It must match perfectly and the accelerator label must not have
+        // changed (i.e. due to keyboard layout change).
+        final id = existing.item == i &&
+                existing.acceleratorLabel == i.accelerator?.label
+            ? existing.id
+            : _nextItemId++;
+        res.add(MenuElement(id: id, item: i));
+        currentByItem.remove(existing.item);
 
         if (existing.item.submenu != null) {
           if (!identical(existing.item.submenu, i.submenu)) {
@@ -307,11 +330,12 @@ class MenuElement {
   MenuElement({
     required this.id,
     required this.item,
-  });
+  }) : acceleratorLabel = item.accelerator?.label;
 
   final int id;
 
   final MenuItem item;
+  final String? acceleratorLabel;
 
   @override
   bool operator ==(Object other) =>
