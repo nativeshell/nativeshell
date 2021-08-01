@@ -604,13 +604,13 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn activate(&self) -> PlatformResult<()> {
+    pub fn activate(&self) -> PlatformResult<bool> {
         unsafe {
             let app = NSApplication::sharedApplication(nil);
             NSApplication::activateIgnoringOtherApps_(app, YES);
             NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
         }
-        Ok(())
+        Ok(true)
     }
 
     unsafe fn synthetize_mouse_up_event(&self) {

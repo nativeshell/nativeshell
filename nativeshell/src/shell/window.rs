@@ -132,7 +132,7 @@ impl Window {
         self.platform_window().hide().map_err(|e| e.into())
     }
 
-    fn activate(&self) -> Result<()> {
+    fn activate(&self) -> Result<bool> {
         self.platform_window().activate().map_err(|e| e.into())
     }
 
