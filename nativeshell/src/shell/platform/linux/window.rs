@@ -384,6 +384,7 @@ impl PlatformWindow {
     }
 
     pub fn activate(&self) -> PlatformResult<bool> {
+        self.window.present();
         Ok(true)
     }
 
