@@ -7,10 +7,16 @@ import 'menu.dart';
 class AcceleratorKey {
   AcceleratorKey(this.key, this.label);
 
-  final LogicalKeyboardKey key;
+  final KeyboardKey key;
   final String label;
 }
 
+// Defines a keyboard shortcut.
+// Can be conveniently constructed:
+//
+// import 'package:nativeshell/accelerators.dart';
+// final accelerator1 = cmdOrCtrl + shift + 'e';
+// final accelerator2 = alt + f1;
 class Accelerator {
   const Accelerator({
     this.key,
@@ -68,8 +74,10 @@ class Accelerator {
   bool matches(RawKeyEvent event) {
     final key = this.key?.key;
     if (key != null) {
-      final physicalKey =
-          KeyboardMap.current().getPhysicalKeyForLogicalKey(key);
+      final physicalKey = key is PhysicalKeyboardKey
+          ? key
+          : KeyboardMap.current()
+              .getPhysicalKeyForLogicalKey(key as LogicalKeyboardKey);
       return event.isAltPressed == alt &&
           event.isControlPressed == control &&
           event.isMetaPressed == meta &&
