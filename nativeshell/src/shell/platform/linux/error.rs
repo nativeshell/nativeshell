@@ -3,6 +3,7 @@ use std::fmt::Display;
 #[derive(Debug, Clone)]
 pub enum PlatformError {
     NotImplemented,
+    NotAvailable,
     UnknownError,
     GLibError { message: String },
     OtherError { error: String },
@@ -15,6 +16,9 @@ impl Display for PlatformError {
         match self {
             PlatformError::NotImplemented => {
                 write!(f, "Not Implemented")
+            }
+            PlatformError::NotAvailable => {
+                write!(f, "Not Available")
             }
             PlatformError::UnknownError => {
                 write!(f, "Unknown Error")

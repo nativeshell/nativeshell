@@ -68,8 +68,8 @@ fn main() {
             Windows::Win32::UI::KeyboardAndMouseInput::{
                 SetFocus, EnableWindow, IsWindowEnabled, SetActiveWindow, ReleaseCapture, SetCapture,
                 GetCapture, GetAsyncKeyState, GetKeyboardState, GetKeyState, TrackMouseEvent, ToUnicode,
-                ToUnicodeEx, MapVirtualKeyW, ToAscii, GetKeyboardLayout, GetKeyboardLayoutList,
-                TRACKMOUSEEVENT,
+                ToUnicodeEx, MapVirtualKeyW, ToAscii, GetKeyboardLayout, GetKeyboardLayoutList, RegisterHotKey,
+                UnregisterHotKey, TRACKMOUSEEVENT,
             },
             Windows::Win32::UI::Shell::{
                 SetWindowSubclass, RemoveWindowSubclass, DefSubclassProc, IDropTargetHelper, IDragSourceHelper,
@@ -89,7 +89,7 @@ fn main() {
                 WM_CHANGEUISTATE, WM_UPDATEUISTATE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYUP, WM_SETFOCUS, WM_DWMCOMPOSITIONCHANGED,
                 WM_NCLBUTTONDOWN, WM_ERASEBKGND, WM_ENTERSIZEMOVE, WM_EXITSIZEMOVE,
                 WM_QUERYUISTATE, WM_SYSCOMMAND, WM_INITMENUPOPUP, WM_INPUTLANGCHANGE,
-                MK_LBUTTON,
+                MK_LBUTTON, WM_HOTKEY,
                 // Methods
                 GetSystemMenu, EnableMenuItem, CreatePopupMenu, DestroyMenu, AppendMenuW,
                 TrackPopupMenuEx, InsertMenuItemW, RemoveMenu, SetMenuItemInfoW, SetMenuInfo, GetMenuInfo,

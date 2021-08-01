@@ -3,6 +3,7 @@ pub mod binary_messenger;
 pub mod drag_data;
 pub mod engine;
 pub mod error;
+pub mod hot_key;
 pub mod init;
 pub mod keyboard_map;
 pub mod menu;
