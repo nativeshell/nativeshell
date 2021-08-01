@@ -4,13 +4,6 @@ import 'package:nativeshell/nativeshell.dart';
 import 'key_interceptor.dart';
 import 'menu.dart';
 
-class AcceleratorKey {
-  AcceleratorKey(this.key, this.label);
-
-  final KeyboardKey key;
-  final String label;
-}
-
 // Defines a keyboard shortcut.
 // Can be conveniently constructed:
 //
@@ -26,15 +19,32 @@ class Accelerator {
     this.shift = false,
   });
 
-  final AcceleratorKey? key;
+  final KeyboardKey? key;
   final bool alt;
   final bool control;
   final bool meta;
   final bool shift;
 
+  String get label {
+    final k = key;
+    if (k is LogicalKeyboardKey) {
+      return k.keyLabel;
+    } else if (k is PhysicalKeyboardKey) {
+      final logical = KeyboardMap.current().getLogicalKeyForPhysicalKey(k);
+      if (logical != null) {
+        return logical.keyLabel;
+      }
+    }
+    return '??';
+  }
+
   Accelerator operator +(dynamic that) {
     if (that is num) {
       that = '$that';
+    }
+
+    if (that is KeyboardKey) {
+      that = Accelerator(key: that);
     }
 
     if (that is String) {
@@ -42,9 +52,7 @@ class Accelerator {
       final lower = that.toLowerCase();
       return this +
           Accelerator(
-              key: AcceleratorKey(
-                  _keyForCodeUnit(lower.codeUnits[0]), that.toUpperCase()),
-              shift: lower != that);
+              key: _keyForCodeUnit(lower.codeUnits[0]), shift: lower != that);
     } else if (that is Accelerator) {
       return Accelerator(
           key: that.key ?? key,
@@ -66,13 +74,13 @@ class Accelerator {
           control == other.control &&
           meta == other.meta &&
           shift == other.shift &&
-          key?.key == other.key?.key);
+          key == other.key);
 
   @override
-  int get hashCode => hashValues(alt, control, meta, shift, key?.key);
+  int get hashCode => hashValues(alt, control, meta, shift, key);
 
   bool matches(RawKeyEvent event) {
-    final key = this.key?.key;
+    final key = this.key;
     if (key != null) {
       final physicalKey = key is PhysicalKeyboardKey
           ? key
@@ -99,7 +107,7 @@ class Accelerator {
 
   dynamic serialize() => key != null
       ? {
-          'label': key!.label,
+          'label': label,
           'alt': alt,
           'shift': shift,
           'meta': meta,
