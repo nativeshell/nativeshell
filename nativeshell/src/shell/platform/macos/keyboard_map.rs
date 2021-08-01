@@ -211,6 +211,7 @@ impl PlatformKeyboardMap {
     }
 
     fn on_layout_changed(&self) {
+        self.current_layout.borrow_mut().take();
         if let Some(delegate) = self.delegate.upgrade() {
             delegate.borrow().keyboard_map_did_change();
         }
