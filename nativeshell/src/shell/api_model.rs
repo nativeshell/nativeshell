@@ -332,6 +332,7 @@ pub struct Key {
     pub logical_shift: Option<i64>,
     pub logical_alt: Option<i64>,
     pub logical_alt_shift: Option<i64>,
+    pub logical_meta: Option<i64>,
 }
 
 #[derive(serde::Serialize, Debug, Clone)]

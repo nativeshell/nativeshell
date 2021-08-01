@@ -180,6 +180,7 @@ impl PlatformKeyboardMap {
             logical_shift: None,
             logical_alt: None,
             logical_alt_shift: None,
+            logical_meta: None,
         };
 
         let virtual_code = MapVirtualKeyW(entry.platform as u32, MAPVK_VSC_TO_VK);

@@ -30,7 +30,12 @@ class Accelerator {
     if (k is LogicalKeyboardKey) {
       return k.keyLabel;
     } else if (k is PhysicalKeyboardKey) {
-      final logical = KeyboardMap.current().getLogicalKeyForPhysicalKey(k);
+      // on macOS CMD (meta) on some keyboards (SVK) resulsts in US key code.
+      // So we need to take that into account when generating labels
+      // (used for key equivalents on NSMenuItem) otherwise the shortcut won't
+      // be matched.
+      final logical =
+          KeyboardMap.current().getLogicalKeyForPhysicalKey(k, meta: meta);
       if (logical != null) {
         return logical.keyLabel;
       }

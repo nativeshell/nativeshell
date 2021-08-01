@@ -89,12 +89,14 @@ impl PlatformKeyboardMap {
                 logical_shift: None,
                 logical_alt: None,
                 logical_alt_shift: None,
+                logical_meta: None,
             },
             None => {
                 let mut logical_key = None::<i64>;
                 let mut logical_key_shift = None::<i64>;
                 let mut logical_key_alt = None::<i64>;
                 let mut logical_key_alt_shift = None::<i64>;
+                let mut logical_key_cmd = None::<i64>;
 
                 let mut dead_key_state: u32 = 0;
                 let mut unichar: u16 = 0;
@@ -102,20 +104,11 @@ impl PlatformKeyboardMap {
 
                 let layout = CFDataGetBytePtr(layout_data as CFDataRef);
 
-                // On some keyboard (SVK), using any modifier keys when specifying keyboard
-                // shortcut results in results in US layout key matched. Therefore when getting the
-                // "base" value of we simulate CMD key press.
-                // Example: ] key on SVK keyboard is ä, but when specifying NSMenuItem key equivalent
-                // CMD + ä with SVK keybaord is never matched. The equivalent needs to be CMD + ].
-                // On the other hand ' key on French AZERTY is ù, and CMD + ù key equivalent
-                // is matched. That's possibly because UCKeyTranslate CMD + ] on SVK keyboard returns ],
-                // whereas on French AZERTY UCKeyTranslate CMD + ' returns ù.
-                // This applies also for other modifiers (shift/alt).
                 UCKeyTranslate(
                     layout as *mut _,
                     entry.platform as u16,
                     kUCKeyActionDisplay,
-                    (cmdKey >> 8) & 0xFF,
+                    0,
                     LMGetKbdType(),
                     kUCKeyTranslateNoDeadKeysMask,
                     &mut dead_key_state as *mut _,
@@ -179,6 +172,31 @@ impl PlatformKeyboardMap {
                     logical_key_alt_shift.replace(unichar as i64);
                 }
 
+                // On some keyboard (SVK), using CMD modifier keys when specifying keyboard
+                // shortcut results in results in US layout key matched. So we need to know
+                // the value with CMD modifier as well.
+                // Example: ] key on SVK keyboard is ä, but when specifying NSMenuItem key equivalent
+                // CMD + ä with SVK keybaord is never matched. The equivalent needs to be CMD + ].
+                // On the other hand ' key on French AZERTY is ù, and CMD + ù key equivalent
+                // is matched. That's possibly because UCKeyTranslate CMD + ] on SVK keyboard returns ],
+                // whereas on French AZERTY UCKeyTranslate CMD + ' returns ù.
+                UCKeyTranslate(
+                    layout as *mut _,
+                    entry.platform as u16,
+                    kUCKeyActionDisplay,
+                    (cmdKey >> 8) & 0xFF,
+                    LMGetKbdType(),
+                    kUCKeyTranslateNoDeadKeysMask,
+                    &mut dead_key_state as *mut _,
+                    1,
+                    &mut unichar_count as *mut _,
+                    &mut unichar as *mut _,
+                );
+
+                if unichar_count > 0 {
+                    logical_key_cmd.replace(unichar as i64);
+                }
+
                 // println!(
                 //     "KEY: {:?}, {:?} {:?} {:?} {:?}",
                 //     entry.platform,
@@ -195,6 +213,7 @@ impl PlatformKeyboardMap {
                     logical_shift: logical_key_shift,
                     logical_alt: logical_key_alt,
                     logical_alt_shift: logical_key_alt_shift,
+                    logical_meta: logical_key_cmd,
                 }
             }
         }
