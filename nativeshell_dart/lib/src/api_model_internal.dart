@@ -104,6 +104,7 @@ class KeyboardKey {
     this.logicalShift,
     this.logicalAlt,
     this.logicalAltShift,
+    this.logicalMeta,
   });
 
   final int platform;
@@ -112,6 +113,7 @@ class KeyboardKey {
   final int? logicalShift;
   final int? logicalAlt;
   final int? logicalAltShift;
+  final int? logicalMeta;
 
   static KeyboardKey deserialize(dynamic value) {
     final map = value as Map;
@@ -121,7 +123,8 @@ class KeyboardKey {
         logical: map['logical'],
         logicalShift: map['logicalShift'],
         logicalAlt: map['logicalAlt'],
-        logicalAltShift: map['logicalAltShift']);
+        logicalAltShift: map['logicalAltShift'],
+        logicalMeta: map['logicalMeta']);
   }
 }
 

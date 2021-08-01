@@ -36,6 +36,7 @@ class KeyboardMap {
     PhysicalKeyboardKey physicalKey, {
     bool shift = false,
     bool alt = false,
+    bool meta = false,
   }) {
     final key = _physicalToKey[physicalKey.usbHidUsage];
 
@@ -43,7 +44,9 @@ class KeyboardMap {
       return null;
     }
 
-    if (shift && alt && key.logicalAltShift != null) {
+    if (meta && key.logicalMeta != null) {
+      return LogicalKeyboardKey(key.logicalMeta!);
+    } else if (shift && alt && key.logicalAltShift != null) {
       return LogicalKeyboardKey(key.logicalAltShift!);
     } else if (shift && !alt && key.logicalShift != null) {
       return LogicalKeyboardKey(key.logicalShift!);

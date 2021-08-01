@@ -419,10 +419,10 @@ impl PlatformMenu {
             "space" => 0x0020,
             "tab" => 0x0009,
             "enter" => 0x000d,
-            "up arrow" => 0xF700,
-            "down arrow" => 0xF701,
-            "left arrow" => 0xF702,
-            "right arrow" => 0xF703,
+            "arrow up" => 0xF700,
+            "arrow down" => 0xF701,
+            "arrow left" => 0xF702,
+            "arrow right" => 0xF703,
             _ => label.chars().next().unwrap_or(0 as char) as u32,
         };
         let mut res = String::new();

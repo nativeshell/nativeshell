@@ -46,6 +46,9 @@ class KeyboardMapManager {
       if (key.logicalShift != null) {
         logicalToKey[key.logicalShift!] = key;
       }
+      if (key.logicalMeta != null) {
+        logicalToKey[key.logicalMeta!] = key;
+      }
       if (key.logical != null) {
         logicalToKey[key.logical!] = key;
       }

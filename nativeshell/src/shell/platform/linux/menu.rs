@@ -360,10 +360,10 @@ impl PlatformMenu {
             "space" => gdk_sys::GDK_KEY_space,
             "tab" => gdk_sys::GDK_KEY_Tab,
             "enter" => gdk_sys::GDK_KEY_KP_Enter,
-            "up arrow" => gdk_sys::GDK_KEY_Up,
-            "down arrow" => gdk_sys::GDK_KEY_Down,
-            "left arrow" => gdk_sys::GDK_KEY_Left,
-            "right arrow" => gdk_sys::GDK_KEY_Right,
+            "arrow up" => gdk_sys::GDK_KEY_Up,
+            "arrow down" => gdk_sys::GDK_KEY_Down,
+            "arrow left" => gdk_sys::GDK_KEY_Left,
+            "arrow right" => gdk_sys::GDK_KEY_Right,
             _ => label.chars().next().unwrap_or(0 as char) as i32,
         };
         value

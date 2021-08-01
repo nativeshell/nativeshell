@@ -177,6 +177,7 @@ impl PlatformKeyboardMap {
             logical_shift: key_shift,
             logical_alt: None,
             logical_alt_shift: None,
+            logical_meta: None,
         }
     }
 
@@ -194,6 +195,7 @@ impl PlatformKeyboardMap {
             logical_shift: entry.fallback.and_then(Self::shift_key),
             logical_alt: None,
             logical_alt_shift: None,
+            logical_meta: None,
         }
     }
 
@@ -255,6 +257,7 @@ impl PlatformKeyboardMap {
     }
 
     fn on_layout_changed(&self) {
+        self.current_layout.borrow_mut().take();
         if let Some(delegate) = self.delegate.upgrade() {
             delegate.borrow().keyboard_map_did_change();
         }

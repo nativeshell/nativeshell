@@ -10,7 +10,7 @@ extern "C" {
     pub static kTISPropertyUnicodeKeyLayoutData: CFObject;
     pub static kTISNotifySelectedKeyboardInputSourceChanged: CFStringRef;
     pub fn TISCopyCurrentKeyboardLayoutInputSource() -> CFObject;
-    pub fn TISCopyCurrentASCIICapableKeyboardInputSource() -> CFObject;
+    pub fn TISCopyCurrentASCIICapableKeyboardLayoutInputSource() -> CFObject;
     pub fn TISGetInputSourceProperty(input_source: CFObject, property_key: CFObject)
         -> *mut c_void;
 
@@ -67,6 +67,8 @@ pub const kUCKeyActionDisplay: u16 = 3;
 pub const kUCKeyTranslateNoDeadKeysBit: u32 = 0;
 #[allow(non_upper_case_globals)]
 pub const kUCKeyTranslateNoDeadKeysMask: u32 = 1 << kUCKeyTranslateNoDeadKeysBit;
+#[allow(non_upper_case_globals)]
+pub const cmdKey: u32 = 256;
 #[allow(non_upper_case_globals)]
 pub const shiftKey: u32 = 512;
 #[allow(non_upper_case_globals)]

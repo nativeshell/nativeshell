@@ -122,7 +122,8 @@ class MenuItem {
           title == other.title &&
           (submenu == null) == (other.submenu == null) &&
           role == other.role &&
-          checkStatus == other.checkStatus);
+          checkStatus == other.checkStatus &&
+          accelerator == other.accelerator);
 
   @override
   int get hashCode => hashValues(title, separator, submenu != null);
