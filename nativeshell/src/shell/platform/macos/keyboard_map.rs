@@ -26,11 +26,11 @@ use crate::{
 };
 
 use super::keyboard_map_sys::{
-    kTISNotifySelectedKeyboardInputSourceChanged, kUCKeyActionDisplay,
+    cmdKey, kTISNotifySelectedKeyboardInputSourceChanged, kUCKeyActionDisplay,
     kUCKeyTranslateNoDeadKeysMask, CFNotificationCenterAddObserver,
     CFNotificationCenterGetDistributedCenter, CFNotificationCenterRef,
     CFNotificationCenterRemoveObserver, CFNotificationSuspensionBehaviorCoalesce, LMGetKbdType,
-    TISCopyCurrentASCIICapableKeyboardInputSource, UCKeyTranslate,
+    TISCopyCurrentASCIICapableKeyboardLayoutInputSource, UCKeyTranslate,
 };
 
 pub struct PlatformKeyboardMap {
@@ -65,7 +65,7 @@ impl PlatformKeyboardMap {
     fn create_keyboard_layout(&self) -> KeyboardMap {
         let key_map = get_key_map();
         unsafe {
-            let input_source = TISCopyCurrentASCIICapableKeyboardInputSource();
+            let input_source = TISCopyCurrentASCIICapableKeyboardLayoutInputSource();
             let layout_data: CFObject =
                 TISGetInputSourceProperty(input_source, kTISPropertyUnicodeKeyLayoutData);
 
@@ -102,11 +102,20 @@ impl PlatformKeyboardMap {
 
                 let layout = CFDataGetBytePtr(layout_data as CFDataRef);
 
+                // On some keyboard (SVK), using any modifier keys when specifying keyboard
+                // shortcut results in results in US layout key matched. Therefore when getting the
+                // "base" value of we simulate CMD key press.
+                // Example: ] key on SVK keyboard is ä, but when specifying NSMenuItem key equivalent
+                // CMD + ä with SVK keybaord is never matched. The equivalent needs to be CMD + ].
+                // On the other hand ' key on French AZERTY is ù, and CMD + ù key equivalent
+                // is matched. That's possibly because UCKeyTranslate CMD + ] on SVK keyboard returns ],
+                // whereas on French AZERTY UCKeyTranslate CMD + ' returns ù.
+                // This applies also for other modifiers (shift/alt).
                 UCKeyTranslate(
                     layout as *mut _,
                     entry.platform as u16,
                     kUCKeyActionDisplay,
-                    0,
+                    (cmdKey >> 8) & 0xFF,
                     LMGetKbdType(),
                     kUCKeyTranslateNoDeadKeysMask,
                     &mut dead_key_state as *mut _,
