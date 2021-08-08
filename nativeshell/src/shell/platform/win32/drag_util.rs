@@ -193,7 +193,7 @@ impl DataUtil {
     }
 
     pub fn extract_url(buffer: &[u8]) -> String {
-        let str = CStr::from_bytes_with_nul(&buffer).unwrap();
+        let str = CStr::from_bytes_with_nul(buffer).unwrap();
         str.to_string_lossy().into()
     }
 

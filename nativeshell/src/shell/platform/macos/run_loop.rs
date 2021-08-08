@@ -77,7 +77,7 @@ impl State {
             callbacks: self.callbacks.drain(0..).collect(),
             timers: pending
                 .iter()
-                .map(|h| self.timers.remove(&h).unwrap())
+                .map(|h| self.timers.remove(h).unwrap())
                 .collect(),
         }
     }

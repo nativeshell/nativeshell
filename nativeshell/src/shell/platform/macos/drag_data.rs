@@ -233,7 +233,7 @@ impl DragDataAdapter for FallThroughDragDataAdapter {
                 let bytes: *const u8 = msg_send![data, bytes];
                 let length: usize = msg_send![data, length];
                 let data: &[u8] = std::slice::from_raw_parts(bytes, length);
-                let value = codec.decode_message(&data).unwrap();
+                let value = codec.decode_message(data).unwrap();
                 if let Value::Map(value) = value {
                     for entry in value {
                         if let Value::String(key) = entry.0 {

@@ -113,7 +113,7 @@ impl DropContext {
         };
 
         for data in pending_data.iter() {
-            widget.drag_get_data(&context, &data, time);
+            widget.drag_get_data(context, data, time);
         }
     }
 
@@ -358,7 +358,7 @@ impl DragContext {
                 (request.rect.x - event_coords.0) * scale_factor,
                 (request.rect.y - event_coords.1) * scale_factor,
             );
-            context.drag_set_icon_surface(&surface)
+            context.drag_set_icon_surface(surface)
         }
 
         self.dragging.replace(true);

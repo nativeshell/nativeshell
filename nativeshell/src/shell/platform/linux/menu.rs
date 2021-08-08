@@ -101,7 +101,7 @@ impl PlatformMenu {
         });
 
         self.menu.connect_hide(move |menu| {
-            if let Some(platform_menu) = Self::platform_menu_from_gtk_menu(&menu) {
+            if let Some(platform_menu) = Self::platform_menu_from_gtk_menu(menu) {
                 platform_menu.set_pending_selection_done();
                 // Fix for https://github.com/nativeshell/examples/issues/13
                 // Sometimes on KDE/Wayland when activating another window the
@@ -402,8 +402,8 @@ impl PlatformMenu {
         match &menu_item.accelerator {
             Some(accelerator) => {
                 label.set_accel(
-                    Self::accelerator_label_code(&accelerator) as u32,
-                    Self::accelerator_modifier_type(&accelerator),
+                    Self::accelerator_label_code(accelerator) as u32,
+                    Self::accelerator_modifier_type(accelerator),
                 );
             }
             None => {

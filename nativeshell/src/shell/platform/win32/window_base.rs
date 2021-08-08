@@ -318,7 +318,7 @@ impl WindowBaseState {
     }
 
     pub fn global_to_local(&self, offset: &IPoint) -> Point {
-        let local: Point = self.global_to_local_physical(&offset).into();
+        let local: Point = self.global_to_local_physical(offset).into();
         local.scaled(1.0 / self.get_scaling_factor())
     }
 

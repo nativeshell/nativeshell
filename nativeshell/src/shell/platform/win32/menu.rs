@@ -150,14 +150,14 @@ impl PlatformMenu {
                     // nothing
                 }
                 DiffResult::Update(old, new) => {
-                    let title = to_utf16(&self.title_for_item(&new));
+                    let title = to_utf16(&self.title_for_item(new));
                     let mut info = Self::get_menu_item_info(new, &title, manager);
                     unsafe {
                         SetMenuItemInfoW(self.menu, old.id as u32, false, &mut info as *mut _);
                     }
                 }
                 DiffResult::Insert(item) => {
-                    let title = to_utf16(&self.title_for_item(&item));
+                    let title = to_utf16(&self.title_for_item(item));
                     let mut info = Self::get_menu_item_info(item, &title, manager);
                     unsafe {
                         InsertMenuItemW(self.menu, i as u32, true, &mut info as *mut _);
