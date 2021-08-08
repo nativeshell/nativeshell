@@ -630,23 +630,19 @@ impl PlatformWindow {
 
         if let Some(event) = last_event {
             let opposite = match event.eventType() {
-                NSLeftMouseDown => NSLeftMouseUp,
-                NSRightMouseDown => NSRightMouseUp,
+                NSLeftMouseDown => CGEventType::LeftMouseUp,
+                NSRightMouseDown => CGEventType::RightMouseUp,
                 _ => return,
             };
 
-            let opposite: id = msg_send![class!(NSEvent), mouseEventWithType: opposite
-                location:NSEvent::mouseLocation(*event)
-                modifierFlags:NSEvent::modifierFlags(*event)
-                timestamp:NSEvent::timestamp(*event)
-                windowNumber:NSEvent::windowNumber(*event)
-                context:NSEvent::context(*event)
-                eventNumber:event.eventNumber()
-                clickCount:1
-                pressure:1
-            ];
+            let event = NSEvent::CGEvent(*event) as core_graphics::sys::CGEventRef;
+            let event = CGEventCreateCopy(event);
+            CGEventSetType(event, opposite);
 
-            let () = msg_send![*self.platform_window, sendEvent: opposite];
+            let synthetized: id = msg_send![class!(NSEvent), eventWithCGEvent: event];
+            CFRelease(event as *mut _);
+
+            let () = msg_send![*self.platform_window, sendEvent: synthetized];
         }
     }
 
@@ -738,12 +734,23 @@ impl PlatformWindow {
     fn check_window_dragging(&self, event: StrongPtr) {
         let event_type = unsafe { NSEvent::eventType(*event) };
 
+        // println!(
+        //     "EVent type {:?} {} {}",
+        //     event_type,
+        //     self.mouse_down.get(),
+        //     self.mouse_dragged.get()
+        // );
+
         // NSMouseMoved after NSLeftMouseDragged without NSLeftMouseUp
-        if event_type == NSMouseMoved && self.mouse_down.get() {
-            unsafe {
-                self.synthetize_mouse_up_event();
+        if event_type == NSMouseMoved {
+            if self.mouse_down.get() {
+                unsafe {
+                    // println!("Synthetizing up");
+                    self.synthetize_mouse_up_event();
+                }
             }
             self.mouse_down.set(false);
+            self.mouse_dragged.set(false);
         }
 
         if event_type == NSLeftMouseDown {
@@ -784,6 +791,8 @@ impl PlatformWindow {
                 ];
                 CGEventSetLocation(event, location);
                 CGEventSetWindowLocation(event, location_win);
+
+                println!("Synthetizing left mouse down");
 
                 let synthetized: id = msg_send![class!(NSEvent), eventWithCGEvent: event];
                 CFRelease(event as *mut _);
