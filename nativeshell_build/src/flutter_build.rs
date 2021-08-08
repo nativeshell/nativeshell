@@ -57,7 +57,7 @@ pub trait AsPath {
 
 impl AsPath for str {
     fn as_path(&self) -> &Path {
-        &Path::new(self)
+        Path::new(self)
     }
 }
 
@@ -93,7 +93,7 @@ impl FlutterOptions<'_> {
                 let executable = executable
                     .canonicalize()
                     .wrap_error(FileOperation::Canonicalize, || executable)?;
-                let executable = simplified(&&executable).into();
+                let executable = simplified(&executable).into();
                 Ok(executable)
             }
         }
@@ -459,9 +459,9 @@ impl Flutter<'_> {
     ) -> BuildResult<()> {
         let artifacts_dir = get_artifacts_dir()?;
         let flutter_out_root = self.out_dir.join("flutter");
-        let emitter = ArtifactsEmitter::new(&self, flutter_out_root, artifacts_dir)?;
+        let emitter = ArtifactsEmitter::new(self, flutter_out_root, artifacts_dir)?;
 
-        let plugins = Plugins::new(&self, &emitter);
+        let plugins = Plugins::new(self, &emitter);
         plugins.process()?;
 
         match self.target_os {

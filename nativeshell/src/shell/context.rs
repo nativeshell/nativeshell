@@ -68,7 +68,7 @@ impl ContextImpl {
         self.engine_manager.set(EngineManager::new(context));
         self.message_manager.set(MessageManager::new(context));
         self.window_method_channel
-            .set(WindowMethodChannel::new(&context));
+            .set(WindowMethodChannel::new(context));
         self.window_manager.set(WindowManager::new(context));
         self.application_delegate_manager
             .set(ApplicationDelegateManager::new(context));

@@ -30,7 +30,7 @@ impl<'a, 'de> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
             Value::I64(i) => visitor.visit_i64(*i),
             Value::F64(f) => visitor.visit_f64(*f),
             Value::String(s) => visitor.visit_str(s.as_str()),
-            Value::U8List(s) => visitor.visit_bytes(&s),
+            Value::U8List(s) => visitor.visit_bytes(s),
             Value::I32List(_) => visitor.visit_seq(SeqAccess::new(self)),
             Value::I64List(_) => visitor.visit_seq(SeqAccess::new(self)),
             Value::F64List(_) => visitor.visit_seq(SeqAccess::new(self)),

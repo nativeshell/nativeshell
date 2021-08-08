@@ -127,7 +127,7 @@ impl MacOSBundle {
         );
 
         for (key, value) in &self.options.info_plist_additional_args {
-            Self::replace_plist_value(&mut template, &key, &value);
+            Self::replace_plist_value(&mut template, key, value);
         }
 
         let plist = contents.as_ref().join("Info.plist");

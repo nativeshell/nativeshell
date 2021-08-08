@@ -143,7 +143,7 @@ fn _register_observatory_listener(file_suffix: String) {
                         {
                             // revert to the original stdout and terminate the thread
                             dup2(stdout, STDOUT_FILENO);
-                            have_observatory_url(&url, &file_suffix);
+                            have_observatory_url(url, &file_suffix);
                             return;
                         }
                     }
