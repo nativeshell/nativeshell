@@ -425,7 +425,7 @@ impl PlatformWindow {
             }
         }
 
-        if self.window_menu.borrow().should_forward_event(&event) {
+        if self.window_menu.borrow().should_forward_event(event) {
             self.propagate_event(event);
         }
     }
@@ -433,8 +433,7 @@ impl PlatformWindow {
     pub(super) fn propagate_event(&self, event: &mut Event) {
         let event_box = self.get_event_box();
         if let Some(event_box) = event_box {
-            let mut event =
-                translate_event_to_window(&event, &self.view.borrow().window().unwrap());
+            let mut event = translate_event_to_window(event, &self.view.borrow().window().unwrap());
             propagate_event(&event_box, &mut event);
         }
     }
