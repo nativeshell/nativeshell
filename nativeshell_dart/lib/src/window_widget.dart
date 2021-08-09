@@ -121,7 +121,7 @@ abstract class WindowState {
     final res = context
         .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
         ?.windowState;
-    res is T ? res : null;
+    return res is T ? res : null;
   }
 
   void registerTapCallback(ValueChanged<PointerDownEvent> cb) {
@@ -161,6 +161,8 @@ class WindowWidget extends StatefulWidget {
 
 enum _Status { notInitialized, initializing, initialized }
 
+bool _haveWindowLayoutProbe = false;
+
 class _WindowWidgetState extends State<WindowWidget> {
   WindowState? _windowState;
 
@@ -168,6 +170,21 @@ class _WindowWidgetState extends State<WindowWidget> {
   Widget build(BuildContext context) {
     _maybeInitialize();
     if (status == _Status.initialized) {
+      if (!_haveWindowLayoutProbe) {
+        WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+          assert(
+              _haveWindowLayoutProbe,
+              'Breaking change: You need to put WindowLayoutProbe somewhere '
+              'in widget hierarchy, below WindowWidget, but higher than any '
+              'widget that affects layout (i.e. Padding).\n'
+              'For example:\n'
+              '  WindowWidget\n'
+              '    MaterialApp\n'
+              '       WindowLayoutProbe\n'
+              '         <Actual Content>');
+        });
+      }
+
       final window = WindowManager.instance.currentWindow;
       final emptyBefore = _windowState == null;
       _windowState ??= widget.onCreateState(window.initData);
@@ -181,16 +198,10 @@ class _WindowWidgetState extends State<WindowWidget> {
           color: Color(0x00000000),
           child: _WindowStateWidget(
             windowState: _windowState!,
-            child: _WindowLayout(
-              builtWindow: _windowState!,
-              child: _WindowLayoutInner(
-                windowState: _windowState!,
-                child: Builder(
-                  builder: (context) {
-                    return _windowState!.build(context);
-                  },
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                return _windowState!.build(context);
+              },
             ),
           ),
         ),
@@ -219,6 +230,40 @@ class _WindowWidgetState extends State<WindowWidget> {
         cb(e);
       }
     }
+  }
+}
+
+class _WindowLayoutChecker extends InheritedWidget {
+  _WindowLayoutChecker({Key? key, required Widget child})
+      : super(key: key, child: child);
+
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+    return false;
+  }
+}
+
+class WindowLayoutProbe extends StatelessWidget {
+  const WindowLayoutProbe({Key? key, required this.child}) : super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = WindowState.maybeOf(context);
+    assert(
+        state != null, 'WindowLayoutProbe must be placed below WindowWidget');
+    final prev =
+        context.dependOnInheritedWidgetOfExactType<_WindowLayoutChecker>();
+    assert(
+        prev == null,
+        'Multiple WindowLayoutProbe widgets found in hierarchy. '
+        'Please make sure there is only one WindowLayoutProbe widget present.');
+    _haveWindowLayoutProbe = true;
+    return _WindowLayoutChecker(
+        child: _WindowLayout(
+            windowState: state!,
+            child: _WindowLayoutInner(windowState: state, child: child)));
   }
 }
 
@@ -304,25 +349,25 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 }
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
-  final WindowState builtWindow;
+  final WindowState windowState;
 
   const _WindowLayout({
     Key? key,
     required Widget child,
-    required this.builtWindow,
+    required this.windowState,
   }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return _RenderWindowLayout(
-      builtWindow,
+      windowState,
     );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayout renderObject) {
-    renderObject.builtWindow = builtWindow;
+    renderObject.builtWindow = windowState;
   }
 }
 
