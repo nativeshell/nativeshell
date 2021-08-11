@@ -121,7 +121,7 @@ abstract class WindowState {
     final res = context
         .dependOnInheritedWidgetOfExactType<_WindowStateWidget>()
         ?.windowState;
-    res is T ? res : null;
+    return res is T ? res : null;
   }
 
   void registerTapCallback(ValueChanged<PointerDownEvent> cb) {
@@ -161,6 +161,8 @@ class WindowWidget extends StatefulWidget {
 
 enum _Status { notInitialized, initializing, initialized }
 
+bool _haveWindowLayoutProbe = false;
+
 class _WindowWidgetState extends State<WindowWidget> {
   WindowState? _windowState;
 
@@ -174,6 +176,15 @@ class _WindowWidgetState extends State<WindowWidget> {
       if (emptyBefore) {
         WindowManager.instance.haveWindowState(_windowState!);
       }
+      if (_windowState!.windowSizingMode == WindowSizingMode.manual) {
+        WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+          _prepareAndShow(_windowState!, () => Size(0, 0));
+        });
+      } else {
+        if (!_haveWindowLayoutProbe) {
+          _checkWindowLayoutProbe();
+        }
+      }
 
       return Listener(
         onPointerDown: _onWindowTap,
@@ -181,16 +192,10 @@ class _WindowWidgetState extends State<WindowWidget> {
           color: Color(0x00000000),
           child: _WindowStateWidget(
             windowState: _windowState!,
-            child: _WindowLayout(
-              builtWindow: _windowState!,
-              child: _WindowLayoutInner(
-                windowState: _windowState!,
-                child: Builder(
-                  builder: (context) {
-                    return _windowState!.build(context);
-                  },
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                return _windowState!.build(context);
+              },
             ),
           ),
         ),
@@ -209,6 +214,23 @@ class _WindowWidgetState extends State<WindowWidget> {
     }
   }
 
+  Future<void> _checkWindowLayoutProbe() async {
+    await Future.delayed(Duration(seconds: 2));
+    assert(
+        _haveWindowLayoutProbe,
+        '*******************************************************\n\n'
+        'BREAKING CHANGE: To use WindowSizingMode.sizeToContents or '
+        'WindowSizingMode.atLeastIntrinsicSize you need to put '
+        'the WindowLayoutProbe widget somewhere in widget hierarchy. '
+        'It must be below WindowWidget, but higher than any '
+        'widget that affects layout (i.e. Padding).\n'
+        'For example:\n'
+        '  WindowWidget\n'
+        '    MaterialApp\n'
+        '       WindowLayoutProbe\n'
+        '         <Actual Content>');
+  }
+
   _Status status = _Status.notInitialized;
   dynamic initData;
 
@@ -219,6 +241,41 @@ class _WindowWidgetState extends State<WindowWidget> {
         cb(e);
       }
     }
+  }
+}
+
+class _WindowLayoutChecker extends InheritedWidget {
+  _WindowLayoutChecker({Key? key, required Widget child})
+      : super(key: key, child: child);
+
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+    return false;
+  }
+}
+
+class WindowLayoutProbe extends StatelessWidget {
+  const WindowLayoutProbe({Key? key, required this.child}) : super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = WindowState.maybeOf(context);
+    assert(
+        state != null, 'WindowLayoutProbe must be placed below WindowWidget');
+    final prev =
+        context.dependOnInheritedWidgetOfExactType<_WindowLayoutChecker>();
+    assert(
+        prev == null,
+        'Multiple WindowLayoutProbe widgets found in hierarchy. '
+        'Please make sure there is only one WindowLayoutProbe widget present.');
+    _haveWindowLayoutProbe = true;
+
+    return _WindowLayoutChecker(
+        child: _WindowLayout(
+            windowState: state!,
+            child: _WindowLayoutInner(windowState: state, child: child)));
   }
 }
 
@@ -304,43 +361,43 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
 }
 
 class _WindowLayout extends SingleChildRenderObjectWidget {
-  final WindowState builtWindow;
+  final WindowState windowState;
 
   const _WindowLayout({
     Key? key,
     required Widget child,
-    required this.builtWindow,
+    required this.windowState,
   }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return _RenderWindowLayout(
-      builtWindow,
+      windowState,
     );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayout renderObject) {
-    renderObject.builtWindow = builtWindow;
+    renderObject.windowState = windowState;
   }
 }
 
 class _RenderWindowLayout extends RenderProxyBox {
-  _RenderWindowLayout(this.builtWindow);
+  _RenderWindowLayout(this.windowState);
 
-  WindowState builtWindow;
+  WindowState windowState;
 
   Size? _lastConstraints;
 
   @override
   void performLayout() {
-    if (builtWindow.windowSizingMode == WindowSizingMode.sizeToContents) {
+    if (windowState.windowSizingMode == WindowSizingMode.sizeToContents) {
       final constraints =
           BoxConstraints.loose(Size(double.infinity, double.infinity));
       child!.layout(constraints, parentUsesSize: true);
       size = Size(this.constraints.maxWidth, this.constraints.maxHeight);
-    } else if (builtWindow.windowSizingMode ==
+    } else if (windowState.windowSizingMode ==
         WindowSizingMode.atLeastIntrinsicSize) {
       var w = child!.getMaxIntrinsicWidth(double.infinity);
       var h = child!.getMinIntrinsicHeight(w);
@@ -348,7 +405,7 @@ class _RenderWindowLayout extends RenderProxyBox {
       final intrinsicSize = _sanitizeAndSnapToPixelBoundary(Size(w, h));
 
       if (_lastConstraints != intrinsicSize) {
-        builtWindow.updateWindowConstraints(intrinsicSize);
+        windowState.updateWindowConstraints(intrinsicSize);
         _lastConstraints = intrinsicSize;
       }
 
@@ -358,7 +415,7 @@ class _RenderWindowLayout extends RenderProxyBox {
           max(intrinsicSize.height, size.height));
 
       if (maxSize.width > size.width || maxSize.height > size.height) {
-        builtWindow.updateWindowSize(_sanitizeAndSnapToPixelBoundary(maxSize));
+        windowState.updateWindowSize(_sanitizeAndSnapToPixelBoundary(maxSize));
       }
       final constraints = BoxConstraints.tight(maxSize);
       child!.layout(constraints, parentUsesSize: true);
@@ -367,31 +424,39 @@ class _RenderWindowLayout extends RenderProxyBox {
       super.performLayout();
     }
 
-    if (!hasLayout) {
-      hasLayout = true;
-      _prepareAndShow();
-    }
+    _prepareAndShow(windowState, () {
+      final Size size;
+      if (windowState.windowSizingMode ==
+          WindowSizingMode.atLeastIntrinsicSize) {
+        var w = child!.getMaxIntrinsicWidth(double.infinity);
+        var h = child!.getMinIntrinsicHeight(w);
+        size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+      } else if (windowState.windowSizingMode == WindowSizingMode.manual) {
+        size = Size(0, 0);
+      } else {
+        size = _sanitizeAndSnapToPixelBoundary(child!.size);
+      }
+      return size;
+    });
   }
-
-  void _prepareAndShow() async {
-    final win = WindowManager.instance.currentWindow;
-    final Size size;
-    if (builtWindow.windowSizingMode == WindowSizingMode.atLeastIntrinsicSize) {
-      var w = child!.getMaxIntrinsicWidth(double.infinity);
-      var h = child!.getMinIntrinsicHeight(w);
-      size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
-    } else {
-      size = _sanitizeAndSnapToPixelBoundary(child!.size);
-    }
-    await builtWindow.initializeWindow(size);
-    if (builtWindow.windowSizingMode == WindowSizingMode.atLeastIntrinsicSize) {
-      await builtWindow.updateWindowConstraints(size);
-    }
-    await win.readyToShow();
-  }
-
-  bool hasLayout = false;
 }
+
+void _prepareAndShow(
+    WindowState windowState, Size Function() getInitialSize) async {
+  if (_windowShown) {
+    return;
+  }
+  _windowShown = true;
+  final win = WindowManager.instance.currentWindow;
+  final size = getInitialSize();
+  await windowState.initializeWindow(size);
+  if (windowState.windowSizingMode == WindowSizingMode.atLeastIntrinsicSize) {
+    await windowState.updateWindowConstraints(size);
+  }
+  await win.readyToShow();
+}
+
+bool _windowShown = false;
 
 Size _sanitizeAndSnapToPixelBoundary(Size size) {
   var w = size.width;

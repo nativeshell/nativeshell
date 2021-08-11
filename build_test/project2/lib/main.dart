@@ -37,9 +37,11 @@ class MainWindowState extends WindowState {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      child: Center(child: Text('Welcome to NativeShell!')),
+    return WindowLayoutProbe(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Center(child: Text('Welcome to NativeShell!')),
+      ),
     );
   }
 }
