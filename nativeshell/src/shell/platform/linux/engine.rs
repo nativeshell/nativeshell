@@ -4,10 +4,12 @@ use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::PlatformResult,
     flutter::{self, EngineExt, ViewExt},
+    texture::PlatformTextureRegistry,
 };
 
 pub struct PlatformEngine {
     pub(super) view: flutter::View,
+    texture_registry: PlatformTextureRegistry,
 }
 
 pub struct PlatformPlugin {
@@ -27,7 +29,11 @@ impl PlatformEngine {
                 }
             }
         }
-        PlatformEngine { view }
+        let texture_registrar = view.get_engine().get_texture_registrar();
+        PlatformEngine {
+            view,
+            texture_registry: PlatformTextureRegistry::new(texture_registrar),
+        }
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {
@@ -42,5 +48,9 @@ impl PlatformEngine {
 
     pub fn shut_down(&mut self) -> PlatformResult<()> {
         Ok(())
+    }
+
+    pub(crate) fn texture_registry(&self) -> &PlatformTextureRegistry {
+        &self.texture_registry
     }
 }

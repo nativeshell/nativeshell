@@ -1,12 +1,19 @@
-use super::{binary_messenger::PlatformBinaryMessenger, error::PlatformResult};
+use super::{
+    binary_messenger::PlatformBinaryMessenger, error::PlatformResult,
+    texture::PlatformTextureRegistry,
+};
 
-pub struct PlatformEngine {}
+pub struct PlatformEngine {
+    texture_registry: PlatformTextureRegistry,
+}
 
 pub type PlatformPlugin = isize;
 
 impl PlatformEngine {
     pub fn new(_plugins: &[PlatformPlugin]) -> Self {
-        PlatformEngine {}
+        PlatformEngine {
+            texture_registry: PlatformTextureRegistry::new(),
+        }
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {
@@ -19,5 +26,9 @@ impl PlatformEngine {
 
     pub fn shut_down(&mut self) -> PlatformResult<()> {
         Err(super::error::PlatformError::NotImplemented)
+    }
+
+    pub(crate) fn texture_registry(&self) -> &PlatformTextureRegistry {
+        &self.texture_registry
     }
 }
