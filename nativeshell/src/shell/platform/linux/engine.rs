@@ -31,7 +31,7 @@ impl PlatformEngine {
             }
         }
         PlatformEngine {
-            view,
+            view: view.clone(),
             handle: view.get_engine(),
         }
     }
