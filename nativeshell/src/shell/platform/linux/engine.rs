@@ -3,11 +3,14 @@ use gtk::prelude::WidgetExt;
 use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::PlatformResult,
-    flutter::{self, EngineExt, ViewExt},
+    flutter::{self, Engine, EngineExt, ViewExt},
 };
+
+pub type PlatformEngineType = Engine;
 
 pub struct PlatformEngine {
     pub(super) view: flutter::View,
+    pub(crate) handle: PlatformEngineType,
 }
 
 pub struct PlatformPlugin {
@@ -27,7 +30,10 @@ impl PlatformEngine {
                 }
             }
         }
-        PlatformEngine { view }
+        PlatformEngine {
+            view,
+            handle: view.get_engine(),
+        }
     }
 
     pub fn new_binary_messenger(&self) -> PlatformBinaryMessenger {

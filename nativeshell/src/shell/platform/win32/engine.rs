@@ -11,8 +11,10 @@ use super::{
     util::to_utf16,
 };
 
+pub type PlatformEngineType = FlutterDesktopEngineRef;
+
 pub struct PlatformEngine {
-    pub(super) handle: FlutterDesktopEngineRef,
+    pub(crate) handle: PlatformEngineType,
 }
 
 pub struct PlatformPlugin {
