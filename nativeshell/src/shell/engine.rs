@@ -25,6 +25,7 @@ impl FlutterEngine {
     }
 
     pub fn platform_engine(&self) -> PlatformEngineType {
+        #[allow(clippy::clone_on_copy)]
         self.platform_engine.handle.clone()
     }
 
