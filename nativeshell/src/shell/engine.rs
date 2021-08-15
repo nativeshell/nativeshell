@@ -1,5 +1,5 @@
 use super::{
-    platform::engine::{PlatformEngine, PlatformPlugin},
+    platform::engine::{PlatformEngine, PlatformEngineType, PlatformPlugin},
     BinaryMessenger,
 };
 use crate::Result;
@@ -22,6 +22,11 @@ impl FlutterEngine {
 
     pub fn binary_messenger(&self) -> &BinaryMessenger {
         self.binary_messenger.as_ref().unwrap()
+    }
+
+    pub fn platform_engine(&self) -> PlatformEngineType {
+        #[allow(clippy::clone_on_copy)]
+        self.platform_engine.handle.clone()
     }
 
     pub fn launch(&mut self) -> Result<()> {

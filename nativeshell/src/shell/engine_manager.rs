@@ -13,7 +13,8 @@ pub struct EngineManager {
     context: Context,
     engines: HashMap<EngineHandle, Box<RefCell<FlutterEngine>>>,
     next_handle: EngineHandle,
-    next_destroy_notification: i64,
+    next_notification: i64,
+    create_notifications: HashMap<i64, Box<dyn Fn(EngineHandle, &FlutterEngine)>>,
     destroy_notifications: HashMap<i64, Box<dyn Fn(EngineHandle)>>,
 }
 
@@ -23,7 +24,8 @@ impl EngineManager {
             context: context.weak(),
             engines: HashMap::new(),
             next_handle: EngineHandle(1),
-            next_destroy_notification: 1,
+            next_notification: 1,
+            create_notifications: HashMap::new(),
             destroy_notifications: HashMap::new(),
         }
     }
@@ -32,8 +34,14 @@ impl EngineManager {
         if let Some(context) = self.context.get() {
             let engine = FlutterEngine::create(&context.options.flutter_plugins);
             let handle = self.next_handle;
+
+            for n in self.create_notifications.values() {
+                n(handle, &engine);
+            }
+
             self.next_handle.0 += 1;
             self.engines.insert(handle, Box::new(RefCell::new(engine)));
+
             context
                 .message_manager
                 .borrow_mut()
@@ -57,12 +65,35 @@ impl EngineManager {
     }
 
     #[must_use]
+    pub fn register_create_engine_notification<F>(&mut self, notification: F) -> Handle
+    where
+        F: Fn(EngineHandle, &FlutterEngine) + 'static,
+    {
+        let handle = self.next_notification;
+        self.next_notification += 1;
+
+        self.create_notifications
+            .insert(handle, Box::new(notification));
+
+        let context = self.context.clone();
+        Handle::new(move || {
+            if let Some(context) = context.get() {
+                context
+                    .engine_manager
+                    .borrow_mut()
+                    .create_notifications
+                    .remove(&handle);
+            }
+        })
+    }
+
+    #[must_use]
     pub fn register_destroy_engine_notification<F>(&mut self, notification: F) -> Handle
     where
         F: Fn(EngineHandle) + 'static,
     {
-        let handle = self.next_destroy_notification;
-        self.next_destroy_notification += 1;
+        let handle = self.next_notification;
+        self.next_notification += 1;
 
         self.destroy_notifications
             .insert(handle, Box::new(notification));

@@ -9,8 +9,10 @@ use super::{
     error::{PlatformError, PlatformResult},
 };
 
+pub type PlatformEngineType = StrongPtr;
+
 pub struct PlatformEngine {
-    handle: StrongPtr,
+    pub(crate) handle: PlatformEngineType,
     pub(super) view_controller: StrongPtr,
 }
 
