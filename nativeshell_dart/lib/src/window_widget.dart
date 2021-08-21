@@ -218,17 +218,18 @@ class _WindowWidgetState extends State<WindowWidget> {
     await Future.delayed(Duration(seconds: 2));
     assert(
         _haveWindowLayoutProbe,
-        '*******************************************************\n\n'
-        'BREAKING CHANGE: To use WindowSizingMode.sizeToContents or '
+        '\n*******************************************************\n\n'
+        'BREAKING CHANGE:\n'
+        'To use WindowSizingMode.sizeToContents or '
         'WindowSizingMode.atLeastIntrinsicSize you need to put '
-        'the WindowLayoutProbe widget somewhere in widget hierarchy. '
+        'the WindowLayoutProbe widget somewhere in widget hierarchy.\n'
         'It must be below WindowWidget, but higher than any '
         'widget that affects layout (i.e. Padding).\n'
         'For example:\n'
-        '  WindowWidget\n'
-        '    MaterialApp\n'
-        '       WindowLayoutProbe\n'
-        '         <Actual Content>');
+        '| WindowWidget\n'
+        '|   MaterialApp\n'
+        '|      WindowLayoutProbe\n'
+        '|        <Actual Content>\n\n');
   }
 
   _Status status = _Status.notInitialized;
