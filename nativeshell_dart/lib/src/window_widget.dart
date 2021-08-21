@@ -255,6 +255,14 @@ class _WindowLayoutChecker extends InheritedWidget {
   }
 }
 
+//
+// This widget is responsible for sizing window to match content size.
+// It must be placed in widget hierarchy in a way where its children can
+// layout unconstrained (in case of WindowSizingMode.sizeToContents), or
+// where the children can provide intrinsic content size
+// (WindowSizingMode.atLeastIntrinsicSize). This can be for example home
+// widget of MaterialApp.
+//
 class WindowLayoutProbe extends StatelessWidget {
   const WindowLayoutProbe({Key? key, required this.child}) : super(key: key);
 
