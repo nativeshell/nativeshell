@@ -1,8 +1,10 @@
+#![allow(clippy::forget_copy)] // windows-rs !implement macro
+
+use super::bindings::*;
 use super::{all_bindings::*, util::create_instance};
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
-    mem,
     rc::Weak,
 };
 
@@ -229,7 +231,8 @@ impl PlatformKeyboardMap {
         let profiles: ITfInputProcessorProfiles =
             create_instance(&CLSID_TF_InputProcessorProfiles).unwrap();
         let source = profiles.cast::<ITfSource>().unwrap();
-        let sink = LanguageProfileNotifySink::new(self.weak_self.borrow().clone());
+        let sink: ITfLanguageProfileNotifySink =
+            LanguageProfileNotifySink::new(self.weak_self.borrow().clone()).into();
 
         unsafe {
             source
@@ -267,101 +270,25 @@ impl Drop for PlatformKeyboardMap {
 // Implementation of ITfLanguageProfileNotifySink
 //
 
-#[repr(C)]
+#[implement(Windows::Win32::UI::TextServices::ITfLanguageProfileNotifySink)]
 struct LanguageProfileNotifySink {
-    _abi: Box<ITfLanguageProfileNotifySink_abi>,
-    ref_cnt: u32,
     target: Weak<PlatformKeyboardMap>,
 }
 
-#[allow(dead_code)]
+#[allow(non_snake_case)]
 impl LanguageProfileNotifySink {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(target: Weak<PlatformKeyboardMap>) -> ITfLanguageProfileNotifySink {
-        let sink = Box::new(Self {
-            _abi: Box::new(ITfLanguageProfileNotifySink_abi(
-                Self::_query_interface,
-                Self::_add_ref,
-                Self::_release,
-                Self::_on_language_change,
-                Self::_on_language_changed,
-            )),
-            ref_cnt: 1,
-            target,
-        });
-
-        unsafe {
-            let ptr = Box::into_raw(sink);
-            mem::transmute(ptr)
-        }
+    fn new(target: Weak<PlatformKeyboardMap>) -> Self {
+        Self { target }
     }
 
-    fn query_interface(
-        &mut self,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> HRESULT {
-        if iid == &ITfLanguageProfileNotifySink::IID || iid == &IUnknown::IID {
-            unsafe {
-                *interface = self as *mut Self as *mut _;
-            }
-            self.add_ref();
-            S_OK
-        } else {
-            E_NOINTERFACE
-        }
+    fn OnLanguageChange(&self, _langid: u16) -> windows::Result<BOOL> {
+        Ok(true.into())
     }
 
-    fn add_ref(&mut self) -> u32 {
-        self.ref_cnt += 1;
-        self.ref_cnt
-    }
-
-    fn release(&mut self) -> u32 {
-        self.ref_cnt -= 1;
-        let res = self.ref_cnt;
-
-        if res == 0 {
-            unsafe {
-                Box::from_raw(self as *mut Self);
-            }
-        }
-
-        res
-    }
-
-    fn language_changed(&self) -> HRESULT {
+    fn OnLanguageChanged(&self) -> ::windows::Result<()> {
         if let Some(target) = self.target.upgrade() {
             target.keyboard_layout_changed();
         }
-        S_OK
-    }
-
-    unsafe extern "system" fn _query_interface(
-        this: ::windows::RawPtr,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> windows::HRESULT {
-        (*(this as *mut Self)).query_interface(iid, interface)
-    }
-
-    unsafe extern "system" fn _add_ref(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).add_ref()
-    }
-
-    unsafe extern "system" fn _release(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).release()
-    }
-
-    unsafe extern "system" fn _on_language_change(
-        _this: ::windows::RawPtr,
-        _langid: u16,
-        pfaccept: *mut BOOL,
-    ) -> HRESULT {
-        *pfaccept = true.into();
-        S_OK
-    }
-    unsafe extern "system" fn _on_language_changed(this: ::windows::RawPtr) -> HRESULT {
-        (*(this as *mut Self)).language_changed()
+        Ok(())
     }
 }
