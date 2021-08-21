@@ -6,14 +6,14 @@ use std::{
     slice,
 };
 
-use windows::{create_instance, IUnknown, Interface, HRESULT};
+use windows::{IUnknown, Interface, HRESULT};
 
 use crate::util::OkLog;
 
 use super::{
     all_bindings::*,
     drag_util::{CLSID_DragDropHelper, DataUtil},
-    util::{com_object_from_ptr, get_raw_ptr},
+    util::{com_object_from_ptr, create_instance, get_raw_ptr},
 };
 
 pub trait DropTargetDelegate {

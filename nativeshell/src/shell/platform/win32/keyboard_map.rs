@@ -1,4 +1,4 @@
-use super::all_bindings::*;
+use super::{all_bindings::*, util::create_instance};
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
