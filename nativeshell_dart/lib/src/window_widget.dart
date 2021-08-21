@@ -70,7 +70,7 @@ abstract class WindowState {
   }
 
   // Updates window constraints; Called for windows sized with
-  // WindowSizing.atLeastIntrinsicSize when intrinsic content size changes.
+  // WindowSizingMode.atLeastIntrinsicSize when intrinsic content size changes.
   Future<void> updateWindowConstraints(Size intrinsicContentSize) async {
     await window.setGeometry(Geometry(
       minContentSize: intrinsicContentSize,
