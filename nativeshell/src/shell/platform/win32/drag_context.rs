@@ -4,8 +4,6 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use windows::create_instance;
-
 use crate::{
     shell::{
         api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
@@ -24,6 +22,7 @@ use super::{
         create_dragimage_bitmap, CLSID_DragDropHelper,
     },
     error::PlatformResult,
+    util::create_instance,
     window::PlatformWindow,
 };
 

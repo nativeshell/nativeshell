@@ -40,7 +40,7 @@ url = "2.2.1"
 cc = "1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = "0.17.2"
+windows = "0.19"
 utf16_lit = "2.0.1"
 const-cstr = "0.3.0"
 widestring = "0.4.3"
@@ -49,7 +49,7 @@ detour = {version = "0.8.0", default-features = false }
 base64 = "0.13.0"
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
-windows = "0.17.2"
+windows = "0.19"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 glib = "0.14.0"

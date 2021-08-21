@@ -74,6 +74,10 @@ impl BoolResultExt for BOOL {
     }
 }
 
+pub fn create_instance<T: Interface>(clsid: &Guid) -> Result<T> {
+    unsafe { CoCreateInstance(clsid, None, CLSCTX_ALL) }
+}
+
 pub(super) fn direct_composition_supported() -> bool {
     // for now dsiable direct composition until flutter composition problems
     // are resolved

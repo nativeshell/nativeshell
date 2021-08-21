@@ -32,7 +32,7 @@ fn main() {
                 IStream, STREAM_SEEK,
             },
             Windows::Win32::System::Com::{
-                CoInitializeEx, CoInitializeSecurity, CoUninitialize, COINIT,
+                CoInitializeEx, CoInitializeSecurity, CoUninitialize, CoCreateInstance, COINIT,
                 IDataObject, IDropSource, IDropTarget, RevokeDragDrop, OleInitialize, DVASPECT, TYMED,
                 ReleaseStgMedium, DATADIR, EOLE_AUTHENTICATION_CAPABILITIES, FORMATETC, IEnumFORMATETC, IEnumSTATDATA,
                 IAdviseSink, RegisterDragDrop, DoDragDrop,
