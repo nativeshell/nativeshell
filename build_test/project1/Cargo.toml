@@ -11,5 +11,5 @@ cargo-emit = "0.1"
 nativeshell_build = { path = "../../nativeshell_build" }
 
 [dependencies]
-nativeshell = "0.1.7"
-env_logger = "0.8.3"
+nativeshell = { path = "../../nativeshell" }
+env_logger = "0.9.0"
