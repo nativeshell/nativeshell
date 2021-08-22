@@ -76,10 +76,19 @@ pub type FlBinaryMessengerMessageHandler = Option<
     ),
 >;
 
+#[cfg(test)]
+extern "C" {
+    pub fn fl_dart_project_new() -> *mut GObject;
+}
+
+// Only link flutter_linux_gtk when not building for tests
+#[cfg(not(test))]
 #[link(name = "flutter_linux_gtk")]
 extern "C" {
     pub fn fl_dart_project_new() -> *mut GObject;
+}
 
+extern "C" {
     pub fn fl_view_new(project: *mut FlDartProject) -> *mut GtkWidget;
     pub fn fl_view_get_engine(view: *mut FlView) -> *mut GObject;
 
