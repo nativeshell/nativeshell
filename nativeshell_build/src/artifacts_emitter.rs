@@ -170,9 +170,6 @@ impl<'a> ArtifactsEmitter<'a> {
                 self.artifacts_out_dir.to_string_lossy(),
             };
         } else if cfg!(target_os = "linux") {
-            cargo_emit::rustc_link_lib! {
-                "flutter_linux_gtk",
-            };
             cargo_emit::rustc_link_search! {
                 self.artifacts_out_dir.join("lib").to_string_lossy(),
             };
