@@ -14,7 +14,7 @@ use libc::c_void;
 use objc::{
     declare::ClassDecl,
     rc::{autoreleasepool, StrongPtr},
-    runtime::{Class, Object, Sel},
+    runtime::{Class, Object, Protocol, Sel},
 };
 use url::Url;
 
@@ -158,6 +158,7 @@ lazy_static! {
         let superclass = class!(NSObject);
         let mut decl = ClassDecl::new("IMApplicationDeleagte", superclass).unwrap();
         decl.add_ivar::<*mut c_void>("imState");
+        decl.add_protocol(Protocol::get("NSApplicationDelegate").unwrap());
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
         decl.add_method(
             sel!(applicationWillFinishLaunching:),
