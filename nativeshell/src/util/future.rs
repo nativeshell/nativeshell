@@ -30,9 +30,12 @@ impl<T> FutureCompleter<T> {
     }
 
     pub fn complete(self, data: T) {
-        let mut state = self.state.borrow_mut();
-        state.data.replace(data);
-        if let Some(waker) = state.waker.take() {
+        let waker = {
+            let mut state = self.state.borrow_mut();
+            state.data.replace(data);
+            state.waker.take()
+        };
+        if let Some(waker) = waker {
             waker.wake();
         }
     }
