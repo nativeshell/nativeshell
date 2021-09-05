@@ -7,7 +7,7 @@ use crate::{
     codec::{
         MethodCall, MethodCallError, MethodCallResult, MethodInvoker, StandardMethodCodec, Value,
     },
-    util::FutureWrapper,
+    util::FutureCompleter,
     Error,
 };
 
@@ -40,20 +40,29 @@ impl AsyncMethodInvoker {
             self.channel.clone(),
             &StandardMethodCodec,
         );
-        FutureWrapper::create(move |fulfillment| {
-            let fulfillment = Rc::new(fulfillment);
-            let fulfillment_clone = fulfillment.clone();
-            let res = invoker.call_method(method, args, move |reply| match reply {
-                Ok(value) => fulfillment_clone.fulfill(Ok(value)),
-                Err(error) => {
-                    fulfillment_clone.fulfill(Err(AsyncMethodCallError::MethodCallError(error)))
+        let (
+            future, //
+            completer,
+        ) = FutureCompleter::<AsyncMethodCallResult<Value>>::new();
+
+        let completer = Rc::new(RefCell::new(Some(completer)));
+        let completer_clone = completer.clone();
+        let res = invoker.call_method(method, args, move |reply| {
+            let completer = completer_clone.borrow_mut().take().unwrap();
+            match reply {
+                Ok(value) => {
+                    completer.complete(Ok(value));
                 }
-            });
-            if let Err(error) = res {
-                fulfillment.fulfill(Err(AsyncMethodCallError::ShellError(error)));
+                Err(error) => {
+                    completer.complete(Err(AsyncMethodCallError::MethodCallError(error)));
+                }
             }
-        })
-        .await
+        });
+        if let Err(error) = res {
+            let completer = completer.take().unwrap();
+            completer.complete(Err(AsyncMethodCallError::ShellError(error)));
+        };
+        future.await
     }
 }
 
