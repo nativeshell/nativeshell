@@ -50,12 +50,8 @@ impl AsyncMethodInvoker {
         let res = invoker.call_method(method, args, move |reply| {
             let completer = completer_clone.borrow_mut().take().unwrap();
             match reply {
-                Ok(value) => {
-                    completer.complete(Ok(value));
-                }
-                Err(error) => {
-                    completer.complete(Err(AsyncMethodCallError::MethodCallError(error)));
-                }
+                Ok(value) => completer.complete(Ok(value)),
+                Err(error) => completer.complete(Err(AsyncMethodCallError::MethodCallError(error))),
             }
         });
         if let Err(error) = res {
