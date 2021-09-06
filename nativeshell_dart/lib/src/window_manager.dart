@@ -5,6 +5,7 @@ import 'key_interceptor.dart';
 import 'api_constants.dart';
 import 'drag_drop.dart';
 import 'event.dart';
+import 'util.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
 import 'keyboard_map_internal.dart';
@@ -130,6 +131,23 @@ class WindowManager {
   final windowAddedEvent = Event<Window>();
 }
 
+class _WindowDragDriver extends DragDriver {
+  Future<dynamic> onMethodCall(WindowMethodCall call) async {
+    if (call.method == Methods.dropTargetDraggingUpdated) {
+      final info = DragInfo.deserialize(call.arguments);
+      final res = await draggingUpdated(info);
+      return {
+        'effect': enumToString(res),
+      };
+    } else if (call.method == Methods.dropTargetDraggingExited) {
+      return draggingExited();
+    } else if (call.method == Methods.dropTargetPerformDrop) {
+      final info = DragInfo.deserialize(call.arguments);
+      return performDrop(info);
+    }
+  }
+}
+
 class _LocalWindow extends LocalWindow {
   _LocalWindow(
     WindowHandle handle, {
@@ -139,7 +157,7 @@ class _LocalWindow extends LocalWindow {
 
   WindowState? _currentState;
 
-  final _dropTarget = DropTarget();
+  final _dropTarget = _WindowDragDriver();
 
   @override
   Future<void> onCloseRequested() async {

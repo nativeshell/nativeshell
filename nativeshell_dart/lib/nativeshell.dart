@@ -3,6 +3,7 @@ library nativeshell;
 export 'src/accelerator.dart';
 export 'src/api_model.dart';
 export 'src/drag_drop.dart';
+export 'src/drag_session.dart';
 export 'src/hot_key.dart';
 export 'src/intrinsic_sized_box.dart';
 export 'src/keyboard_map.dart';

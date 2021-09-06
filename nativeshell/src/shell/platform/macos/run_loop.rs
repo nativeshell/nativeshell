@@ -238,7 +238,7 @@ impl PlatformRunLoop {
                 location: NSPoint::new(0.0, 0.0)
                 modifierFlags: 0
                 timestamp: 0
-                    windowNumber: 0
+                windowNumber: 0
                 context: nil
                 subtype: 0
                 data1: 0
