@@ -80,10 +80,10 @@ pub(crate) mod method {
         pub const RESTORE_POSITION_FROM_STRING: &str = "Window.restorePositionFromString";
     }
 
-    pub mod drop_target {
-        pub const DRAGGING_UPDATED: &str = "DropTarget.draggingUpdated";
-        pub const DRAGGING_EXITED: &str = "DropTarget.draggingExited";
-        pub const PERFORM_DROP: &str = "DropTarget.performDrop";
+    pub mod drag_driver {
+        pub const DRAGGING_UPDATED: &str = "DragDriver.draggingUpdated";
+        pub const DRAGGING_EXITED: &str = "DragDriver.draggingExited";
+        pub const PERFORM_DROP: &str = "DragDriver.performDrop";
     }
 
     pub mod drag_source {

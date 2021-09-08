@@ -122,7 +122,7 @@ class WindowManager {
   Future<dynamic> _onDropTargetCall(WindowMethodCall call) async {
     final window = _windows[call.targetWindowHandle];
     if (window is _LocalWindow) {
-      return window._dropTarget.onMethodCall(call);
+      return window._dragDriver.onMethodCall(call);
     } else {
       return null;
     }
@@ -133,15 +133,15 @@ class WindowManager {
 
 class _WindowDragDriver extends DragDriver {
   Future<dynamic> onMethodCall(WindowMethodCall call) async {
-    if (call.method == Methods.dropTargetDraggingUpdated) {
+    if (call.method == Methods.dragDriverDraggingUpdated) {
       final info = DragInfo.deserialize(call.arguments);
       final res = await draggingUpdated(info);
       return {
         'effect': enumToString(res),
       };
-    } else if (call.method == Methods.dropTargetDraggingExited) {
+    } else if (call.method == Methods.dragDriverDraggingExited) {
       return draggingExited();
-    } else if (call.method == Methods.dropTargetPerformDrop) {
+    } else if (call.method == Methods.dragDriverPerformDrop) {
       final info = DragInfo.deserialize(call.arguments);
       return performDrop(info);
     }
@@ -157,7 +157,7 @@ class _LocalWindow extends LocalWindow {
 
   WindowState? _currentState;
 
-  final _dropTarget = _WindowDragDriver();
+  final _dragDriver = _WindowDragDriver();
 
   @override
   Future<void> onCloseRequested() async {
