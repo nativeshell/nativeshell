@@ -390,7 +390,7 @@ impl PlatformWindowDelegate for Window {
     fn dragging_exited(&self) {
         if let Some(invoker) = self.drop_target_invoker() {
             invoker
-                .call_method(method::drop_target::DRAGGING_EXITED, Value::Null, |_| {})
+                .call_method(method::drag_driver::DRAGGING_EXITED, Value::Null, |_| {})
                 .ok_log();
         }
     }
@@ -400,7 +400,7 @@ impl PlatformWindowDelegate for Window {
         if let Some(invoker) = self.drop_target_invoker() {
             invoker
                 .call_method(
-                    method::drop_target::DRAGGING_UPDATED,
+                    method::drag_driver::DRAGGING_UPDATED,
                     to_value(info).unwrap(),
                     move |r| {
                         let s = weak.upgrade();
@@ -421,7 +421,7 @@ impl PlatformWindowDelegate for Window {
         if let Some(invoker) = self.drop_target_invoker() {
             invoker
                 .call_method(
-                    method::drop_target::PERFORM_DROP,
+                    method::drag_driver::PERFORM_DROP,
                     to_value(info).unwrap(),
                     |_| {},
                 )

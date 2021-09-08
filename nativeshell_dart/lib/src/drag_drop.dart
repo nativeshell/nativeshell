@@ -8,8 +8,6 @@ import 'package:flutter/rendering.dart';
 import 'api_constants.dart';
 import 'api_model.dart';
 import 'util.dart';
-import 'window.dart';
-import 'window_method_channel.dart';
 
 enum DragEffect {
   None,
@@ -95,8 +93,8 @@ class DragData {
   }
 
   Future<T?> get<T>(DragDataKey<T> key) async {
-    // access to values is async for future proofing;
-    /// Some platforms allow accessing data asynchronously
+    // Access to values is async for future proofing;
+    // Some platforms may only allow accessing data asynchronously
     final res = _properties[key._name];
     if (res != null) {
       return key._decode(res);
@@ -182,6 +180,11 @@ class RenderDropRegion extends RenderProxyBox {
     } else {
       return DragEffect.None;
     }
+  }
+
+  @override
+  bool hitTestSelf(ui.Offset position) {
+    return true;
   }
 
   void handleOnDropExit(HitTestEntry entry) {
@@ -315,131 +318,18 @@ class DropRegionState extends State<DropRegion> {
   }
 }
 
-final _dragSourceChannel = WindowMethodChannel(Channels.dragSource);
-
-class DragException implements Exception {
-  final String message;
-  DragException(this.message);
-}
-
-class DragSession {
-  static DragSession? currentSession() {
-    return _DragSessionManager.instance.activeSession;
-  }
-
-  static Future<DragSession> beginWithContext({
-    required BuildContext context,
-    required DragData data,
-    required List<DragEffect> allowedEffects,
-  }) async {
-    final renderObject_ = context.findRenderObject();
-    final renderObject = renderObject_ is RenderRepaintBoundary
-        ? renderObject_
-        : context.findAncestorRenderObjectOfType<RenderRepaintBoundary>();
-
-    if (renderObject == null) {
-      throw DragException("Couldn't find any repaint boundary ancestor");
-    }
-
-    final pr = MediaQuery.of(context).devicePixelRatio;
-    final snapshot = await renderObject.toImage(pixelRatio: pr);
-    final rect = MatrixUtils.transformRect(renderObject.getTransformTo(null),
-        Rect.fromLTWH(0, 0, renderObject.size.width, renderObject.size.height));
-    return DragSession.beginWithImage(
-        window: Window.of(context),
-        image: snapshot,
-        rect: rect,
-        data: data,
-        allowedEffects: allowedEffects);
-  }
-
-  static Future<DragSession> beginWithImage({
-    required LocalWindow window,
-    required ui.Image image,
-    required Rect rect,
-    required DragData data,
-    required List<DragEffect> allowedEffects,
-  }) async {
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-
-    await _dragSourceChannel
-        .invokeMethod(window.handle, Methods.dragSourceBeginDragSession, {
-      'image': {
-        'width': image.width,
-        'height': image.height,
-        'bytesPerRow': image.width * 4,
-        'data': bytes!.buffer.asUint8List()
-      },
-      'rect': rect.serialize(),
-      'data': data.serialize(),
-      'allowedEffects':
-          allowedEffects.map<String>((e) => enumToString(e)).toList(),
-    });
-
-    final res = DragSession();
-    _DragSessionManager.instance.registerSession(res);
-    return res;
-  }
-
-  Future<DragEffect> waitForResult() async {
-    if (_result != null) {
-      return _result!;
-    } else {
-      return _completer.future;
-    }
-  }
-
-  void _setResult(DragEffect result) {
-    _result = result;
-    _completer.complete(_result);
-  }
-
-  DragEffect? _result;
-  final _completer = Completer<DragEffect>();
-}
-
-class _DragSessionManager {
-  static final instance = _DragSessionManager();
-
-  _DragSessionManager() {
-    _dragSourceChannel.setMethodCallHandler(_onMethodCall);
-  }
-
-  Future<dynamic> _onMethodCall(WindowMethodCall call) async {
-    if (call.method == Methods.dragSourceDragSessionEnded) {
-      final result =
-          enumFromString(DragEffect.values, call.arguments, DragEffect.None);
-      assert(_activeSessions.isNotEmpty,
-          'Received drag session notification without active drag session.');
-      final session = _activeSessions.removeAt(0);
-      session._setResult(result);
-    }
-  }
-
-  DragSession? get activeSession =>
-      _activeSessions.isEmpty ? null : _activeSessions.last;
-
-  void registerSession(DragSession session) {
-    _activeSessions.add(session);
-  }
-
-  // It is possible to have more than one active session; MacOS drag session finished
-  // notification can be delayed so we might have nother session already in progress;
-  // Last value is current session
-  final _activeSessions = <DragSession>[];
-}
-
-class DropTarget {
+class DragDriver {
   RenderDropRegion? _lastDropRegion;
   HitTestEntry? _lastDropRegionEntry;
 
-  Future<DragEffect> _draggingUpdated(DragInfo info) async {
+  Future<DragEffect> draggingUpdated(DragInfo info) async {
     var res = DragEffect.None;
     final hitTest = HitTestResult();
     final event = DropEvent(info: info);
     RenderDropRegion? dropRegion;
     HitTestEntry? entry;
     GestureBinding.instance!.hitTest(hitTest, info.location);
+
     for (final item in hitTest.path) {
       final target = item.target;
       if (target is RenderDropRegion) {
@@ -460,7 +350,7 @@ class DropTarget {
     return res;
   }
 
-  void _draggingExited() {
+  void draggingExited() {
     if (_lastDropRegion != null) {
       _lastDropRegion!.handleOnDropExit(_lastDropRegionEntry!);
       _lastDropRegion = null;
@@ -468,29 +358,14 @@ class DropTarget {
     }
   }
 
-  void _performDrop(DragInfo info) async {
-    final res = await _draggingUpdated(info);
+  void performDrop(DragInfo info) async {
+    final res = await draggingUpdated(info);
     if (res != DragEffect.None) {
       assert(_lastDropRegion != null);
       final event = DropEvent(info: info);
       _lastDropRegion!.handlePerformDrop(event, _lastDropRegionEntry!);
       _lastDropRegion = null;
       _lastDropRegionEntry = null;
-    }
-  }
-
-  Future<dynamic> onMethodCall(WindowMethodCall call) async {
-    if (call.method == Methods.dropTargetDraggingUpdated) {
-      final info = DragInfo.deserialize(call.arguments);
-      final res = await _draggingUpdated(info);
-      return {
-        'effect': enumToString(res),
-      };
-    } else if (call.method == Methods.dropTargetDraggingExited) {
-      return _draggingExited();
-    } else if (call.method == Methods.dropTargetPerformDrop) {
-      final info = DragInfo.deserialize(call.arguments);
-      return _performDrop(info);
     }
   }
 }

@@ -52,10 +52,10 @@ class Methods {
   static final windowRestorePositionFromString =
       'Window.restorePositionFromString';
 
-  // Drop Target
-  static final dropTargetDraggingUpdated = 'DropTarget.draggingUpdated';
-  static final dropTargetDraggingExited = 'DropTarget.draggingExited';
-  static final dropTargetPerformDrop = 'DropTarget.performDrop';
+  // Drag Driver
+  static final dragDriverDraggingUpdated = 'DragDriver.draggingUpdated';
+  static final dragDriverDraggingExited = 'DragDriver.draggingExited';
+  static final dragDriverPerformDrop = 'DragDriver.performDrop';
 
   // Drop Source
   static final dragSourceBeginDragSession = 'DragSource.beginDragSession';
