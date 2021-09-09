@@ -15,6 +15,7 @@ use async_trait::async_trait;
 
 use super::{Context, EngineHandle, Handle};
 
+#[derive(Clone)]
 pub struct AsyncMethodInvoker {
     context: Context,
     channel: String,

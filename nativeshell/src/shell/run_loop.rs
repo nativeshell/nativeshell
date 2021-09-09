@@ -107,7 +107,8 @@ struct Task {
     future: UnsafeCell<LocalBoxFuture<'static, ()>>,
 }
 
-//
+// Tasks can only be spawned on run loop thread and will only be executed
+// on run loop thread. ArcWake however doesn't know this.
 unsafe impl Send for Task {}
 unsafe impl Sync for Task {}
 
