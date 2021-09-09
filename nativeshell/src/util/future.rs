@@ -54,9 +54,7 @@ impl<T> Future for CompletableFuture<T> {
         match data {
             Some(data) => Poll::Ready(data),
             None => {
-                if state.waker.is_none() {
-                    state.waker.replace(cx.waker().clone());
-                }
+                state.waker.get_or_insert_with(|| cx.waker().clone());
                 Poll::Pending
             }
         }
