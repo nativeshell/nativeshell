@@ -51,15 +51,27 @@ impl AsyncMethodInvoker {
         let completer = Rc::new(RefCell::new(Some(completer)));
         let completer_clone = completer.clone();
         let res = invoker.call_method(method, args, move |reply| {
-            let completer = completer_clone.borrow_mut().take().unwrap();
-            match reply {
-                Ok(value) => completer.complete(Ok(value)),
-                Err(error) => completer.complete(Err(AsyncMethodCallError::MethodCallError(error))),
+            match completer_clone.borrow_mut().take() {
+                Some(completer) => match reply {
+                    Ok(value) => completer.complete(Ok(value)),
+                    Err(error) => {
+                        completer.complete(Err(AsyncMethodCallError::MethodCallError(error)))
+                    }
+                },
+                None => {
+                    panic!("Reply block was invoked more than once of after call_method failed with error.")
+                }
             }
         });
         if let Err(error) = res {
-            let completer = completer.take().unwrap();
-            completer.complete(Err(AsyncMethodCallError::ShellError(error)));
+            match completer.take() {
+                Some(completer) => {
+                    completer.complete(Err(AsyncMethodCallError::ShellError(error)));
+                }
+                None => {
+                    panic!("call_method failed with error but reply block was already invoked.");
+                }
+            }
         };
         future.await
     }
