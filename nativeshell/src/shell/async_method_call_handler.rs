@@ -52,7 +52,7 @@ impl AsyncMethodInvoker {
         let completer_clone = completer.clone();
         let res = invoker.call_method(method, args, move |reply| {
             let completer = completer_clone.borrow_mut().take().expect(
-                "Reply block was invoked more than once of after call_method failed with error.",
+                "Reply block was invoked more than once or after call_method failed with error.",
             );
             match reply {
                 Ok(value) => completer.complete(Ok(value)),
