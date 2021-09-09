@@ -54,7 +54,7 @@ impl RunLoop {
 
     pub fn run(&self) {
         // set context as current
-        let _handle = self.context.get().unwrap().set_current();
+        let _handle = self.context.get().unwrap().set_as_current();
         self.platform_run_loop.run()
     }
 

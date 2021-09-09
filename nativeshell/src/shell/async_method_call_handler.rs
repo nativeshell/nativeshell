@@ -22,7 +22,9 @@ pub struct AsyncMethodInvoker {
 }
 
 pub enum AsyncMethodCallError<V> {
+    // Error originating from NativeShell, such as invalid engine handle
     ShellError(Error),
+    // Error originating from Flutter code
     MethodCallError(MethodCallError<V>),
 }
 

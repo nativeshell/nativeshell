@@ -158,7 +158,7 @@ impl ContextRef {
 
     // Sets the context as the current context for the current thread.
     // The context is set as current while the result handle is in scope.
-    pub fn set_current(&self) -> CurrentContextHandle {
+    pub fn set_as_current(&self) -> CurrentContextHandle {
         CurrentContextHandle {
             previous: CURRENT_CONTEXT.with(|c| c.borrow_mut().replace(self.weak())),
         }
@@ -166,7 +166,8 @@ impl ContextRef {
 }
 
 // Spawn the future with current run loop as executor. This must be called on main
-// thread otherwise the method will panic if there is no context associated with current thread.
+// thread otherwise the method will panic (because there is no context associated
+// with current thread).
 pub fn spawn(future: impl Future<Output = ()> + 'static) {
     let context = Context::current().unwrap();
     context.run_loop.borrow().spawn(future);
