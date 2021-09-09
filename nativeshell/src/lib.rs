@@ -9,6 +9,8 @@ pub mod util;
 mod error;
 pub use error::*;
 
+pub use shell::spawn;
+
 #[allow(unused_imports)]
 #[macro_use]
 extern crate lazy_static;

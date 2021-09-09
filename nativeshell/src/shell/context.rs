@@ -1,4 +1,9 @@
-use std::rc::{Rc, Weak};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
+
+use futures::Future;
 
 use crate::{util::LateRefCell, Error, Result};
 
@@ -64,7 +69,7 @@ impl ContextImpl {
     fn initialize(&self, context: &ContextRef) -> Result<()> {
         init_platform().map_err(Error::from)?;
 
-        self.run_loop.set(RunLoop::new());
+        self.run_loop.set(RunLoop::new(context));
         self.engine_manager.set(EngineManager::new(context));
         self.message_manager.set(MessageManager::new(context));
         self.window_method_channel
@@ -117,6 +122,24 @@ impl Context {
     pub fn get(&self) -> Option<ContextRef> {
         self.context.upgrade().map(|c| ContextRef { context: c })
     }
+
+    pub fn current() -> Option<ContextRef> {
+        CURRENT_CONTEXT.with(|c| c.borrow().as_ref().and_then(|c| c.get()))
+    }
+}
+
+thread_local! {
+    static CURRENT_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+}
+
+pub struct CurrentContextHandle {
+    previous: Option<Context>,
+}
+
+impl Drop for CurrentContextHandle {
+    fn drop(&mut self) {
+        CURRENT_CONTEXT.with(|c| *c.borrow_mut() = self.previous.take());
+    }
 }
 
 // Strong reference to a Context. Intentionally not clonable; There should be one
@@ -132,6 +155,22 @@ impl ContextRef {
             context: Rc::downgrade(&self.context),
         }
     }
+
+    // Sets the context as the current context for the current thread.
+    // The context is set as current while the result handle is in scope.
+    pub fn set_as_current(&self) -> CurrentContextHandle {
+        CurrentContextHandle {
+            previous: CURRENT_CONTEXT.with(|c| c.borrow_mut().replace(self.weak())),
+        }
+    }
+}
+
+// Spawn the future with current run loop as executor. This must be called on main
+// thread otherwise the method will panic (because there is no context associated
+// with current thread).
+pub fn spawn(future: impl Future<Output = ()> + 'static) {
+    let context = Context::current().unwrap();
+    context.run_loop.borrow().spawn(future);
 }
 
 impl std::ops::Deref for ContextRef {
