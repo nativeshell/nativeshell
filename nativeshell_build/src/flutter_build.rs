@@ -20,7 +20,10 @@ use crate::{
 // User configurable options during flutter build
 #[derive(Debug)]
 pub struct FlutterOptions<'a> {
-    // lib/main.dart by default
+    // Project root relative to current cargo manifest file
+    pub project_root: Option<&'a Path>,
+
+    // lib/main.dart by default (relative to project root)
     pub target_file: &'a Path,
 
     // Custom Flutter location. If not specified, NativeShell build will try to find
@@ -42,6 +45,7 @@ pub struct FlutterOptions<'a> {
 impl Default for FlutterOptions<'_> {
     fn default() -> Self {
         Self {
+            project_root: None,
             target_file: "lib/main.dart".as_path(),
             flutter_path: None,
             local_engine: None,
@@ -152,7 +156,10 @@ impl Flutter<'_> {
 
     fn new(options: FlutterOptions) -> Flutter {
         Flutter {
-            root_dir: std::env::var("CARGO_MANIFEST_DIR").unwrap().into(),
+            root_dir: std::env::var("CARGO_MANIFEST_DIR")
+                .unwrap()
+                .as_path()
+                .join(&options.project_root.unwrap_or_else(|| "".as_path())),
             out_dir: std::env::var("OUT_DIR").unwrap().into(),
             options,
             build_mode: Flutter::build_mode(),
