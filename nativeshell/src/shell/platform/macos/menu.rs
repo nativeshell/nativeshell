@@ -536,6 +536,7 @@ impl PlatformMenu {
 
 struct MenuItemTargetClass(*const Class);
 unsafe impl Sync for MenuItemTargetClass {}
+unsafe impl Send for MenuItemTargetClass {}
 
 lazy_static! {
     static ref MENU_ITEM_TARGET_CLASS: MenuItemTargetClass = unsafe {

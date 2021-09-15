@@ -151,6 +151,7 @@ impl ApplicationDelegateManager {
 }
 
 struct ApplicationDelegateClass(*const Class);
+unsafe impl Send for ApplicationDelegateClass {}
 unsafe impl Sync for ApplicationDelegateClass {}
 
 lazy_static! {

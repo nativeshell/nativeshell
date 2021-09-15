@@ -919,8 +919,10 @@ impl PlatformWindow {
 
 struct WindowClass(*const Class);
 unsafe impl Sync for WindowClass {}
+unsafe impl Send for WindowClass {}
 struct WindowDelegateClass(*const Class);
 unsafe impl Sync for WindowDelegateClass {}
+unsafe impl Send for WindowDelegateClass {}
 
 lazy_static! {
     static ref WINDOW_CLASS: WindowClass = unsafe {
