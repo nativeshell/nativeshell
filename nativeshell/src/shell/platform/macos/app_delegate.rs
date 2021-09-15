@@ -151,6 +151,7 @@ impl ApplicationDelegateManager {
 }
 
 struct ApplicationDelegateClass(*const Class);
+// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
 unsafe impl Send for ApplicationDelegateClass {}
 unsafe impl Sync for ApplicationDelegateClass {}
 
