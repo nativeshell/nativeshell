@@ -9,6 +9,7 @@ struct Global {
     window_class: RefCell<Weak<WindowClass>>,
 }
 
+unsafe impl Send for Global {}
 unsafe impl Sync for Global {}
 
 lazy_static! {
