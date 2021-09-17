@@ -17,6 +17,8 @@ where
     let mut diff = diff::slice(old, new);
     let mut res = Vec::<DiffResult<&'a T>>::new();
     let mut i = 0;
+    // Convert <Remove, [Remove...]?, Add> sequences to <Update, [Remove...]?`>
+    // for items where can_update returns true.
     while i < diff.len() {
         let cur = &diff[i];
         match cur {
