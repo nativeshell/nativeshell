@@ -1,4 +1,4 @@
-String enumToString<T>(T enumItem, {bool camelCase = false}) {
+String enumToString<T>(T enumItem) {
   return enumItem.toString().split('.')[1];
 }
 
