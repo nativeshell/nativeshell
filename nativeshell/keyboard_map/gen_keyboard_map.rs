@@ -7,6 +7,7 @@ use std::{
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct PhysicalKeyEntry {
     names: HashMap<String, String>,
     scan_codes: HashMap<String, serde_json::Value>, // number or array
@@ -15,6 +16,7 @@ struct PhysicalKeyEntry {
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct LogicalKeyEntry {
     name: String,
     value: i64,

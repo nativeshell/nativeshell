@@ -11,7 +11,7 @@ pub enum GeometryPreference {
     PreferContent,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowGeometry {
     pub frame_origin: Option<Point>,
@@ -73,21 +73,6 @@ impl WindowGeometryRequest {
     }
 }
 
-impl Default for WindowGeometry {
-    fn default() -> Self {
-        Self {
-            frame_origin: None,
-            frame_size: None,
-            content_origin: None,
-            content_size: None,
-            min_frame_size: None,
-            max_frame_size: None,
-            min_content_size: None,
-            max_content_size: None,
-        }
-    }
-}
-
 #[derive(serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PopupMenuRequest {
@@ -118,7 +103,7 @@ pub struct HidePopupMenuRequest {
     pub handle: MenuHandle,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowGeometryFlags {
     pub frame_origin: bool,
@@ -129,21 +114,6 @@ pub struct WindowGeometryFlags {
     pub max_frame_size: bool,
     pub min_content_size: bool,
     pub max_content_size: bool,
-}
-
-impl Default for WindowGeometryFlags {
-    fn default() -> Self {
-        Self {
-            frame_origin: false,
-            frame_size: false,
-            content_origin: false,
-            content_size: false,
-            min_frame_size: false,
-            max_frame_size: false,
-            min_content_size: false,
-            max_content_size: false,
-        }
-    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]

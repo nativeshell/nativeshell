@@ -29,6 +29,7 @@ pub(crate) struct PluginPlatformInfo {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)] // on some platforms
 pub(crate) struct Plugin {
     pub name: String,
     pub path: PathBuf,
