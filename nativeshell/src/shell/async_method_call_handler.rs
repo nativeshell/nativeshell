@@ -82,7 +82,7 @@ pub trait AsyncMethodCallHandler: Sized + 'static {
     fn assign_weak_self(&mut self, _weak_self: Weak<RefCell<Self>>) {}
 
     // Keep the method invoker provider if you want to call methods on engines.
-    fn assign_invoker(&mut self, _provider: AsyncMethodInvoker) {}
+    fn assign_invoker(&mut self, _invoker: AsyncMethodInvoker) {}
 
     // Called when engine is about to be destroyed.
     fn on_engine_destroyed(&self, _engine: EngineHandle) {}
@@ -102,11 +102,11 @@ pub struct RegisteredAsyncMethodCallHandler<T: AsyncMethodCallHandler> {
 
 // Active method call handler
 impl<T: AsyncMethodCallHandler> RegisteredAsyncMethodCallHandler<T> {
-    fn new(context: Context, channel: &str, handler: T) -> Self {
+    pub fn new(context: Context, channel: &str, handler: T) -> Self {
         Self::new_ref(context, channel, Rc::new(RefCell::new(handler)))
     }
 
-    fn new_ref(context: Context, channel: &str, handler: Rc<RefCell<T>>) -> Self {
+    pub fn new_ref(context: Context, channel: &str, handler: Rc<RefCell<T>>) -> Self {
         let context_ref = context.get().unwrap();
 
         handler
