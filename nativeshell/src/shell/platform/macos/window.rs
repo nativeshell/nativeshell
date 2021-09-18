@@ -11,7 +11,7 @@ use cocoa::{
     appkit::{
         CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
         NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
-        NSWindowTabbingMode,
+        NSWindowTabbingMode, NSWindowTitleVisibility,
     },
     base::{id, nil, BOOL, NO, YES},
     foundation::{
@@ -397,8 +397,16 @@ impl PlatformWindow {
 
             if style.frame == WindowFrame::Regular {
                 NSWindow::setTitlebarAppearsTransparent_(*self.platform_window, NO);
+                NSWindow::setTitleVisibility_(
+                    *self.platform_window,
+                    NSWindowTitleVisibility::NSWindowTitleVisible,
+                );
             } else {
                 NSWindow::setTitlebarAppearsTransparent_(*self.platform_window, YES);
+                NSWindow::setTitleVisibility_(
+                    *self.platform_window,
+                    NSWindowTitleVisibility::NSWindowTitleHidden,
+                );
             }
 
             if style.frame == WindowFrame::NoTitle {
