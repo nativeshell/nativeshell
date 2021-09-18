@@ -30,9 +30,9 @@ impl EngineManager {
         }
     }
 
-    pub fn create_engine(&mut self) -> Result<EngineHandle> {
+    pub fn create_engine(&mut self, parent_engine: Option<EngineHandle>) -> Result<EngineHandle> {
         if let Some(context) = self.context.get() {
-            let engine = FlutterEngine::create(&context.options.flutter_plugins);
+            let engine = FlutterEngine::new(&context.options.flutter_plugins, parent_engine);
             let handle = self.next_handle;
 
             for n in self.create_notifications.values() {
@@ -62,6 +62,14 @@ impl EngineManager {
 
     pub fn get_engine(&self, handle: EngineHandle) -> Option<Ref<FlutterEngine>> {
         self.engines.get(&handle).map(|a| a.borrow())
+    }
+
+    // Returns the handle of engine responsible for creating provided engine. It is valid
+    // for this method to return handle to engine that is no longer active.
+    pub fn get_parent_engine(&self, handle: EngineHandle) -> Option<EngineHandle> {
+        self.engines
+            .get(&handle)
+            .and_then(|e| e.borrow().parent_engine)
     }
 
     #[must_use]

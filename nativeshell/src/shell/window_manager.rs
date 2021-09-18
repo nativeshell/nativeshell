@@ -77,7 +77,14 @@ impl WindowManager {
             let window_handle = self.next_handle;
             self.next_handle.0 += 1;
 
-            let engine_handle = context.engine_manager.borrow_mut().create_engine()?;
+            let parent_engine = parent
+                .and_then(|parent| self.windows.get(&parent))
+                .map(|win| win.engine_handle);
+
+            let engine_handle = context
+                .engine_manager
+                .borrow_mut()
+                .create_engine(parent_engine)?;
 
             self.engine_to_window.insert(engine_handle, window_handle);
 
@@ -130,6 +137,10 @@ impl WindowManager {
             .borrow()
             .get(&handle)
             .map(|w| w.platform_window.borrow().get_platform_window())
+    }
+
+    pub fn get_engine_for_window(&self, handle: WindowHandle) -> Option<EngineHandle> {
+        self.windows.borrow().get(&handle).map(|w| w.engine_handle)
     }
 
     pub(super) fn remove_window(&mut self, window: &Window) {
