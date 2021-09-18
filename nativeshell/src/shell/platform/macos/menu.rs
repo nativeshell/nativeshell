@@ -535,6 +535,8 @@ impl PlatformMenu {
 }
 
 struct MenuItemTargetClass(*const Class);
+// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
+unsafe impl Send for MenuItemTargetClass {}
 unsafe impl Sync for MenuItemTargetClass {}
 
 lazy_static! {

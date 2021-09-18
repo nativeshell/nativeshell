@@ -9,6 +9,8 @@ struct Global {
     window_class: RefCell<Weak<WindowClass>>,
 }
 
+// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
+unsafe impl Send for Global {}
 unsafe impl Sync for Global {}
 
 lazy_static! {

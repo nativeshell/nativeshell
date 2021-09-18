@@ -926,8 +926,12 @@ impl PlatformWindow {
 }
 
 struct WindowClass(*const Class);
+// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
+unsafe impl Send for WindowClass {}
 unsafe impl Sync for WindowClass {}
 struct WindowDelegateClass(*const Class);
+// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
+unsafe impl Send for WindowDelegateClass {}
 unsafe impl Sync for WindowDelegateClass {}
 
 lazy_static! {
