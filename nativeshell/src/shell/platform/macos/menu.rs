@@ -145,13 +145,10 @@ impl PlatformMenuManager {
         self.window_menus
             .borrow_mut()
             .remove(&StrongPtrWrapper(window));
-    }
-
-    pub fn window_did_become_active(&self, _window: StrongPtr) {
         self.schedule_update();
     }
 
-    pub fn window_did_resign_active(&self, _window: StrongPtr) {
+    pub fn window_did_become_active(&self, _window: StrongPtr) {
         self.schedule_update();
     }
 }

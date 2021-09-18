@@ -1141,18 +1141,7 @@ extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
     });
 }
 
-extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
-    with_state_delegate(this, |state, _delegate| {
-        if let Some(context) = state.context.get() {
-            context
-                .menu_manager
-                .borrow()
-                .borrow()
-                .get_platform_menu_manager()
-                .window_did_resign_active(state.platform_window.clone());
-        }
-    });
-}
+extern "C" fn window_did_resign_key(_this: &Object, _: Sel, _: id) {}
 
 extern "C" fn layout_if_needed(this: &mut Object, _sel: Sel) {
     unsafe {
