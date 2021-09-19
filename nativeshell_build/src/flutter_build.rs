@@ -7,7 +7,7 @@ use std::{
 
 use dunce::simplified;
 use path_slash::PathExt;
-use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
+use yaml_rust::{Yaml, YamlLoader};
 
 use crate::{
     artifacts_emitter::ArtifactsEmitter,
@@ -237,18 +237,11 @@ impl Flutter<'_> {
         Ok(None)
     }
 
-    // copy pub_spec.yaml, linking assets in the process; asset directories
-    // need to be linked relative to pubspec.yaml
-    // Returns asset directories
-    fn copy_pubspec_yaml(&self, from: &Path, to: &Path) -> BuildResult<Vec<PathBuf>> {
-        let mut res = Vec::<PathBuf>::new();
-
-        let pub_spec = fs::read_to_string(from).wrap_error(FileOperation::Read, || from.into())?;
-        let pub_spec = YamlLoader::load_from_str(&pub_spec)
+    fn extract_assets(pub_spec: &str) -> BuildResult<Vec<String>> {
+        let pub_spec = YamlLoader::load_from_str(pub_spec)
             .map_err(|err| BuildError::YamlError { source: err })?;
 
-        let from_dir = from.parent().unwrap();
-        let to_dir = to.parent().unwrap();
+        let mut res = Vec::new();
 
         let flutter = &pub_spec[0];
         if let Yaml::Hash(hash) = flutter {
@@ -258,8 +251,24 @@ impl Flutter<'_> {
                 if let Some(Yaml::Array(assets)) = assets {
                     for asset in assets {
                         if let Yaml::String(str) = asset {
-                            if let Some(asset) = self.link_asset(from_dir, to_dir, str)? {
-                                res.push(asset);
+                            res.push(str.clone());
+                        }
+                    }
+                }
+                let fonts = flutter.get(&Yaml::String("fonts".into()));
+                if let Some(Yaml::Array(fonts)) = fonts {
+                    for font in fonts {
+                        if let Yaml::Hash(font) = font {
+                            let fonts = font.get(&Yaml::String("fonts".into()));
+                            if let Some(Yaml::Array(fonts)) = fonts {
+                                for font in fonts {
+                                    if let Yaml::Hash(font) = font {
+                                        let asset = font.get(&Yaml::String("asset".into()));
+                                        if let Some(Yaml::String(str)) = asset {
+                                            res.push(str.clone());
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -267,12 +276,32 @@ impl Flutter<'_> {
             }
         }
 
-        let mut out_str = String::new();
-        let mut emitter = YamlEmitter::new(&mut out_str);
-        emitter.dump(flutter).unwrap();
+        Ok(res)
+    }
+
+    // copy pub_spec.yaml, linking assets in the process; asset directories
+    // need to be linked relative to pubspec.yaml
+    // Returns asset directories
+    fn copy_pubspec_yaml(&self, from: &Path, to: &Path) -> BuildResult<Vec<PathBuf>> {
+        let pub_spec = fs::read_to_string(from).wrap_error(FileOperation::Read, || from.into())?;
+
+        let from_dir = from.parent().unwrap();
+        let to_dir = to.parent().unwrap();
+
+        let assets: BuildResult<Vec<PathBuf>> = Self::extract_assets(&pub_spec)?
+            .iter()
+            .filter_map(|asset| {
+                let res = self.link_asset(from_dir, to_dir, asset);
+                match res {
+                    Ok(None) => None,
+                    Ok(Some(value)) => Some(Ok(value)),
+                    Err(err) => Some(Err(err)),
+                }
+            })
+            .collect();
 
         Self::copy(from, to)?;
-        Ok(res)
+        assets
     }
 
     pub fn build_mode() -> String {
@@ -602,4 +631,35 @@ struct PackageConfig {
     packages: Vec<Package>,
     #[serde(flatten)]
     other: serde_json::Map<String, serde_json::Value>,
+}
+
+#[test]
+fn test_extract_assets() {
+    let pub_spec = r#"
+flutter:
+  assets:
+    - asset1
+    - asset2
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: fonts/Raleway-Regular.ttf
+        - asset: fonts/Raleway-Italic.ttf
+          style: italic
+    - family: RobotoMono
+      fonts:
+        - asset: fonts/RobotoMono-Regular.ttf
+        - asset: fonts/RobotoMono-Bold.ttf
+          weight: 700
+    "#;
+    let assets = Flutter::extract_assets(pub_spec).unwrap();
+    let expected: Vec<String> = vec![
+        "asset1".into(),
+        "asset2".into(),
+        "fonts/Raleway-Regular.ttf".into(),
+        "fonts/Raleway-Italic.ttf".into(),
+        "fonts/RobotoMono-Regular.ttf".into(),
+        "fonts/RobotoMono-Bold.ttf".into(),
+    ];
+    assert_eq!(assets, expected);
 }
