@@ -1,4 +1,4 @@
-use std::{collections::HashMap, slice};
+use std::collections::HashMap;
 
 use log::error;
 
@@ -368,14 +368,12 @@ impl<'a> Reader<'a> {
         }
     }
     fn read_string(&mut self, len: usize) -> String {
-        unsafe {
-            if len == 0 {
-                String::from("")
-            } else {
-                let v = slice::from_raw_parts(&self.buf[self.pos], len);
-                self.pos += len;
-                String::from_utf8_lossy(v).to_owned().to_string()
-            }
+        if len == 0 {
+            String::from("")
+        } else {
+            let v = &self.buf[self.pos..self.pos + len];
+            self.pos += len;
+            String::from_utf8_lossy(v).to_owned().to_string()
         }
     }
     fn read_u8_list(&mut self, len: usize) -> Vec<u8> {
