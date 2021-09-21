@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:nativeshell/nativeshell.dart';
+import 'dart:io';
 
 import 'key_interceptor.dart';
 import 'api_constants.dart';
@@ -9,7 +9,7 @@ import 'util.dart';
 import 'window.dart';
 import 'window_method_channel.dart';
 import 'keyboard_map_internal.dart';
-import 'dart:io';
+import 'window_widget.dart';
 
 // Do not use directly. Access windows through Window.of(context) or through
 // WindowState.window.

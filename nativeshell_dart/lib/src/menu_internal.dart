@@ -3,8 +3,8 @@ import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
-import 'package:nativeshell/nativeshell.dart';
 
+import 'keyboard_map.dart';
 import 'mutex.dart';
 import 'util.dart';
 import 'api_constants.dart';

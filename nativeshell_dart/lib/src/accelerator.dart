@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nativeshell/nativeshell.dart';
 import 'key_interceptor.dart';
+import 'keyboard_map.dart';
 import 'menu.dart';
 
 // Defines a keyboard shortcut.
