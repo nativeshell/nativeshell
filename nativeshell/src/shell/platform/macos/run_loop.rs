@@ -134,15 +134,13 @@ impl State {
 
     extern "C" fn retain(data: *const c_void) -> *const c_void {
         let state = data as *const Mutex<State>;
-        let state = unsafe { Arc::from_raw(state) };
-        let _ = ManuallyDrop::new(state.clone()); // increase ref count
-        let _ = ManuallyDrop::new(state); // counter Arc::from_raw
+        unsafe { Arc::increment_strong_count(state) }
         data
     }
 
     extern "C" fn release(data: *const c_void) {
         let state = data as *const Mutex<State>;
-        unsafe { Arc::from_raw(state) }; // decrease ref count
+        unsafe { Arc::decrement_strong_count(state) };
     }
 
     extern "C" fn on_timer(_timer: CFRunLoopTimerRef, data: *mut c_void) {
