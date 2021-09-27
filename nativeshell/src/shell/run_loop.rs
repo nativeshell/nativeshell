@@ -133,8 +133,12 @@ impl<T: 'static> ArcWake for Task<T> {
     fn wake_by_ref(arc_self: &std::sync::Arc<Self>) {
         let arc_self = arc_self.clone();
         let poll = move |arc_self: Arc<Task<T>>| {
-            if let Poll::Ready(value) = arc_self.poll() {
-                *arc_self.value.borrow_mut() = Some(value);
+            if arc_self.value.borrow().is_none() {
+                if let Poll::Ready(value) = arc_self.poll() {
+                    *arc_self.value.borrow_mut() = Some(value);
+                }
+            }
+            if arc_self.value.borrow().is_some() {
                 if let Some(waker) = arc_self.waker.borrow_mut().take() {
                     waker.wake();
                 }
