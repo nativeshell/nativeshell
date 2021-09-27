@@ -1,8 +1,9 @@
 use std::{
-    cell::UnsafeCell,
+    cell::{RefCell, UnsafeCell},
     future::Future,
     rc::Rc,
     sync::Arc,
+    task::Poll,
     thread::{self, ThreadId},
     time::Duration,
 };
@@ -71,14 +72,17 @@ impl RunLoop {
     // Spawn the future with current run loop being the executor;
     // Generally the future will be executed synchronously until first
     // await.
-    pub fn spawn(&self, future: impl Future<Output = ()> + 'static) {
+    pub fn spawn<T: 'static>(&self, future: impl Future<Output = T> + 'static) -> Joiner<T> {
         let future = future.boxed_local();
         let task = Arc::new(Task {
             sender: self.new_sender(),
             thread_id: thread::current().id(),
             future: UnsafeCell::new(future),
+            value: RefCell::new(None),
+            waker: RefCell::new(None),
         });
         ArcWake::wake_by_ref(&task);
+        Joiner { task }
     }
 }
 
@@ -101,38 +105,70 @@ impl RunLoopSender {
 //
 //
 
-struct Task {
+struct Task<T> {
     sender: RunLoopSender,
     thread_id: ThreadId,
-    future: UnsafeCell<LocalBoxFuture<'static, ()>>,
+    future: UnsafeCell<LocalBoxFuture<'static, T>>,
+    value: RefCell<Option<T>>,
+    waker: RefCell<Option<std::task::Waker>>,
 }
 
 // Tasks can only be spawned on run loop thread and will only be executed
 // on run loop thread. ArcWake however doesn't know this.
-unsafe impl Send for Task {}
-unsafe impl Sync for Task {}
+unsafe impl<T> Send for Task<T> {}
+unsafe impl<T> Sync for Task<T> {}
 
-impl Task {
-    fn poll(self: &std::sync::Arc<Self>) {
+impl<T: 'static> Task<T> {
+    fn poll(self: &std::sync::Arc<Self>) -> Poll<T> {
         let waker = waker_ref(self).clone();
         let context = &mut core::task::Context::from_waker(&waker);
         unsafe {
             let future = &mut *self.future.get();
-            let _ = future.as_mut().poll(context);
+            future.as_mut().poll(context)
         }
     }
 }
 
-impl ArcWake for Task {
+impl<T: 'static> ArcWake for Task<T> {
     fn wake_by_ref(arc_self: &std::sync::Arc<Self>) {
         let arc_self = arc_self.clone();
+        let poll = move |arc_self: Arc<Task<T>>| {
+            if let Poll::Ready(value) = arc_self.poll() {
+                *arc_self.value.borrow_mut() = Some(value);
+                if let Some(waker) = arc_self.waker.borrow_mut().take() {
+                    waker.wake();
+                }
+            }
+        };
         if arc_self.thread_id == thread::current().id() {
-            arc_self.poll();
+            poll(arc_self);
         } else {
             let sender = arc_self.sender.clone();
             sender.send(move || {
-                arc_self.poll();
+                poll(arc_self);
             });
+        }
+    }
+}
+
+pub struct Joiner<T> {
+    task: Arc<Task<T>>,
+}
+
+impl<T: 'static> Future for Joiner<T> {
+    type Output = T;
+
+    fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+        let value = self.task.value.borrow_mut().take();
+        match value {
+            Some(value) => Poll::Ready(value),
+            None => {
+                self.task
+                    .waker
+                    .borrow_mut()
+                    .get_or_insert_with(|| cx.waker().clone());
+                Poll::Pending
+            }
         }
     }
 }
