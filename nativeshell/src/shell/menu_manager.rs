@@ -170,7 +170,7 @@ impl MenuDelegate for MenuManager {
         if let Some(invoker) = self.invoker_for_menu(menu_handle) {
             invoker
                 .call_method(
-                    method::menu::ON_ACTION.into(),
+                    method::menu::ON_ACTION,
                     to_value(&MenuAction {
                         handle: menu_handle,
                         id,
@@ -186,7 +186,7 @@ impl MenuDelegate for MenuManager {
         if let Some(invoker) = self.invoker_for_menu(menu_handle) {
             invoker
                 .call_method(
-                    method::menu::ON_OPEN.into(),
+                    method::menu::ON_OPEN,
                     to_value(&MenuOpen {
                         handle: menu_handle,
                     })
@@ -207,11 +207,7 @@ impl MenuDelegate for MenuManager {
     fn move_to_previous_menu(&self, menu_handle: MenuHandle) {
         if let Some(invoker) = self.invoker_for_menu(menu_handle) {
             invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_PREVIOUS_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
+                .call_method(method::menu_bar::MOVE_TO_PREVIOUS_MENU, Value::Null, |_| {})
                 .ok_log();
         }
     }
@@ -219,11 +215,7 @@ impl MenuDelegate for MenuManager {
     fn move_to_next_menu(&self, menu_handle: MenuHandle) {
         if let Some(invoker) = self.invoker_for_menu(menu_handle) {
             invoker
-                .call_method(
-                    method::menu_bar::MOVE_TO_NEXT_MENU.into(),
-                    Value::Null,
-                    |_| {},
-                )
+                .call_method(method::menu_bar::MOVE_TO_NEXT_MENU, Value::Null, |_| {})
                 .ok_log();
         }
     }

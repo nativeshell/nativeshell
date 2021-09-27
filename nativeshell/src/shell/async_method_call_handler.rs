@@ -46,7 +46,7 @@ impl AsyncMethodInvoker {
     pub async fn call_method(
         &self,
         engine: EngineHandle,
-        method: String,
+        method: &str,
         args: Value,
     ) -> AsyncMethodCallResult<Value> {
         let invoker = MethodInvoker::new(

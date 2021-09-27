@@ -83,11 +83,7 @@ impl KeyboardMapDelegate for KeyboardMapManager {
         for engine in &self.engines {
             let invoker = self.provider.get_method_invoker_for_engine(*engine);
             invoker
-                .call_method(
-                    method::keyboard_map::ON_CHANGED.into(),
-                    layout.clone(),
-                    |_| {},
-                )
+                .call_method(method::keyboard_map::ON_CHANGED, layout.clone(), |_| {})
                 .ok_log();
         }
     }

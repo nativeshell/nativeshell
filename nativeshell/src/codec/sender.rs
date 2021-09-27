@@ -32,12 +32,15 @@ impl<V> MethodInvoker<V> {
         }
     }
 
-    pub fn call_method<F>(&self, method: String, args: V, reply: F) -> Result<()>
+    pub fn call_method<F>(&self, method: &str, args: V, reply: F) -> Result<()>
     where
         F: FnOnce(MethodCallResult<V>) + 'static,
     {
         if let Some(context) = self.context.get() {
-            let encoded = self.codec.encode_method_call(&MethodCall { method, args });
+            let encoded = self.codec.encode_method_call(&MethodCall {
+                method: method.into(),
+                args,
+            });
             let engine_manager = context.engine_manager.borrow();
             let engine = engine_manager.get_engine(self.engine_handle);
             if let Some(engine) = engine {

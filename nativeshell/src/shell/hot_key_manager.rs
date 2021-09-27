@@ -72,7 +72,7 @@ impl HotKeyManagerDelegate for HotKeyManager {
         let invoker = self.invoker_provider.get_method_invoker_for_engine(engine);
         invoker
             .call_method(
-                method::hot_key::ON_PRESSED.into(),
+                method::hot_key::ON_PRESSED,
                 to_value(&HotKeyPressed { handle }).unwrap(),
                 |_| {},
             )
