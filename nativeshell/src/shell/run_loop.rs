@@ -72,7 +72,7 @@ impl RunLoop {
     // Spawn the future with current run loop being the executor;
     // Generally the future will be executed synchronously until first
     // await.
-    pub fn spawn<T: 'static>(&self, future: impl Future<Output = T> + 'static) -> Joiner<T> {
+    pub fn spawn<T: 'static>(&self, future: impl Future<Output = T> + 'static) -> JoinHandle<T> {
         let future = future.boxed_local();
         let task = Arc::new(Task {
             sender: self.new_sender(),
@@ -82,7 +82,7 @@ impl RunLoop {
             waker: RefCell::new(None),
         });
         ArcWake::wake_by_ref(&task);
-        Joiner { task }
+        JoinHandle { task }
     }
 }
 
@@ -151,11 +151,11 @@ impl<T: 'static> ArcWake for Task<T> {
     }
 }
 
-pub struct Joiner<T> {
+pub struct JoinHandle<T> {
     task: Arc<Task<T>>,
 }
 
-impl<T: 'static> Future for Joiner<T> {
+impl<T: 'static> Future for JoinHandle<T> {
     type Output = T;
 
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {

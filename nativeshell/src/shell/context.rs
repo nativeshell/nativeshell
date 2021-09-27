@@ -12,7 +12,7 @@ use super::{
         app_delegate::ApplicationDelegateManager, drag_data::DragDataAdapter,
         engine::PlatformPlugin, init::init_platform,
     },
-    EngineManager, HotKeyManager, Joiner, KeyboardMapManager, MenuManager, MessageManager,
+    EngineManager, HotKeyManager, JoinHandle, KeyboardMapManager, MenuManager, MessageManager,
     RegisteredMethodCallHandler, RunLoop, WindowManager, WindowMethodChannel,
 };
 
@@ -168,7 +168,7 @@ impl ContextRef {
 // Spawn the future with current run loop as executor. This must be called on main
 // thread otherwise the method will panic (because there is no context associated
 // with current thread).
-pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> Joiner<T> {
+pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> JoinHandle<T> {
     let context = Context::current().unwrap();
     let run_loop = context.run_loop.borrow();
     run_loop.spawn(future)
