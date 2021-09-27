@@ -9,7 +9,7 @@ pub mod util;
 mod error;
 pub use error::*;
 
-pub use shell::spawn;
+pub use shell::{spawn, Context};
 
 #[allow(unused_imports)]
 #[macro_use]
