@@ -1,7 +1,6 @@
 use crate::Error;
 
 pub use self::value::Value;
-
 pub mod value;
 
 mod message_channel;
@@ -26,6 +25,17 @@ pub struct MethodCallError<V> {
     pub code: String,
     pub message: Option<String>,
     pub details: V,
+}
+
+impl<T> std::fmt::Display for MethodCallError<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.message {
+            Some(message) => {
+                write!(f, "{} ({})", message, self.code)
+            }
+            None => write!(f, "{}", self.code),
+        }
+    }
 }
 
 impl<V> MethodCallError<V> {

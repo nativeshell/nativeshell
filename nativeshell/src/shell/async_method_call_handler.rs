@@ -21,12 +21,24 @@ pub struct AsyncMethodInvoker {
     channel: String,
 }
 
+#[derive(Debug)]
 pub enum AsyncMethodCallError<V> {
     // Error originating from NativeShell, such as invalid engine handle
     ShellError(Error),
     // Error originating from Flutter code
     MethodCallError(MethodCallError<V>),
 }
+
+impl std::fmt::Display for AsyncMethodCallError<Value> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AsyncMethodCallError::ShellError(error) => write!(f, "NativeShell Error: {}", error),
+            AsyncMethodCallError::MethodCallError(error) => write!(f, "MethodCallError: {}", error),
+        }
+    }
+}
+
+impl std::error::Error for AsyncMethodCallError<Value> {}
 
 pub type AsyncMethodCallResult<V> = std::result::Result<V, AsyncMethodCallError<V>>;
 
