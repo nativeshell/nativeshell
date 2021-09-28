@@ -4,7 +4,6 @@ use std::{
     rc::Rc,
     sync::Arc,
     task::Poll,
-    thread::{self, ThreadId},
     time::Duration,
 };
 
@@ -70,13 +69,10 @@ impl RunLoop {
     }
 
     // Spawn the future with current run loop being the executor;
-    // Generally the future will be executed synchronously until first
-    // await.
     pub fn spawn<T: 'static>(&self, future: impl Future<Output = T> + 'static) -> JoinHandle<T> {
         let future = future.boxed_local();
         let task = Arc::new(Task {
             sender: self.new_sender(),
-            thread_id: thread::current().id(),
             future: UnsafeCell::new(future),
             value: RefCell::new(None),
             waker: RefCell::new(None),
@@ -107,7 +103,6 @@ impl RunLoopSender {
 
 struct Task<T> {
     sender: RunLoopSender,
-    thread_id: ThreadId,
     future: UnsafeCell<LocalBoxFuture<'static, T>>,
     value: RefCell<Option<T>>,
     waker: RefCell<Option<std::task::Waker>>,
@@ -132,7 +127,8 @@ impl<T: 'static> Task<T> {
 impl<T: 'static> ArcWake for Task<T> {
     fn wake_by_ref(arc_self: &std::sync::Arc<Self>) {
         let arc_self = arc_self.clone();
-        let poll = move |arc_self: Arc<Task<T>>| {
+        let sender = arc_self.sender.clone();
+        sender.send(move || {
             if arc_self.value.borrow().is_none() {
                 if let Poll::Ready(value) = arc_self.poll() {
                     *arc_self.value.borrow_mut() = Some(value);
@@ -143,15 +139,7 @@ impl<T: 'static> ArcWake for Task<T> {
                     waker.wake();
                 }
             }
-        };
-        if arc_self.thread_id == thread::current().id() {
-            poll(arc_self);
-        } else {
-            let sender = arc_self.sender.clone();
-            sender.send(move || {
-                poll(arc_self);
-            });
-        }
+        });
     }
 }
 
