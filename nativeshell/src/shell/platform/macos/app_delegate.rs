@@ -160,7 +160,9 @@ lazy_static! {
         let superclass = class!(NSObject);
         let mut decl = ClassDecl::new("IMApplicationDeleagte", superclass).unwrap();
         decl.add_ivar::<*mut c_void>("imState");
-        decl.add_protocol(Protocol::get("NSApplicationDelegate").unwrap());
+        if let Some(protocol) = Protocol::get("NSApplicationDelegate") {
+            decl.add_protocol(protocol);
+        }
         decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
         decl.add_method(
             sel!(applicationWillFinishLaunching:),
