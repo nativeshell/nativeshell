@@ -419,7 +419,6 @@ class DragDriver {
     final hitTest = HitTestResult();
     final event = DropEvent(info: info);
     _RenderDropRegion? dropRegion;
-    HitTestEntry? entry;
     final monitors = <_RenderDropMonitor>[];
 
     GestureBinding.instance!.hitTest(hitTest, info.position);
@@ -430,7 +429,6 @@ class DragDriver {
         res = await target.handleOnDrop(event);
         if (res != DragEffect.None) {
           dropRegion = target;
-          entry = item;
         }
       }
       if (target is _RenderDropMonitor) {
