@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -122,19 +121,52 @@ class DropEvent {
     required this.info,
   });
 
-  DropEvent transformed(Matrix4 matrix) {
-    return DropEvent(
-      info:
-          info.withLocation(MatrixUtils.transformPoint(matrix, info.location)),
-    );
-  }
-
   @override
   String toString() {
     return 'DragEvent: ${info.toString()}';
   }
 
   final DragInfo info;
+}
+
+typedef DropMonitorListener = void Function(DropEvent event,
+    {required bool isInside});
+
+// Widget that passively listens for drop events. Unlike (Raw)DropRegion,
+// DropMonitor can not set drop effect and does not get performDrop
+// notifications, however there can be multiple DropMonitor widgets nested
+// and each of them will get the notification, whereas there can be only one
+// DropRegion active.
+// After first notification, DropMonitor will keep getting notifications until
+// drop pointer leaves the window. Check the `isInside` argument in
+// DropMonitorListener to see whether the pointer is inside monitor.
+class DropMonitor extends SingleChildRenderObjectWidget {
+  final DropMonitorListener? onDropOver;
+  final DropExitListener? onDropExit;
+  final HitTestBehavior behavior;
+
+  DropMonitor({
+    Key? key,
+    Widget? child,
+    this.onDropOver,
+    this.onDropExit,
+    this.behavior = HitTestBehavior.deferToChild,
+  }) : super(key: key, child: child);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderDropMonitor(
+        onDropOver: onDropOver, onDropExit: onDropExit, behavior: behavior);
+  }
+
+  @override
+  void updateRenderObject(
+      BuildContext context, _RenderDropMonitor renderObject) {
+    renderObject
+      ..onDropOver = onDropOver
+      ..onDropExit = onDropExit
+      ..behavior = behavior;
+  }
 }
 
 typedef DropEventListener = FutureOr<DragEffect> Function(DropEvent);
@@ -145,6 +177,7 @@ class RawDropRegion extends SingleChildRenderObjectWidget {
   final DropEventListener? onDropOver;
   final DropExitListener? onDropExit;
   final PerformDropListener? onPerformDrop;
+  final HitTestBehavior behavior;
 
   RawDropRegion({
     Key? key,
@@ -152,85 +185,127 @@ class RawDropRegion extends SingleChildRenderObjectWidget {
     this.onDropOver,
     this.onDropExit,
     this.onPerformDrop,
+    this.behavior = HitTestBehavior.deferToChild,
   }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderDropRegion(
+    return _RenderDropRegion(
         onDropOver: onDropOver,
         onDropExit: onDropExit,
-        onPerformDrop: onPerformDrop);
+        onPerformDrop: onPerformDrop,
+        behavior: behavior);
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderDropRegion renderObject) {
+  void updateRenderObject(
+      BuildContext context, _RenderDropRegion renderObject) {
     renderObject
       ..onDropOver = onDropOver
       ..onDropExit = onDropExit
-      ..onPerformDrop = onPerformDrop;
+      ..onPerformDrop = onPerformDrop
+      ..behavior = behavior;
   }
 }
 
-class RenderDropRegion extends RenderProxyBox {
-  FutureOr<DragEffect> handleOnDrop(DropEvent event, HitTestEntry entry) async {
+class _RenderDropRegion extends RenderProxyBoxWithHitTestBehavior {
+  FutureOr<DragEffect> handleOnDrop(DropEvent event) async {
     final onDropOver = this.onDropOver;
     if (onDropOver != null) {
-      return onDropOver(
-          event.transformed(entry.transform ?? Matrix4.identity()));
+      final transformed = DropEvent(
+          info: event.info
+              .withPosition(globalToLocal(event.info.globalPosition)));
+      return onDropOver(transformed);
     } else {
       return DragEffect.None;
     }
   }
 
-  @override
-  bool hitTestSelf(ui.Offset position) {
-    return true;
-  }
-
-  void handleOnDropExit(HitTestEntry entry) {
+  void handleOnDropExit() {
     final onDropExit = this.onDropExit;
     if (onDropExit != null) {
       onDropExit();
     }
   }
 
-  void handlePerformDrop(DropEvent event, HitTestEntry entry) {
+  void handlePerformDrop(DropEvent event) {
     final onPerformDrop = this.onPerformDrop;
     if (onPerformDrop != null) {
-      onPerformDrop(event.transformed(entry.transform ?? Matrix4.identity()));
+      final transformed = DropEvent(
+          info: event.info
+              .withPosition(globalToLocal(event.info.globalPosition)));
+      onPerformDrop(transformed);
     }
   }
 
-  RenderDropRegion(
-      {this.onDropOver, this.onDropExit, this.onPerformDrop, RenderBox? child})
-      : super(child);
+  _RenderDropRegion({
+    this.onDropOver,
+    this.onDropExit,
+    this.onPerformDrop,
+    RenderBox? child,
+    required HitTestBehavior behavior,
+  }) : super(behavior: behavior, child: child);
 
   DropEventListener? onDropOver;
   DropExitListener? onDropExit;
   PerformDropListener? onPerformDrop;
 }
 
+class _RenderDropMonitor extends RenderProxyBoxWithHitTestBehavior {
+  void handleOnDrop(DropEvent event, {required bool isInside}) {
+    final onDropOver = this.onDropOver;
+    if (onDropOver != null) {
+      final transformed = DropEvent(
+          info: event.info
+              .withPosition(globalToLocal(event.info.globalPosition)));
+      onDropOver(transformed, isInside: isInside);
+    }
+  }
+
+  void handleOnDropExit() {
+    final onDropExit = this.onDropExit;
+    if (onDropExit != null) {
+      onDropExit();
+    }
+  }
+
+  _RenderDropMonitor({
+    this.onDropOver,
+    this.onDropExit,
+    RenderBox? child,
+    required HitTestBehavior behavior,
+  }) : super(behavior: behavior, child: child);
+
+  DropMonitorListener? onDropOver;
+  DropExitListener? onDropExit;
+}
+
 class DragInfo {
   DragInfo({
-    required this.location,
+    required this.position,
+    required this.globalPosition,
     required this.data,
     required this.allowedEffects,
   });
 
-  final Offset location;
+  final Offset position;
+  final Offset globalPosition;
   final DragData data;
   final Set<DragEffect> allowedEffects;
 
-  DragInfo withLocation(Offset location) => DragInfo(
-        location: location,
+  DragInfo withPosition(Offset position) => DragInfo(
+        position: position,
+        globalPosition: globalPosition,
         data: data,
         allowedEffects: allowedEffects,
       );
 
   static DragInfo deserialize(dynamic value) {
     final map = value as Map;
+    final position = OffsetExt.deserialize(map['location']);
     return DragInfo(
-        location: OffsetExt.deserialize(map['location']),
+        position: position,
+        globalPosition: position,
         data: DragData.deserialize(map['data']),
         allowedEffects: Set<DragEffect>.from((map['allowedEffects'] as List)
             .map(
@@ -238,7 +313,7 @@ class DragInfo {
   }
 
   Map serialize() => {
-        'location': location.serialize(),
+        'location': position.serialize(),
         'data': data.serialize(),
         'allowedEffects': allowedEffects.map((e) => enumToString(e)).toList(),
       };
@@ -254,6 +329,7 @@ class DropRegion extends StatefulWidget {
     this.onDropExit,
     this.onDropOver,
     this.onPerformDrop,
+    this.behavior = HitTestBehavior.deferToChild,
     required this.child,
   }) : super(key: key);
 
@@ -261,11 +337,26 @@ class DropRegion extends StatefulWidget {
   final VoidCallback? onDropExit;
   final DropEventListener? onDropOver;
   final PerformDropListener? onPerformDrop;
+  final HitTestBehavior behavior;
   final Widget child;
 
   @override
   State<StatefulWidget> createState() {
     return DropRegionState();
+  }
+}
+
+class DropListener extends StatelessWidget {
+  const DropListener({
+    Key? key,
+    required this.child,
+  }) : super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MetaData();
   }
 }
 
@@ -278,6 +369,7 @@ class DropRegionState extends State<DropRegion> {
       onDropOver: _onDropOver,
       onDropExit: _onDropExit,
       onPerformDrop: _onPerformDrop,
+      behavior: widget.behavior,
       child: widget.child,
     );
   }
@@ -319,43 +411,56 @@ class DropRegionState extends State<DropRegion> {
 }
 
 class DragDriver {
-  RenderDropRegion? _lastDropRegion;
-  HitTestEntry? _lastDropRegionEntry;
+  _RenderDropRegion? _lastDropRegion;
+  final _allDropMonitors = <_RenderDropMonitor>{};
 
   Future<DragEffect> draggingUpdated(DragInfo info) async {
     var res = DragEffect.None;
     final hitTest = HitTestResult();
     final event = DropEvent(info: info);
-    RenderDropRegion? dropRegion;
+    _RenderDropRegion? dropRegion;
     HitTestEntry? entry;
-    GestureBinding.instance!.hitTest(hitTest, info.location);
+    final monitors = <_RenderDropMonitor>[];
+
+    GestureBinding.instance!.hitTest(hitTest, info.position);
 
     for (final item in hitTest.path) {
       final target = item.target;
-      if (target is RenderDropRegion) {
-        res = await target.handleOnDrop(event, item);
+      if (target is _RenderDropRegion && dropRegion == null) {
+        res = await target.handleOnDrop(event);
         if (res != DragEffect.None) {
           dropRegion = target;
           entry = item;
-          break;
         }
+      }
+      if (target is _RenderDropMonitor) {
+        monitors.add(target);
       }
     }
     if (_lastDropRegion != dropRegion && _lastDropRegion != null) {
-      _lastDropRegion!.handleOnDropExit(_lastDropRegionEntry!);
+      _lastDropRegion!.handleOnDropExit();
     }
     _lastDropRegion = dropRegion;
-    _lastDropRegionEntry = entry;
+
+    monitors.forEach((element) => element.handleOnDrop(event, isInside: true));
+
+    _allDropMonitors.forEach((element) {
+      if (!monitors.contains(element)) {
+        element.handleOnDrop(event, isInside: false);
+      }
+    });
+    _allDropMonitors.addAll(monitors);
 
     return res;
   }
 
   void draggingExited() {
     if (_lastDropRegion != null) {
-      _lastDropRegion!.handleOnDropExit(_lastDropRegionEntry!);
+      _lastDropRegion!.handleOnDropExit();
       _lastDropRegion = null;
-      _lastDropRegionEntry = null;
     }
+    _allDropMonitors.forEach((element) => element.handleOnDropExit());
+    _allDropMonitors.clear();
   }
 
   void performDrop(DragInfo info) async {
@@ -363,9 +468,10 @@ class DragDriver {
     if (res != DragEffect.None) {
       assert(_lastDropRegion != null);
       final event = DropEvent(info: info);
-      _lastDropRegion!.handlePerformDrop(event, _lastDropRegionEntry!);
+      _lastDropRegion!.handlePerformDrop(event);
       _lastDropRegion = null;
-      _lastDropRegionEntry = null;
     }
+    _allDropMonitors.forEach((element) => element.handleOnDropExit());
+    _allDropMonitors.clear();
   }
 }
