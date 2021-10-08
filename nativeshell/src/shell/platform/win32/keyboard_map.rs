@@ -1,7 +1,6 @@
 #![allow(clippy::forget_copy)] // windows-rs !implement macro
 
-use super::bindings::*;
-use super::{all_bindings::*, util::create_instance};
+use super::{all_bindings::*, bindings::*, util::create_instance};
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -127,12 +126,12 @@ impl PlatformKeyboardMap {
         let buf = &mut [0u16, 10];
 
         if shift {
-            key_state[VK_SHIFT as usize] = 128;
+            key_state[VK_SHIFT.0 as usize] = 128;
         }
 
         if alt {
-            key_state[VK_CONTROL as usize] = 128;
-            key_state[VK_MENU as usize] = 128;
+            key_state[VK_CONTROL.0 as usize] = 128;
+            key_state[VK_MENU.0 as usize] = 128;
         }
 
         // According to documentation, since Windows 10 version 1607 if bit 2 is
@@ -154,8 +153,8 @@ impl PlatformKeyboardMap {
             let key_state = &mut [0u8; 256];
             let buf = &mut [0u16, 10];
             let res = ToUnicodeEx(
-                VK_SPACE,
-                MapVirtualKeyW(VK_SPACE, MAPVK_VK_TO_VSC),
+                VK_SPACE.0 as u32,
+                MapVirtualKeyW(VK_SPACE.0 as u32, MAPVK_VK_TO_VSC),
                 key_state.as_ptr(),
                 PWSTR(buf.as_mut_ptr()),
                 buf.len() as i32,
@@ -235,13 +234,14 @@ impl PlatformKeyboardMap {
             LanguageProfileNotifySink::new(self.weak_self.borrow().clone()).into();
 
         unsafe {
-            source
+            let cookie = source
                 .AdviseSink(
                     &ITfLanguageProfileNotifySink::IID,
                     Some(sink.cast::<IUnknown>().unwrap()),
-                    self.cookie.as_ptr(),
                 )
-                .ok_log();
+                .ok_log()
+                .unwrap_or(0);
+            self.cookie.set(cookie);
         }
 
         self.source.borrow_mut().replace(source);

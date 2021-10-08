@@ -46,7 +46,7 @@ impl WindowClass {
 
     fn register(&mut self) {
         unsafe {
-            let mut class_name: Param<PWSTR> = self.class_name.clone().into_param();
+            let class_name: Param<PWSTR> = self.class_name.clone().into_param();
             let class = WNDCLASSW {
                 style: CS_HREDRAW | CS_VREDRAW,
                 lpfnWndProc: Some(wnd_proc),
