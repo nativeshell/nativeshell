@@ -168,6 +168,10 @@ pub struct PlatformRunLoop {
 
 impl PlatformRunLoop {
     pub fn new() -> Self {
+        unsafe {
+            let app = NSApplication::sharedApplication(nil);
+            NSApplication::setActivationPolicy_(app, NSApplicationActivationPolicyRegular);
+        }
         Self {
             next_handle: Cell::new(INVALID_HANDLE + 1),
             state: Arc::new(Mutex::new(State::new())),
@@ -216,7 +220,6 @@ impl PlatformRunLoop {
     pub fn run(&self) {
         unsafe {
             let app = NSApplication::sharedApplication(nil);
-            NSApplication::setActivationPolicy_(app, NSApplicationActivationPolicyRegular);
             NSApplication::activateIgnoringOtherApps_(app, YES);
             NSApplication::run(app);
         }
