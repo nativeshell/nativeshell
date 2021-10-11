@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2021-10-11
+
+- Breaking change: Renamed `location` field on `DragEvent` to `position`.
+- Added `DragEvent.globalPosition`
+- Added `DropMonitor` widget
+
 ## [0.1.9] - 2021-08-21
 
 - Breaking change: Added WindowLayoutProbe widget required for WindowSizingMode.atLeastIntrinsicSize and WindowSizingMode.sizeToContents
