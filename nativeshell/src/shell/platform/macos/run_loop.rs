@@ -41,6 +41,9 @@ struct State {
     timer: Option<CFRunLoopTimer>,
 }
 
+// CFRunLoopTimer is thread safe
+unsafe impl Send for State {}
+
 struct StatePendingExecution {
     callbacks: Vec<Callback>,
     timers: Vec<Timer>,
