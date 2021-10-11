@@ -253,7 +253,7 @@ impl WindowMenu {
             SendMessageW(
                 menu_hwnd,
                 WM_KEYDOWN as u32,
-                WPARAM(VK_DOWN as usize),
+                WPARAM(VK_DOWN.0 as usize),
                 LPARAM(0),
             );
             let mut item_info = MENUITEMINFOW {
@@ -359,8 +359,8 @@ impl WindowMenu {
             let key = msg.wParam.0 as u32;
 
             let (key_prev, key_next) = match self.delegate().get_state().is_rtl() {
-                true => (VK_RIGHT, VK_LEFT),
-                false => (VK_LEFT, VK_RIGHT),
+                true => (VK_RIGHT.0 as u32, VK_LEFT.0 as u32),
+                false => (VK_LEFT.0 as u32, VK_RIGHT.0 as u32),
             };
 
             if let Some(delegate) = current_menu.platform_menu.delegate.upgrade() {

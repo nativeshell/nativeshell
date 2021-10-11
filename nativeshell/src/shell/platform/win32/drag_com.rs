@@ -1,20 +1,24 @@
+// in generated code
+#![allow(clippy::forget_copy)]
+
 use std::{
     cell::{RefCell, RefMut},
     collections::HashMap,
-    mem::{self, forget},
+    mem::forget,
     rc::Weak,
     slice,
 };
 
-use windows::{IUnknown, Interface, HRESULT};
-
-use crate::util::OkLog;
+use windows::HRESULT;
 
 use super::{
     all_bindings::*,
+    bindings::*,
     drag_util::{CLSID_DragDropHelper, DataUtil},
     util::{com_object_from_ptr, create_instance, get_raw_ptr},
 };
+
+use crate::util::OkLog;
 
 pub trait DropTargetDelegate {
     fn drag_enter(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32;
@@ -23,119 +27,70 @@ pub trait DropTargetDelegate {
     fn perform_drop(&self, object: IDataObject, pt: &POINTL, effect_mask: u32) -> u32;
 }
 
-#[repr(C)]
+//
+// DropTarget
+//
+
+#[implement(Windows::Win32::System::Com::IDropTarget)]
 pub(super) struct DropTarget {
-    _abi: Box<IDropTarget_abi>,
-    ref_cnt: u32,
     drop_target_helper: IDropTargetHelper,
     hwnd: HWND,
     delegate: Weak<dyn DropTargetDelegate>,
 }
 
-#[allow(dead_code)]
+#[allow(non_snake_case)]
 impl DropTarget {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(hwnd: HWND, delegate: Weak<dyn DropTargetDelegate>) -> IDropTarget {
+    pub fn new(hwnd: HWND, delegate: Weak<dyn DropTargetDelegate>) -> Self {
         let helper: IDropTargetHelper = create_instance(&CLSID_DragDropHelper).unwrap();
-        let target = Box::new(Self {
-            _abi: Box::new(IDropTarget_abi(
-                Self::_query_interface,
-                Self::_add_ref,
-                Self::_release,
-                Self::_drag_enter,
-                Self::_drag_over,
-                Self::_drag_leave,
-                Self::_drop,
-            )),
-            ref_cnt: 1,
+        Self {
             drop_target_helper: helper,
             hwnd,
             delegate,
-        });
-
-        unsafe {
-            let ptr = Box::into_raw(target);
-            mem::transmute(ptr)
         }
     }
 
-    fn query_interface(
-        &mut self,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> HRESULT {
-        if iid == &IDropTarget::IID || iid == &IUnknown::IID {
-            unsafe {
-                *interface = self as *mut Self as *mut _;
-            }
-            self.add_ref();
-            S_OK
-        } else {
-            E_NOINTERFACE
-        }
-    }
-
-    fn add_ref(&mut self) -> u32 {
-        self.ref_cnt += 1;
-        self.ref_cnt
-    }
-
-    fn release(&mut self) -> u32 {
-        self.ref_cnt -= 1;
-        let res = self.ref_cnt;
-
-        if res == 0 {
-            unsafe {
-                Box::from_raw(self as *mut Self);
-            }
-        }
-
-        res
-    }
-
-    fn drag_enter(
+    fn DragEnter(
         &self,
-        p_data_obj: ::std::option::Option<IDataObject>,
-        _grf_key_state: u32,
-        mut pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
+        pdataobj: &Option<IDataObject>,
+        _grfkeystate: u32,
+        pt: POINTL,
+        pdweffect: *mut u32,
+    ) -> ::windows::Result<()> {
         unsafe {
-            if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate.drag_enter(p_data_obj.clone().unwrap(), &pt, *pdw_effect);
+            if let (Some(delegate), Some(p_data_obj)) = //
+                (self.delegate.upgrade(), pdataobj)
+            {
+                *pdweffect = delegate.drag_enter(p_data_obj.clone(), &pt, *pdweffect);
             }
 
+            let mut point = POINT { x: pt.x, y: pt.y };
             self.drop_target_helper
-                .DragEnter(
-                    self.hwnd,
-                    p_data_obj,
-                    &mut pt as *mut POINTL as *mut _,
-                    *pdw_effect,
-                )
+                .DragEnter(self.hwnd, pdataobj, &mut point as *mut _, *pdweffect)
                 .ok_log();
         }
-        S_OK
+        Ok(())
     }
 
-    fn drag_over(
+    fn DragOver(
         &self,
-        _grf_key_state: u32,
-        mut pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
+        _grfkeystate: u32,
+        pt: POINTL,
+        pdweffect: *mut u32,
+    ) -> ::windows::Result<()> {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate.drag_over(&pt, *pdw_effect);
+                *pdweffect = delegate.drag_over(&pt, *pdweffect);
             }
 
+            let mut point = POINT { x: pt.x, y: pt.y };
             self.drop_target_helper
-                .DragOver(&mut pt as *mut POINTL as *mut _, *pdw_effect)
+                .DragOver(&mut point as *mut _, *pdweffect)
                 .ok_log();
         }
-        S_OK
+        Ok(())
     }
 
-    fn drag_leave(&self) -> ::windows::HRESULT {
+    fn DragLeave(&self) -> ::windows::Result<()> {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 delegate.drag_leave();
@@ -143,167 +98,57 @@ impl DropTarget {
 
             self.drop_target_helper.DragLeave().ok_log();
         }
-        S_OK
+        Ok(())
     }
 
-    fn drop(
+    fn Drop(
         &self,
-        p_data_obj: ::std::option::Option<IDataObject>,
-        _grf_key_state: u32,
-        mut pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
+        pdataobj: &Option<IDataObject>,
+        _grfkeystate: u32,
+        pt: POINTL,
+        pdweffect: *mut u32,
+    ) -> ::windows::Result<()> {
         unsafe {
-            if let Some(delegate) = self.delegate.upgrade() {
-                *pdw_effect = delegate.perform_drop(p_data_obj.clone().unwrap(), &pt, *pdw_effect);
+            if let (Some(delegate), Some(pdataobj)) = //
+                (self.delegate.upgrade(), pdataobj)
+            {
+                *pdweffect = delegate.perform_drop(pdataobj.clone(), &pt, *pdweffect);
             }
 
+            let mut point = POINT { x: pt.x, y: pt.y };
             self.drop_target_helper
-                .Drop(p_data_obj, &mut pt as *mut POINTL as *mut _, *pdw_effect)
+                .Drop(pdataobj, &mut point as *mut _, *pdweffect)
                 .ok_log();
         }
-        S_OK
-    }
-
-    unsafe extern "system" fn _query_interface(
-        this: ::windows::RawPtr,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> windows::HRESULT {
-        (*(this as *mut Self)).query_interface(iid, interface)
-    }
-
-    unsafe extern "system" fn _add_ref(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).add_ref()
-    }
-
-    unsafe extern "system" fn _release(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).release()
-    }
-
-    unsafe extern "system" fn _drag_enter(
-        this: ::windows::RawPtr,
-        p_data_obj: ::windows::RawPtr,
-        grf_key_state: u32,
-        pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).drag_enter(
-            com_object_from_ptr(p_data_obj),
-            grf_key_state,
-            pt,
-            pdw_effect,
-        )
-    }
-
-    unsafe extern "system" fn _drag_over(
-        this: ::windows::RawPtr,
-        grf_key_state: u32,
-        pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).drag_over(grf_key_state, pt, pdw_effect)
-    }
-
-    unsafe extern "system" fn _drag_leave(this: ::windows::RawPtr) -> ::windows::HRESULT {
-        (*(this as *mut Self)).drag_leave()
-    }
-
-    unsafe extern "system" fn _drop(
-        this: ::windows::RawPtr,
-        p_data_obj: ::windows::RawPtr,
-        grf_key_state: u32,
-        pt: POINTL,
-        pdw_effect: *mut u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).drop(
-            com_object_from_ptr(p_data_obj),
-            grf_key_state,
-            pt,
-            pdw_effect,
-        )
+        Ok(())
     }
 }
 
 //
-//
+// EnumFormatETC
 //
 
+#[implement(Windows::Win32::System::Com::IEnumFORMATETC)]
 struct EnumFORMATETC {
-    _abi: Box<IEnumFORMATETC_abi>,
-    ref_cnt: u32,
     formats: Vec<FORMATETC>,
     index: usize,
 }
 
-#[allow(dead_code)]
+#[allow(non_snake_case)]
 impl EnumFORMATETC {
-    fn new_(formats: Vec<FORMATETC>, index: usize) -> IEnumFORMATETC {
-        let target = Box::new(Self {
-            _abi: Box::new(IEnumFORMATETC_abi(
-                Self::_query_interface,
-                Self::_add_ref,
-                Self::_release,
-                Self::_next,
-                Self::_skip,
-                Self::_reset,
-                Self::_clone,
-            )),
-            ref_cnt: 1,
-            formats,
-            index,
-        });
-
-        unsafe {
-            let ptr = Box::into_raw(target);
-            mem::transmute(ptr)
-        }
+    fn new_(formats: Vec<FORMATETC>, index: usize) -> EnumFORMATETC {
+        Self { formats, index }
     }
 
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(formats: Vec<FORMATETC>) -> IEnumFORMATETC {
+    pub fn new(formats: Vec<FORMATETC>) -> EnumFORMATETC {
         Self::new_(formats, 0)
-    }
-
-    fn query_interface(
-        &mut self,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> HRESULT {
-        if iid == &IEnumFORMATETC::IID || iid == &IUnknown::IID {
-            unsafe {
-                *interface = self as *mut Self as *mut _;
-            }
-            self.add_ref();
-            S_OK
-        } else {
-            E_NOINTERFACE
-        }
-    }
-
-    fn add_ref(&mut self) -> u32 {
-        self.ref_cnt += 1;
-        self.ref_cnt
-    }
-
-    fn release(&mut self) -> u32 {
-        self.ref_cnt -= 1;
-        let res = self.ref_cnt;
-
-        if res == 0 {
-            unsafe {
-                Box::from_raw(self as *mut Self);
-            }
-        }
-
-        res
     }
 
     fn remaining(&self) -> usize {
         self.formats.len() - self.index
     }
 
-    fn next(
+    fn Next(
         &mut self,
         mut celt: u32,
         rgelt: *mut FORMATETC,
@@ -330,7 +175,7 @@ impl EnumFORMATETC {
         }
     }
 
-    fn skip(&mut self, mut celt: u32) -> ::windows::HRESULT {
+    fn Skip(&mut self, mut celt: u32) -> ::windows::HRESULT {
         while celt > 0 && self.remaining() > 0 {
             celt -= 1;
             self.index += 1;
@@ -342,56 +187,14 @@ impl EnumFORMATETC {
         }
     }
 
-    fn reset(&mut self) -> ::windows::HRESULT {
+    fn Reset(&mut self) -> ::windows::HRESULT {
         self.index = 0;
         S_OK
     }
 
-    fn clone(&self, ppenum: *mut ::std::option::Option<IEnumFORMATETC>) -> ::windows::HRESULT {
+    fn Clone(&self) -> ::windows::Result<IEnumFORMATETC> {
         let clone = EnumFORMATETC::new_(self.formats.clone(), self.index);
-        unsafe {
-            *ppenum = Some(clone);
-        }
-        S_OK
-    }
-
-    unsafe extern "system" fn _query_interface(
-        this: ::windows::RawPtr,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).query_interface(iid, interface)
-    }
-
-    unsafe extern "system" fn _add_ref(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).add_ref()
-    }
-
-    unsafe extern "system" fn _release(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).release()
-    }
-
-    unsafe extern "system" fn _next(
-        this: ::windows::RawPtr,
-        celt: u32,
-        rgelt: *mut FORMATETC,
-        pcelt_fetched: *mut u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).next(celt, rgelt, pcelt_fetched)
-    }
-
-    unsafe extern "system" fn _skip(this: ::windows::RawPtr, celt: u32) -> ::windows::HRESULT {
-        (*(this as *mut Self)).skip(celt)
-    }
-
-    unsafe extern "system" fn _reset(this: ::windows::RawPtr) -> ::windows::HRESULT {
-        (*(this as *mut Self)).reset()
-    }
-    unsafe extern "system" fn _clone(
-        this: ::windows::RawPtr,
-        ppenum: *mut ::windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).clone(ppenum as *mut _)
+        Ok(clone.into())
     }
 }
 
@@ -399,76 +202,17 @@ impl EnumFORMATETC {
 // DataObject
 //
 
+const DATA_E_FORMATETC: HRESULT = HRESULT((-2147221404 + 1) as u32);
+
+#[implement(Windows::Win32::System::Com::IDataObject)]
 pub struct DataObject {
-    _abi: Box<IDataObject_abi>,
-    ref_cnt: u32,
     data: Weak<RefCell<HashMap<u32, Vec<u8>>>>,
 }
 
-const DATA_E_FORMATETC: i32 = -2147221404 + 1;
-
-#[allow(dead_code)]
+#[allow(non_snake_case)]
 impl DataObject {
-    // Using weak reference just in case some other software keeps DragObject alive after drag is finished
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(data: Weak<RefCell<HashMap<u32, Vec<u8>>>>) -> IDataObject {
-        let target = Box::new(Self {
-            _abi: Box::new(IDataObject_abi(
-                Self::_query_interface,
-                Self::_add_ref,
-                Self::_release,
-                Self::_get_data,
-                Self::_get_data_here,
-                Self::_query_get_data,
-                Self::_get_canonical_format_etc,
-                Self::_set_data,
-                Self::_enum_format_etc,
-                Self::_d_advise,
-                Self::_d_unadvise,
-                Self::_enum_d_advise,
-            )),
-            ref_cnt: 1,
-            data,
-        });
-
-        unsafe {
-            let ptr = Box::into_raw(target);
-            mem::transmute(ptr)
-        }
-    }
-
-    fn query_interface(
-        &mut self,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> HRESULT {
-        if iid == &IDataObject::IID || iid == &IUnknown::IID {
-            unsafe {
-                *interface = self as *mut Self as *mut _;
-            }
-            self.add_ref();
-            S_OK
-        } else {
-            E_NOINTERFACE
-        }
-    }
-
-    fn add_ref(&mut self) -> u32 {
-        self.ref_cnt += 1;
-        self.ref_cnt
-    }
-
-    fn release(&mut self) -> u32 {
-        self.ref_cnt -= 1;
-        let res = self.ref_cnt;
-
-        if res == 0 {
-            unsafe {
-                Box::from_raw(self as *mut Self);
-            }
-        }
-
-        res
+    pub fn new(data: Weak<RefCell<HashMap<u32, Vec<u8>>>>) -> Self {
+        Self { data }
     }
 
     fn with_data_or<F, R>(&self, callback: F, or: R) -> R
@@ -482,11 +226,7 @@ impl DataObject {
         }
     }
 
-    fn get_data(
-        &self,
-        pformatetc_in: *mut FORMATETC,
-        pmedium: *mut STGMEDIUM,
-    ) -> ::windows::HRESULT {
+    fn GetData(&self, pformatetc_in: *const FORMATETC) -> ::windows::Result<STGMEDIUM> {
         let format = unsafe { &*pformatetc_in };
 
         // println!(
@@ -512,17 +252,13 @@ impl DataObject {
                             global
                         };
 
-                        unsafe {
-                            *pmedium = STGMEDIUM {
-                                tymed: TYMED_HGLOBAL.0 as u32,
-                                Anonymous: STGMEDIUM_0 { hGlobal: global },
-                                pUnkForRelease: None,
-                            };
-                        }
-
-                        S_OK
+                        Ok(STGMEDIUM {
+                            tymed: TYMED_HGLOBAL.0 as u32,
+                            Anonymous: STGMEDIUM_0 { hGlobal: global },
+                            pUnkForRelease: None,
+                        })
                     } else {
-                        HRESULT(DATA_E_FORMATETC as u32)
+                        Err(Error::fast_error(DATA_E_FORMATETC))
                     }
                 } else if format.tymed == TYMED_ISTREAM.0 as u32 {
                     unsafe {
@@ -531,39 +267,36 @@ impl DataObject {
                         if let Some(data) = data {
                             let stream = SHCreateMemStream(data.as_ptr(), data.len() as u32);
                             stream.clone().unwrap().Seek(0, STREAM_SEEK_END).ok_log();
-                            *pmedium = STGMEDIUM {
+                            let res = Ok(STGMEDIUM {
                                 tymed: TYMED_ISTREAM.0 as u32,
                                 Anonymous: STGMEDIUM_0 {
                                     pstm: get_raw_ptr(&stream) as windows::RawPtr,
                                 },
                                 pUnkForRelease: None,
-                            };
+                            });
                             forget(stream); // will be released through sgtmedium
-
-                            S_OK
+                            res
                         } else {
-                            HRESULT(DATA_E_FORMATETC as u32)
+                            Err(Error::fast_error(DATA_E_FORMATETC))
                         }
                     }
                 } else {
-                    HRESULT(DATA_E_FORMATETC as u32)
+                    Err(Error::fast_error(DATA_E_FORMATETC))
                 }
             },
-            HRESULT(DATA_E_FORMATETC as u32),
+            Err(Error::fast_error(DATA_E_FORMATETC)),
         )
     }
 
-    fn get_data_here(
+    fn GetDataHere(
         &self,
-        _pformatetc: *mut FORMATETC,
+        _pformatetc: *const FORMATETC,
         _pmedium: *mut STGMEDIUM,
-    ) -> ::windows::HRESULT {
-        HRESULT(DATA_E_FORMATETC as u32)
+    ) -> ::windows::Result<()> {
+        Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn query_get_data(&self, pformatetc: *mut FORMATETC) -> ::windows::HRESULT {
-        // println!("QUERY GET DATA");
-
+    fn QueryGetData(&self, pformatetc: *const FORMATETC) -> ::windows::Result<()> {
         self.with_data_or(
             |data| {
                 let format = unsafe { &*pformatetc };
@@ -571,29 +304,28 @@ impl DataObject {
                     || format.tymed == TYMED_ISTREAM.0 as u32)
                     && data.contains_key(&(format.cfFormat as u32))
                 {
-                    S_OK
+                    Ok(())
                 } else {
-                    S_FALSE
+                    Err(Error::fast_error(S_FALSE))
                 }
             },
-            S_FALSE,
+            Err(Error::fast_error(S_FALSE)),
         )
     }
 
-    fn get_canonical_format_etc(
+    fn GetCanonicalFormatEtc(
         &self,
-        _pformatect_in: *mut FORMATETC,
-        _pformatetc_out: *mut FORMATETC,
-    ) -> ::windows::HRESULT {
-        E_NOTIMPL
+        _pformatectin: *const FORMATETC,
+    ) -> ::windows::Result<FORMATETC> {
+        Err(Error::fast_error(E_NOTIMPL))
     }
 
-    fn set_data(
-        &mut self,
-        pformatetc: *mut FORMATETC,
-        pmedium: *mut STGMEDIUM,
-        f_release: BOOL,
-    ) -> ::windows::HRESULT {
+    fn SetData(
+        &self,
+        pformatetc: *const FORMATETC,
+        pmedium: *const STGMEDIUM,
+        frelease: BOOL,
+    ) -> ::windows::Result<()> {
         let format = unsafe { &*pformatetc };
 
         self.with_data_or(
@@ -610,12 +342,12 @@ impl DataObject {
                         GlobalUnlock(medium.Anonymous.hGlobal);
                         data.insert(format.cfFormat as u32, global_data);
 
-                        if f_release.as_bool() {
-                            ReleaseStgMedium(pmedium);
+                        if frelease.as_bool() {
+                            ReleaseStgMedium(pmedium as *mut _);
                         }
                     }
 
-                    S_OK
+                    Ok(())
                 } else if format.tymed == TYMED_ISTREAM.0 as u32 {
                     unsafe {
                         let medium = &*pmedium;
@@ -647,231 +379,70 @@ impl DataObject {
 
                         data.insert(format.cfFormat as u32, stream_data);
 
-                        if f_release.as_bool() {
-                            ReleaseStgMedium(pmedium);
+                        if frelease.as_bool() {
+                            ReleaseStgMedium(pmedium as *mut _);
                         }
                     }
 
-                    S_OK
+                    Ok(())
                 } else {
-                    HRESULT(DATA_E_FORMATETC as u32)
+                    Err(Error::fast_error(DATA_E_FORMATETC))
                 }
             },
-            HRESULT(DATA_E_FORMATETC as u32),
+            Err(Error::fast_error(DATA_E_FORMATETC)),
         )
     }
 
-    fn enum_format_etc(
-        &self,
-        dw_direction: u32,
-        ppenum_format_etc: *mut ::std::option::Option<IEnumFORMATETC>,
-    ) -> ::windows::HRESULT {
+    fn EnumFormatEtc(&self, dwdirection: u32) -> ::windows::Result<IEnumFORMATETC> {
         let mut formats = Vec::<FORMATETC>::new();
 
         self.with_data_or(
             |data| {
-                if dw_direction == DATADIR_GET.0 as u32 {
+                if dwdirection == DATADIR_GET.0 as u32 {
                     for f in data.keys() {
                         formats.push(DataUtil::get_format_with_tymed(*f, TYMED_HGLOBAL));
                         formats.push(DataUtil::get_format_with_tymed(*f, TYMED_ISTREAM));
                     }
                 }
-                let enum_format = EnumFORMATETC::new(formats);
-                unsafe {
-                    *ppenum_format_etc = Some(enum_format);
-                }
-                S_OK
+                let enum_format = EnumFORMATETC::new(formats).into();
+                Ok(enum_format)
             },
-            S_OK,
+            Err(Error::fast_error(S_FALSE)),
         )
     }
 
-    fn d_advise(
+    fn DAdvise(
         &self,
-        _pformatetc: *mut FORMATETC,
+        _pformatetc: *const FORMATETC,
         _advf: u32,
-        _p_adv_sink: ::std::option::Option<IAdviseSink>,
-        _pdw_connection: *mut u32,
-    ) -> ::windows::HRESULT {
-        E_NOTIMPL
+        _padvsink: &Option<IAdviseSink>,
+    ) -> ::windows::Result<u32> {
+        Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn d_unadvise(&self, _dw_connection: u32) -> ::windows::HRESULT {
-        E_NOTIMPL
+    fn DUnadvise(&self, _dwconnection: u32) -> ::windows::Result<()> {
+        Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn enum_d_advise(
-        &self,
-        _ppenum_advise: *mut ::std::option::Option<IEnumSTATDATA>,
-    ) -> ::windows::HRESULT {
-        E_NOTIMPL
-    }
-
-    unsafe extern "system" fn _query_interface(
-        this: ::windows::RawPtr,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).query_interface(iid, interface)
-    }
-
-    unsafe extern "system" fn _add_ref(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).add_ref()
-    }
-
-    unsafe extern "system" fn _release(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).release()
-    }
-
-    unsafe extern "system" fn _get_data(
-        this: ::windows::RawPtr,
-        pformatetc_in: *mut FORMATETC,
-        pmedium: *mut STGMEDIUM_abi,
-    ) -> ::windows::HRESULT {
-        // make sure rust won't try to release garbage
-        (*pmedium).pUnkForRelease = std::ptr::null_mut();
-        (*(this as *mut Self)).get_data(pformatetc_in, pmedium as *mut _)
-    }
-
-    unsafe extern "system" fn _get_data_here(
-        this: ::windows::RawPtr,
-        pformatetc: *mut FORMATETC,
-        pmedium: *mut STGMEDIUM_abi,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).get_data_here(pformatetc, pmedium as *mut _)
-    }
-
-    unsafe extern "system" fn _query_get_data(
-        this: ::windows::RawPtr,
-        pformatetc: *mut FORMATETC,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).query_get_data(pformatetc)
-    }
-
-    unsafe extern "system" fn _get_canonical_format_etc(
-        this: ::windows::RawPtr,
-        pformatetc_in: *mut FORMATETC,
-        pformatetc_out: *mut FORMATETC,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).get_canonical_format_etc(pformatetc_in, pformatetc_out)
-    }
-
-    unsafe extern "system" fn _set_data(
-        this: ::windows::RawPtr,
-        pformatetc: *mut FORMATETC,
-        pmedium: *mut STGMEDIUM_abi,
-        f_release: BOOL,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).set_data(pformatetc, pmedium as *mut _, f_release)
-    }
-
-    unsafe extern "system" fn _enum_format_etc(
-        this: ::windows::RawPtr,
-        dw_direction: u32,
-        ppenum_format_etc: *mut windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).enum_format_etc(dw_direction, ppenum_format_etc as *mut _)
-    }
-
-    unsafe extern "system" fn _d_advise(
-        this: ::windows::RawPtr,
-        pformatetc: *mut FORMATETC,
-        advf: u32,
-        p_adv_sink: ::windows::RawPtr,
-        pdw_connection: *mut u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).d_advise(
-            pformatetc,
-            advf,
-            com_object_from_ptr(p_adv_sink),
-            pdw_connection,
-        )
-    }
-
-    unsafe extern "system" fn _d_unadvise(
-        this: ::windows::RawPtr,
-        dw_connection: u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).d_unadvise(dw_connection)
-    }
-
-    unsafe extern "system" fn _enum_d_advise(
-        this: ::windows::RawPtr,
-        ppenum_advise: *mut windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).enum_d_advise(ppenum_advise as *mut _)
+    fn EnumDAdvise(&self) -> ::windows::Result<IEnumSTATDATA> {
+        Err(Error::fast_error(DATA_E_FORMATETC))
     }
 }
 
 //
-//
+// DropSource
 //
 
-pub struct DropSource {
-    _abi: Box<IDropSource_abi>,
-    ref_cnt: u32,
-}
+#[implement(Windows::Win32::System::Com::IDropSource)]
+pub struct DropSource {}
 
-#[allow(dead_code)]
+#[allow(non_snake_case)]
 impl DropSource {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new() -> IDropSource {
-        let target = Box::new(Self {
-            _abi: Box::new(IDropSource_abi(
-                Self::_query_interface,
-                Self::_add_ref,
-                Self::_release,
-                Self::_query_continue_drag,
-                Self::_give_feedback,
-            )),
-            ref_cnt: 1,
-        });
-
-        unsafe {
-            let ptr = Box::into_raw(target);
-            mem::transmute(ptr)
-        }
+    pub fn new() -> DropSource {
+        Self {}
     }
 
-    fn query_interface(
-        &mut self,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> HRESULT {
-        if iid == &IDropSource::IID || iid == &IUnknown::IID {
-            unsafe {
-                *interface = self as *mut Self as *mut _;
-            }
-            self.add_ref();
-            S_OK
-        } else {
-            E_NOINTERFACE
-        }
-    }
-
-    fn add_ref(&mut self) -> u32 {
-        self.ref_cnt += 1;
-        self.ref_cnt
-    }
-
-    fn release(&mut self) -> u32 {
-        self.ref_cnt -= 1;
-        let res = self.ref_cnt;
-
-        if res == 0 {
-            unsafe {
-                Box::from_raw(self as *mut Self);
-            }
-        }
-
-        res
-    }
-
-    fn query_continue_drag(
-        &self,
-        f_escape_pressed: BOOL,
-        grf_key_state: u32,
-    ) -> ::windows::HRESULT {
+    fn QueryContinueDrag(&self, f_escape_pressed: BOOL, grf_key_state: u32) -> ::windows::HRESULT {
         if f_escape_pressed.as_bool() {
             DRAGDROP_S_CANCEL
         } else if grf_key_state & MK_LBUTTON as u32 == 0 {
@@ -881,38 +452,7 @@ impl DropSource {
         }
     }
 
-    fn give_feedback(&self, _dw_effect: u32) -> ::windows::HRESULT {
+    fn GiveFeedback(&self, _dw_effect: u32) -> ::windows::HRESULT {
         DRAGDROP_S_USEDEFAULTCURSORS
-    }
-
-    unsafe extern "system" fn _query_interface(
-        this: ::windows::RawPtr,
-        iid: &::windows::Guid,
-        interface: *mut ::windows::RawPtr,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).query_interface(iid, interface)
-    }
-
-    unsafe extern "system" fn _add_ref(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).add_ref()
-    }
-
-    unsafe extern "system" fn _release(this: ::windows::RawPtr) -> u32 {
-        (*(this as *mut Self)).release()
-    }
-
-    unsafe extern "system" fn _query_continue_drag(
-        this: ::windows::RawPtr,
-        f_escape_pressed: BOOL,
-        grf_key_state: u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).query_continue_drag(f_escape_pressed, grf_key_state)
-    }
-
-    unsafe extern "system" fn _give_feedback(
-        this: ::windows::RawPtr,
-        dw_effect: u32,
-    ) -> ::windows::HRESULT {
-        (*(this as *mut Self)).give_feedback(dw_effect)
     }
 }

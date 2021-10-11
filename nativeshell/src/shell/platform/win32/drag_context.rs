@@ -56,7 +56,8 @@ impl DragContext {
     pub fn assign_weak_self(&self, weak_self: Weak<DragContext>) {
         self.weak_self.set(weak_self);
         let window = self.window.upgrade().unwrap();
-        let target: IDropTarget = DropTarget::new(window.hwnd(), self.weak_self.clone_value());
+        let target: IDropTarget =
+            DropTarget::new(window.hwnd(), self.weak_self.clone_value()).into();
         unsafe {
             RegisterDragDrop(window.hwnd(), target).ok_log();
         }
@@ -118,39 +119,11 @@ impl DragContext {
         res
     }
 
-    unsafe fn do_drag_drop<'a>(
-        pdataobj: impl ::windows::IntoParam<'a, IDataObject>,
-        pdropsource: impl ::windows::IntoParam<'a, IDropSource>,
-        dwokeffects: u32,
-        pdweffect: *mut u32,
-    ) -> HRESULT {
-        #[cfg(windows)]
-        {
-            #[link(name = "OLE32")]
-            extern "system" {
-                fn DoDragDrop(
-                    pdataobj: ::windows::RawPtr,
-                    pdropsource: ::windows::RawPtr,
-                    dwokeffects: u32,
-                    pdweffect: *mut u32,
-                ) -> ::windows::HRESULT;
-            }
-            DoDragDrop(
-                pdataobj.into_param().abi(),
-                pdropsource.into_param().abi(),
-                ::std::mem::transmute(dwokeffects),
-                ::std::mem::transmute(pdweffect),
-            )
-        }
-        #[cfg(not(windows))]
-        unimplemented!("Unsupported target OS");
-    }
-
     unsafe fn start_drag_internal(&self, request: DragRequest) {
         let window = self.window.upgrade().unwrap();
         let data = self.serialize_drag_data(request.data);
         let data = Rc::new(RefCell::new(data));
-        let data = DataObject::new(Rc::downgrade(&data));
+        let data: IDataObject = DataObject::new(Rc::downgrade(&data)).into();
         let helper: IDragSourceHelper = create_instance(&CLSID_DragDropHelper).unwrap();
         let hbitmap = create_dragimage_bitmap(&request.image);
         let image_start = window.local_to_global(request.rect.origin());
@@ -172,11 +145,10 @@ impl DragContext {
         helper
             .InitializeFromBitmap(&mut image as *mut _, data.clone())
             .ok_log();
-        let source = DropSource::new();
+        let source: IDropSource = DropSource::new().into();
         let ok_effects = convert_drag_effects(&request.allowed_effects);
         let mut effects_out: u32 = 0;
-        // TODO: Remove the wrapper once https://github.com/microsoft/windows-rs/issues/922 is resolved
-        let res = Self::do_drag_drop(data, source, ok_effects, &mut effects_out as *mut u32);
+        let res = DoDragDrop(data, source, ok_effects, &mut effects_out as *mut u32);
 
         if let Some(delegate) = window.delegate() {
             let mut effect = DragEffect::None;

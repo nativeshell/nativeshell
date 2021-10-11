@@ -69,7 +69,7 @@ fn main() {
                 SetFocus, EnableWindow, IsWindowEnabled, SetActiveWindow, ReleaseCapture, SetCapture,
                 GetCapture, GetAsyncKeyState, GetKeyboardState, GetKeyState, TrackMouseEvent, ToUnicode,
                 ToUnicodeEx, MapVirtualKeyW, ToAscii, GetKeyboardLayout, GetKeyboardLayoutList, RegisterHotKey,
-                UnregisterHotKey, TRACKMOUSEEVENT,
+                UnregisterHotKey, TRACKMOUSEEVENT, VIRTUAL_KEY,
             },
             Windows::Win32::UI::Shell::{
                 SetWindowSubclass, RemoveWindowSubclass, DefSubclassProc, IDropTargetHelper, IDragSourceHelper,
@@ -104,9 +104,9 @@ fn main() {
                 CREATESTRUCTW, MSG, WINDOWPOS, NCCALCSIZE_PARAMS,
                 // Constants
                 TRACK_POPUP_MENU_FLAGS, WINDOW_LONG_PTR_INDEX,
-                VK_SHIFT, VK_MENU, VK_CONTROL, VK_SPACE, WNDCLASS_STYLES, IDC_ARROW, SC_CLOSE, HTCAPTION, HTTOPLEFT,
+                WNDCLASS_STYLES, IDC_ARROW, SC_CLOSE, HTCAPTION, HTTOPLEFT,
                 HTTOPRIGHT, HTTOP, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTBOTTOM, HTLEFT, HTRIGHT, HTCLIENT, HTTRANSPARENT,
-                MSGF_MENU, VK_DOWN, VK_RIGHT, VK_LEFT, MAPVK_VK_TO_VSC, MAPVK_VSC_TO_VK, MAPVK_VK_TO_CHAR,
+                MSGF_MENU, MAPVK_VK_TO_VSC, MAPVK_VSC_TO_VK, MAPVK_VK_TO_CHAR,
             },
         );
     }
