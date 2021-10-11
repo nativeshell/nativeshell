@@ -89,7 +89,6 @@ impl<T: MethodCallHandler> RegisteredMethodCallHandler<T> {
             .borrow_mut()
             .register_method_handler(channel, move |call, reply, engine| {
                 handler_clone
-                    .as_ref()
                     .borrow_mut()
                     .on_method_call(call, reply, engine);
             });

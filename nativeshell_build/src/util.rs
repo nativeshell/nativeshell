@@ -123,8 +123,8 @@ where
         }
         fs::remove_file(dst.as_ref()).wrap_error(FileOperation::Remove, || dst.as_ref().into())?;
     }
-    let src_meta = fs::metadata(src.as_ref())
-        .wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
+    let src_meta =
+        fs::metadata(&src).wrap_error(crate::FileOperation::MetaData, || src.as_ref().into())?;
 
     if !allow_symlinks {
         if src_meta.is_dir() {

@@ -147,11 +147,7 @@ impl<T: AsyncMethodCallHandler> RegisteredAsyncMethodCallHandler<T> {
                 if let Some(context) = context_clone.get() {
                     let handler_clone = handler_clone.clone();
                     context.run_loop.borrow().spawn(async move {
-                        let result = handler_clone
-                            .as_ref()
-                            .borrow()
-                            .on_method_call(call, engine)
-                            .await;
+                        let result = handler_clone.borrow().on_method_call(call, engine).await;
                         reply.send(result);
                     });
                 }
