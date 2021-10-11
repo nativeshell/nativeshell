@@ -61,7 +61,7 @@ impl State {
     fn wake_up_at(&self, time: Instant) {
         let wait_time = time.saturating_duration_since(Instant::now());
         unsafe {
-            SetTimer(self.hwnd.get(), 0, wait_time.as_millis() as u32, None);
+            SetTimer(self.hwnd.get(), 1, wait_time.as_millis() as u32, None);
         }
     }
 
@@ -102,6 +102,7 @@ impl State {
 
     pub fn unschedule(&self, handle: HandleType) {
         self.timers.borrow_mut().remove(&handle);
+        self.wake_up_at(self.next_timer());
     }
 
     fn process_timers(&self) -> Instant {
