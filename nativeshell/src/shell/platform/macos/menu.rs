@@ -1,3 +1,28 @@
+use super::{
+    error::PlatformResult,
+    utils::{superclass, to_nsstring},
+};
+use crate::{
+    shell::{
+        api_model::{Accelerator, CheckStatus, Menu, MenuItem, MenuItemRole, MenuRole},
+        Context, Handle, MenuDelegate, MenuHandle, MenuManager,
+    },
+    util::{update_diff, DiffResult, LateRefCell},
+};
+use cocoa::{
+    appkit::{NSApplication, NSEventModifierFlags, NSMenu, NSMenuItem},
+    base::{id, nil, NO, YES},
+    foundation::{NSInteger, NSUInteger},
+};
+use lazy_static::lazy_static;
+use objc::{
+    class,
+    declare::ClassDecl,
+    msg_send,
+    rc::StrongPtr,
+    runtime::{Class, Object, Sel},
+    sel, sel_impl,
+};
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -8,36 +33,11 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use cocoa::{
-    appkit::{NSApplication, NSEventModifierFlags, NSMenu, NSMenuItem},
-    base::{id, nil, NO, YES},
-    foundation::{NSInteger, NSUInteger},
-};
-use lazy_static::__Deref;
-use objc::{
-    declare::ClassDecl,
-    rc::StrongPtr,
-    runtime::{Class, Object, Sel},
-};
-
-use crate::{
-    shell::{
-        api_model::{Accelerator, CheckStatus, Menu, MenuItem, MenuItemRole, MenuRole},
-        Context, Handle, MenuDelegate, MenuHandle, MenuManager,
-    },
-    util::{update_diff, DiffResult, LateRefCell},
-};
-
-use super::{
-    error::PlatformResult,
-    utils::{superclass, to_nsstring},
-};
-
 struct StrongPtrWrapper(StrongPtr);
 
 impl PartialEq for StrongPtrWrapper {
     fn eq(&self, other: &Self) -> bool {
-        return self.0.deref() == other.0.deref();
+        *self.0 == *other.0
     }
 }
 
@@ -45,7 +45,7 @@ impl Eq for StrongPtrWrapper {}
 
 impl Hash for StrongPtrWrapper {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.deref().hash(state);
+        (*self.0).hash(state);
     }
 }
 

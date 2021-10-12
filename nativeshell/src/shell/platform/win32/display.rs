@@ -1,11 +1,10 @@
+use super::{all_bindings::*, flutter_sys::FlutterDesktopGetDpiForMonitor};
+use crate::shell::{IPoint, IRect, Point, Rect};
+use lazy_static::lazy_static;
 use std::{
     cell::{Ref, RefCell},
     cmp::{self, Ordering},
 };
-
-use crate::shell::{IPoint, IRect, Point, Rect};
-
-use super::{all_bindings::*, flutter_sys::FlutterDesktopGetDpiForMonitor};
 
 #[derive(Clone, Debug)]
 pub struct PhysicalDisplay {

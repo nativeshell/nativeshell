@@ -1,5 +1,3 @@
-extern crate gtk;
-
 pub mod app_delegate;
 pub mod binary_messenger;
 pub mod drag_context;

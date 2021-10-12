@@ -1,3 +1,7 @@
+use super::{all_bindings::*, bindings::Windows::Win32::Graphics::Dxgi::*};
+use crate::util::OkLog;
+use detour::RawDetour;
+use lazy_static::lazy_static;
 use std::{
     cell::Cell,
     ffi::c_void,
@@ -5,13 +9,7 @@ use std::{
     slice,
     sync::Mutex,
 };
-
-use detour::RawDetour;
 use windows::{Guid, IUnknown, Interface, RawPtr, HRESULT};
-
-use crate::util::OkLog;
-
-use super::{all_bindings::*, bindings::Windows::Win32::Graphics::Dxgi::*};
 
 type CreateTargetForHwndT = unsafe extern "system" fn(
     this: RawPtr,

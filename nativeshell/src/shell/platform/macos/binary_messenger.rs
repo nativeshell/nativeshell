@@ -1,15 +1,13 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
+use super::error::PlatformResult;
+use crate::shell::BinaryMessengerReply;
 use block::{Block, ConcreteBlock, RcBlock};
 use cocoa::{
     base::{id, nil},
     foundation::NSString,
 };
-use objc::rc::StrongPtr;
-
-use crate::shell::BinaryMessengerReply;
-
-use super::error::PlatformResult;
+use objc::{class, msg_send, rc::StrongPtr, sel, sel_impl};
 
 pub struct PlatformBinaryMessenger {
     handle: StrongPtr,

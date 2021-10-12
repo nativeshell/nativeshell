@@ -1,11 +1,3 @@
-use std::{
-    cell::Cell,
-    collections::HashMap,
-    mem::ManuallyDrop,
-    sync::{Arc, Mutex},
-    time::{Duration, Instant},
-};
-
 use cocoa::{
     appkit::{
         NSApplication, NSApplicationActivationPolicy::NSApplicationActivationPolicyRegular,
@@ -14,7 +6,6 @@ use cocoa::{
     base::{id, nil, YES},
     foundation::NSPoint,
 };
-
 use core_foundation::{
     base::TCFType,
     date::CFAbsoluteTimeGetCurrent,
@@ -24,6 +15,14 @@ use core_foundation::{
     },
 };
 use libc::c_void;
+use objc::{class, msg_send, sel, sel_impl};
+use std::{
+    cell::Cell,
+    collections::HashMap,
+    mem::ManuallyDrop,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 pub type HandleType = usize;
 pub const INVALID_HANDLE: HandleType = 0;

@@ -1,26 +1,27 @@
-use core::panic;
-use std::{
-    cell::{Cell, RefCell},
-    mem::ManuallyDrop,
-    rc::{Rc, Weak},
-};
-
+use super::utils::from_nsstring;
+use crate::shell::{platform::platform_impl::utils::superclass, Context, ContextRef};
 use cocoa::{
     appkit::{NSApplication, NSApplicationTerminateReply},
     base::{id, nil, BOOL, NO, YES},
     foundation::{NSArray, NSUInteger},
 };
+use core::panic;
+use lazy_static::lazy_static;
 use libc::c_void;
 use objc::{
+    class,
     declare::ClassDecl,
+    msg_send,
     rc::{autoreleasepool, StrongPtr},
     runtime::{Class, Object, Protocol, Sel},
+    sel, sel_impl,
+};
+use std::{
+    cell::{Cell, RefCell},
+    mem::ManuallyDrop,
+    rc::{Rc, Weak},
 };
 use url::Url;
-
-use crate::shell::{platform::platform_impl::utils::superclass, Context, ContextRef};
-
-use super::utils::from_nsstring;
 
 pub struct AppTermination {}
 

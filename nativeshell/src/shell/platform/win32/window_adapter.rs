@@ -1,9 +1,9 @@
+use super::{all_bindings::*, util::direct_composition_supported};
+use lazy_static::lazy_static;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
 };
-
-use super::{all_bindings::*, util::direct_composition_supported};
 
 struct Global {
     window_class: RefCell<Weak<WindowClass>>,

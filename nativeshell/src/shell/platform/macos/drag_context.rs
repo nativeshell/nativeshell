@@ -4,15 +4,18 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use crate::shell::{
+    api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
+    Context, ContextRef, PlatformWindowDelegate, Point,
+};
 use cocoa::{
     base::{id, nil, BOOL, NO, YES},
     foundation::{NSInteger, NSPoint, NSRect, NSUInteger},
 };
-use objc::rc::{autoreleasepool, StrongPtr};
-
-use crate::shell::{
-    api_model::{DragData, DragEffect, DragRequest, DraggingInfo},
-    Context, ContextRef, PlatformWindowDelegate, Point,
+use objc::{
+    class, msg_send,
+    rc::{autoreleasepool, StrongPtr},
+    sel, sel_impl,
 };
 
 use super::{
