@@ -32,6 +32,7 @@ pub struct WindowBaseState {
     delegate: Weak<dyn WindowDelegate>,
     style: RefCell<WindowStyle>,
     pending_show_cmd: Cell<SHOW_WINDOW_CMD>,
+    last_window_pos: RefCell<Option<WINDOWPOS>>,
 }
 
 const LARGE_SIZE: f64 = 64.0 * 1024.0;
@@ -47,6 +48,7 @@ impl WindowBaseState {
             max_content_size: RefCell::new(Size::wh(LARGE_SIZE, LARGE_SIZE)),
             style: Default::default(),
             pending_show_cmd: Cell::new(SW_SHOW),
+            last_window_pos: RefCell::new(None),
         }
     }
 
@@ -572,7 +574,24 @@ impl WindowBaseState {
             }
             WM_WINDOWPOSCHANGING => {
                 let position = unsafe { &mut *(l_param.0 as *mut WINDOWPOS) };
+                let pos_before = *position;
                 self.adjust_window_position(position).ok_log();
+
+                if let Some(ref prev_window_pos) = *self.last_window_pos.borrow() {
+                    if pos_before.cx < position.cx {
+                        // fix window drift when resizing left border past minimum size
+                        if position.x != prev_window_pos.x {
+                            position.x = prev_window_pos.x + prev_window_pos.cx - position.cx;
+                        }
+                    }
+                    if pos_before.cy < position.cy {
+                        // fix window drift when resizing top border past minimum size
+                        if position.y != prev_window_pos.y {
+                            position.y = prev_window_pos.y + prev_window_pos.cy - position.cy;
+                        }
+                    }
+                }
+                self.last_window_pos.borrow_mut().replace(*position);
                 None
             }
             WM_DWMCOMPOSITIONCHANGED => {
