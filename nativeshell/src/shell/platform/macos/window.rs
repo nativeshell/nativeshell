@@ -1,38 +1,10 @@
-use std::{
-    cell::{Cell, RefCell},
-    collections::HashMap,
-    ffi::c_void,
-    mem::ManuallyDrop,
-    rc::{Rc, Weak},
-    time::Duration,
+use super::{
+    drag_context::{DragContext, NSDragOperation},
+    engine::PlatformEngine,
+    error::{PlatformError, PlatformResult},
+    menu::PlatformMenu,
+    utils::*,
 };
-
-use cocoa::{
-    appkit::{
-        CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
-        NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
-        NSWindowTabbingMode, NSWindowTitleVisibility,
-    },
-    base::{id, nil, BOOL, NO, YES},
-    foundation::{
-        NSArray, NSInteger, NSPoint, NSProcessInfo, NSRect, NSSize, NSString, NSUInteger,
-    },
-};
-
-use core_foundation::base::CFRelease;
-use core_graphics::event::CGEventType;
-
-use objc::{
-    declare::ClassDecl,
-    rc::{autoreleasepool, StrongPtr, WeakPtr},
-    runtime::{Class, Object, Sel},
-};
-
-use NSEventType::{
-    NSLeftMouseDown, NSLeftMouseDragged, NSLeftMouseUp, NSMouseEntered, NSMouseExited,
-    NSMouseMoved, NSRightMouseDown, NSRightMouseUp,
-};
-
 use crate::{
     codec::Value,
     shell::{
@@ -44,13 +16,39 @@ use crate::{
     },
     util::{LateRefCell, OkLog},
 };
-
-use super::{
-    drag_context::{DragContext, NSDragOperation},
-    engine::PlatformEngine,
-    error::{PlatformError, PlatformResult},
-    menu::PlatformMenu,
-    utils::*,
+use cocoa::{
+    appkit::{
+        CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
+        NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+        NSWindowTabbingMode, NSWindowTitleVisibility,
+    },
+    base::{id, nil, BOOL, NO, YES},
+    foundation::{
+        NSArray, NSInteger, NSPoint, NSProcessInfo, NSRect, NSSize, NSString, NSUInteger,
+    },
+};
+use core_foundation::base::CFRelease;
+use core_graphics::event::CGEventType;
+use lazy_static::lazy_static;
+use objc::{
+    class,
+    declare::ClassDecl,
+    msg_send,
+    rc::{autoreleasepool, StrongPtr, WeakPtr},
+    runtime::{Class, Object, Sel},
+    sel, sel_impl,
+};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    ffi::c_void,
+    mem::ManuallyDrop,
+    rc::{Rc, Weak},
+    time::Duration,
+};
+use NSEventType::{
+    NSLeftMouseDown, NSLeftMouseDragged, NSLeftMouseUp, NSMouseEntered, NSMouseExited,
+    NSMouseMoved, NSRightMouseDown, NSRightMouseUp,
 };
 
 pub type PlatformWindowType = StrongPtr;
@@ -154,13 +152,13 @@ impl PlatformWindow {
             self.flutter_view.set(StrongPtr::retain(flutter_view));
 
             let view: id = msg_send![class!(IMContentView), alloc];
-            let view: id = msg_send![view, init];
+            let view = StrongPtr::new(msg_send![view, init]);
 
-            let () = msg_send![*self.platform_window, setContentView: view];
-            let () = msg_send![view, addSubview: flutter_view];
+            let () = msg_send![*self.platform_window, setContentView: *view];
+            let () = msg_send![*view, addSubview: flutter_view];
 
             // Add traffic light
-            let () = msg_send![view, addSubview: *self.window_buttons];
+            let () = msg_send![*view, addSubview: *self.window_buttons];
 
             let () = msg_send![*engine.view_controller, setMouseTrackingMode: 3]; // always track mouse
 

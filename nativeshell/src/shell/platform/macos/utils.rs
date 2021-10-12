@@ -1,25 +1,24 @@
-use std::{ffi::CString, mem::ManuallyDrop, os::raw::c_char, slice, sync::Arc};
-
+use crate::shell::{api_model::ImageData, Point, Rect, Size};
 use cocoa::{
     appkit::{NSImage, NSView},
     base::{id, nil},
     foundation::{NSArray, NSPoint, NSRect, NSSize, NSString},
 };
-
 use core_graphics::{
     base::{kCGBitmapByteOrderDefault, kCGImageAlphaLast, kCGRenderingIntentDefault},
     color_space::CGColorSpace,
     data_provider::CGDataProvider,
     image::CGImage,
 };
-
 use objc::{
+    class,
     declare::ClassDecl,
+    msg_send,
     rc::StrongPtr,
     runtime::{objc_getClass, Class, Object},
+    sel, sel_impl,
 };
-
-use crate::shell::{api_model::ImageData, Point, Rect, Size};
+use std::{ffi::CString, mem::ManuallyDrop, os::raw::c_char, slice, sync::Arc};
 
 impl<'a> From<&'a Size> for NSSize {
     fn from(size: &'a Size) -> Self {

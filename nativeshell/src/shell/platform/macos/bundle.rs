@@ -1,12 +1,12 @@
+use cocoa::{base::id, foundation::NSBundle};
+use fs::canonicalize;
+use log::warn;
+use objc::{msg_send, sel, sel_impl};
+use process_path::get_executable_path;
 use std::{
     fs, io,
     path::{Path, PathBuf},
 };
-
-use cocoa::{base::id, foundation::NSBundle};
-use fs::canonicalize;
-use log::warn;
-use process_path::get_executable_path;
 
 fn is_running_bundled() -> bool {
     unsafe {

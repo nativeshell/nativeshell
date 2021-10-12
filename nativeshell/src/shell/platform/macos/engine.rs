@@ -1,12 +1,14 @@
-use cocoa::base::{id, nil, BOOL, NO};
-use log::warn;
-use objc::rc::{autoreleasepool, StrongPtr};
-
-use crate::shell::platform::platform_impl::utils::{class_from_string, to_nsstring};
-
 use super::{
     binary_messenger::PlatformBinaryMessenger,
     error::{PlatformError, PlatformResult},
+};
+use crate::shell::platform::platform_impl::utils::{class_from_string, to_nsstring};
+use cocoa::base::{id, nil, BOOL, NO};
+use log::warn;
+use objc::{
+    class, msg_send,
+    rc::{autoreleasepool, StrongPtr},
+    sel, sel_impl,
 };
 
 pub type PlatformEngineType = StrongPtr;
