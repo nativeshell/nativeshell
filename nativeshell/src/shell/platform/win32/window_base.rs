@@ -574,7 +574,7 @@ impl WindowBaseState {
             }
             WM_WINDOWPOSCHANGING => {
                 let position = unsafe { &mut *(l_param.0 as *mut WINDOWPOS) };
-                let pos_before = position.clone();
+                let pos_before = *position;
                 self.adjust_window_position(position).ok_log();
 
                 if let Some(ref prev_window_pos) = *self.last_window_pos.borrow() {
@@ -591,7 +591,7 @@ impl WindowBaseState {
                         }
                     }
                 }
-                self.last_window_pos.borrow_mut().replace(position.clone());
+                self.last_window_pos.borrow_mut().replace(*position);
                 None
             }
             WM_DWMCOMPOSITIONCHANGED => {
