@@ -1,4 +1,7 @@
-use std::thread::{self, ThreadId};
+use std::{
+    sync::atomic::{AtomicUsize, Ordering},
+    thread,
+};
 
 use crate::shell::RunLoopSender;
 
@@ -9,7 +12,7 @@ where
     T: 'static,
 {
     value: Option<T>,
-    thread_id: ThreadId,
+    thread_id: usize,
     sender: Option<RunLoopSender>,
 }
 
@@ -23,7 +26,7 @@ where
     pub fn new(value: T) -> Self {
         Self {
             value: Some(value),
-            thread_id: thread::current().id(),
+            thread_id: get_thread_id(),
             sender: None,
         }
     }
@@ -34,13 +37,13 @@ where
     pub fn new_with_sender(value: T, sender: RunLoopSender) -> Self {
         Self {
             value: Some(value),
-            thread_id: thread::current().id(),
+            thread_id: get_thread_id(),
             sender: Some(sender),
         }
     }
 
     pub fn get_ref(&self) -> Option<&T> {
-        if self.thread_id == thread::current().id() {
+        if self.thread_id == get_thread_id() {
             self.value.as_ref()
         } else {
             None
@@ -48,7 +51,7 @@ where
     }
 
     pub fn get_mut(&mut self) -> Option<&mut T> {
-        if self.thread_id == thread::current().id() {
+        if self.thread_id == get_thread_id() {
             self.value.as_mut()
         } else {
             None
@@ -56,7 +59,7 @@ where
     }
 
     pub fn take(&mut self) -> Option<T> {
-        if self.thread_id == thread::current().id() {
+        if self.thread_id == get_thread_id() {
             self.value.take()
         } else {
             None
@@ -67,13 +70,13 @@ where
 impl<T> Drop for Capsule<T> {
     fn drop(&mut self) {
         // we still have value and capsule was dropped in other thread
-        if self.value.is_some() && self.thread_id != thread::current().id() {
+        if self.value.is_some() && self.thread_id != get_thread_id() {
             if let Some(sender) = self.sender.as_ref() {
                 let carry = Carry(self.value.take().unwrap());
                 let thread_id = self.thread_id;
                 sender.send(move || {
                     // make sure that sender sent us back to initial thread
-                    if thread_id != thread::current().id() {
+                    if thread_id != get_thread_id() {
                         panic!("Capsule was created on different thread than sender target")
                     }
                     let _ = carry;
@@ -90,3 +93,13 @@ unsafe impl<T> Send for Capsule<T> {}
 struct Carry<T>(T);
 
 unsafe impl<T> Send for Carry<T> {}
+
+fn get_thread_id() -> usize {
+    thread_local!(static THREAD_ID: usize = next_thread_id());
+    THREAD_ID.with(|&x| x)
+}
+
+fn next_thread_id() -> usize {
+    static mut COUNTER: AtomicUsize = AtomicUsize::new(0);
+    unsafe { COUNTER.fetch_add(1, Ordering::SeqCst) }
+}
