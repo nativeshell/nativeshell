@@ -37,7 +37,7 @@ struct StrongPtrWrapper(StrongPtr);
 
 impl PartialEq for StrongPtrWrapper {
     fn eq(&self, other: &Self) -> bool {
-        return *self.0 == *other.0;
+        *self.0 == *other.0
     }
 }
 
