@@ -1,6 +1,3 @@
-extern crate gobject_sys;
-extern crate gtk_sys;
-
 use std::os::raw::{c_char, c_void};
 
 use gobject_sys::{GObject, GObjectClass};
