@@ -1,3 +1,5 @@
+use log::warn;
+
 use crate::{
     shell::{Context, EngineHandle},
     Error, Result,
@@ -49,8 +51,13 @@ impl<V> MethodInvoker<V> {
                     &self.channel_name,
                     &encoded,
                     move |message| {
-                        let message = codec.decode_envelope(message).unwrap();
-                        reply(message);
+                        if message.is_empty() {
+                            // This can happen during hot restart. For now ignore.
+                            warn!("Received empty response from isolate");
+                        } else {
+                            let message = codec.decode_envelope(message).unwrap();
+                            reply(message);
+                        }
                     },
                 )
             } else {
