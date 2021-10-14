@@ -421,10 +421,10 @@ impl<'a> Reader<'a> {
 
 fn clone_into_array<A, T>(slice: &[T]) -> A
 where
-    A: Sized + Default + AsMut<[T]>,
+    A: Default + AsMut<[T]>,
     T: Clone,
 {
-    let mut a = Default::default();
-    <A as AsMut<[T]>>::as_mut(&mut a).clone_from_slice(slice);
+    let mut a = A::default();
+    a.as_mut().clone_from_slice(slice);
     a
 }
