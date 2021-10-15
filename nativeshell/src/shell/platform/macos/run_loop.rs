@@ -4,7 +4,7 @@ use cocoa::{
         NSEventType::NSApplicationDefined,
     },
     base::{id, nil, YES},
-    foundation::NSPoint,
+    foundation::{NSBundle, NSDictionary, NSPoint},
 };
 use core_foundation::{
     base::TCFType,
@@ -15,7 +15,7 @@ use core_foundation::{
     },
 };
 use libc::c_void;
-use objc::{class, msg_send, sel, sel_impl};
+use objc::{class, msg_send, rc::autoreleasepool, sel, sel_impl};
 use std::{
     cell::Cell,
     collections::HashMap,
@@ -23,6 +23,8 @@ use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+
+use crate::shell::platform::platform_impl::utils::to_nsstring;
 
 pub type HandleType = usize;
 pub const INVALID_HANDLE: HandleType = 0;
@@ -170,10 +172,19 @@ pub struct PlatformRunLoop {
 
 impl PlatformRunLoop {
     pub fn new() -> Self {
-        unsafe {
+        autoreleasepool(|| unsafe {
             let app = NSApplication::sharedApplication(nil);
-            NSApplication::setActivationPolicy_(app, NSApplicationActivationPolicyRegular);
-        }
+
+            // Do not try to set activation policy is there is LSUIElement
+            // value specified in Info.plist
+            let bundle: id = NSBundle::mainBundle();
+            let dictionary: id = msg_send![bundle, infoDictionary];
+            if dictionary == nil
+                || NSDictionary::objectForKey_(dictionary, *to_nsstring("LSUIElement")) == nil
+            {
+                NSApplication::setActivationPolicy_(app, NSApplicationActivationPolicyRegular);
+            }
+        });
         Self {
             next_handle: Cell::new(INVALID_HANDLE + 1),
             state: Arc::new(Mutex::new(State::new())),
