@@ -41,9 +41,7 @@ pub(super) fn synthetize_leave_event_from_motion(event: &Event) -> Event {
     e.crossing.x_root = event.root_coords().unwrap().0;
     e.crossing.y_root = event.root_coords().unwrap().1;
 
-    unsafe {
-        gdk_sys::gdk_event_set_device(e, event.device().unwrap().to_glib_none().0);
-    }
+    res.set_device(Some(&event.device().unwrap()));
     res
 }
 
