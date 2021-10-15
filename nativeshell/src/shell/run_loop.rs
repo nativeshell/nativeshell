@@ -1,6 +1,7 @@
 use std::{
     cell::{RefCell, UnsafeCell},
     future::Future,
+    marker::PhantomData,
     rc::Rc,
     sync::Arc,
     task::Poll,
@@ -78,7 +79,10 @@ impl RunLoop {
             waker: RefCell::new(None),
         });
         ArcWake::wake_by_ref(&task);
-        JoinHandle { task }
+        JoinHandle {
+            task,
+            _data: PhantomData {},
+        }
     }
 }
 
@@ -145,6 +149,10 @@ impl<T: 'static> ArcWake for Task<T> {
 
 pub struct JoinHandle<T> {
     task: Arc<Task<T>>,
+    // Task has unsafe `Send` and `Sync`, but that is only because we know
+    // it will not be polled from another thread. This is to ensure that
+    // JoinHandle is neither Send nor Sync.
+    _data: PhantomData<*const ()>,
 }
 
 impl<T: 'static> Future for JoinHandle<T> {
