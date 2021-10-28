@@ -345,6 +345,9 @@ impl PlatformMenu {
         let () = msg_send![item, setTitle:*to_nsstring(&remove_mnemonics(title))];
         let () = msg_send![item, setTarget: nil];
         match role {
+            MenuItemRole::About => {
+                let () = msg_send![item, setAction: sel!(orderFrontStandardAboutPanel:)];
+            }
             MenuItemRole::Hide => {
                 let () = msg_send![item, setAction: sel!(hide:)];
                 let () = msg_send![item, setKeyEquivalent: to_nsstring("h")];

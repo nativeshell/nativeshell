@@ -5,6 +5,9 @@ import 'menu_internal.dart';
 
 enum MenuItemRole {
   // macOS specific
+  about,
+
+  // macOS specific
   hide,
 
   // macOS specific
@@ -131,6 +134,8 @@ class MenuItem {
 
   static String _titleForRole(MenuItemRole role) {
     switch (role) {
+      case MenuItemRole.about:
+        return 'About';
       case MenuItemRole.hide:
         return 'Hide';
       case MenuItemRole.hideOtherApplications:
