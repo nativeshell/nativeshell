@@ -195,6 +195,7 @@ pub struct WindowStyle {
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum MenuItemRole {
+    About,
     Hide,
     HideOtherApplications,
     ShowAll,
