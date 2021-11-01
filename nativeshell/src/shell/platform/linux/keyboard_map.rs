@@ -4,7 +4,6 @@ use std::{
 };
 
 use gdk::{Display, Event, EventKey, Keymap};
-use glib::translate::ToGlibPtr;
 
 use crate::{
     shell::{
@@ -21,25 +20,19 @@ pub struct PlatformKeyboardMap {
     delegate: Weak<RefCell<dyn KeyboardMapDelegate>>,
 }
 
-include!(std::concat!(
-    std::env!("OUT_DIR"),
-    "/generated_keyboard_map.rs"
-));
+include!(concat!(env!("OUT_DIR"), "/generated_keyboard_map.rs"));
 
-fn lookup_key(keymap: &Keymap, key: &gdk_sys::GdkKeymapKey) -> Option<i64> {
+fn lookup_key(keymap: &Keymap, key: &gdk::KeymapKey) -> Option<i64> {
     // Weird behavior, on SVK keyboard enter returns 'a' and left control returns 'A'.
     if key.keycode == 36 || key.keycode == 37 {
         return None;
     }
-    let keyval = unsafe { gdk_sys::gdk_keymap_lookup_key(keymap.to_glib_none().0, key) };
-    if keyval > 0 {
-        let res = unsafe { gdk_sys::gdk_keyval_to_unicode(keyval) };
-        if res >= 0x20 {
-            // ignore control characters
-            return Some(res as i64);
-        }
+    let res = keymap.lookup_key(key)?.to_unicode()? as i64;
+    if res < 0x20 {
+        // ignore control characters
+        return None;
     }
-    None
+    Some(res)
 }
 
 impl PlatformKeyboardMap {
@@ -100,7 +93,7 @@ impl PlatformKeyboardMap {
     fn is_ascii(&self, keymap: &Keymap, group: u8, code: u32) -> bool {
         let key = lookup_key(
             keymap,
-            &gdk_sys::GdkKeymapKey {
+            &gdk::KeymapKey {
                 keycode: code,
                 group: group as _,
                 level: 0,
@@ -150,7 +143,7 @@ impl PlatformKeyboardMap {
     fn key_from_entry(&self, entry: &KeyMapEntry, keymap: &Keymap, group: u8) -> Key {
         let key = lookup_key(
             keymap,
-            &gdk_sys::GdkKeymapKey {
+            &gdk::KeymapKey {
                 keycode: entry.platform as u32,
                 group: group as _,
                 level: 0,
@@ -160,7 +153,7 @@ impl PlatformKeyboardMap {
         let key_shift = if let Some(_key) = key {
             lookup_key(
                 keymap,
-                &gdk_sys::GdkKeymapKey {
+                &gdk::KeymapKey {
                     keycode: entry.platform as u32,
                     group: group as _,
                     level: 1,
