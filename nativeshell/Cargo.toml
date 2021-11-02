@@ -19,6 +19,7 @@ diff = "0.1.12"
 libc = "0.2.94"
 futures = "0.3.17"
 async-trait = "0.1.51"
+once_cell = "1.8.0"
 
 [build-dependencies]
 cargo-emit = "0.2.1"
