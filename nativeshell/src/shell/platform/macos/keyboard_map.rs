@@ -40,10 +40,7 @@ pub struct PlatformKeyboardMap {
     delegate: Weak<RefCell<dyn KeyboardMapDelegate>>,
 }
 
-include!(std::concat!(
-    std::env!("OUT_DIR"),
-    "/generated_keyboard_map.rs"
-));
+include!(concat!(env!("OUT_DIR"), "/generated_keyboard_map.rs"));
 
 impl PlatformKeyboardMap {
     pub fn new(_context: Context, delegate: Weak<RefCell<dyn KeyboardMapDelegate>>) -> Self {
