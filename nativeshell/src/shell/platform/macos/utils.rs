@@ -171,9 +171,9 @@ pub(super) fn class_decl_from_name(name: &str) -> ManuallyDrop<ClassDecl> {
     ManuallyDrop::new(unsafe { std::mem::transmute(res) })
 }
 
-pub(super) fn class_from_string(name: &str) -> *mut Class {
+pub(super) fn class_from_string(name: &str) -> *const Class {
     let name = CString::new(name).unwrap();
-    unsafe { objc_getClass(name.as_ptr() as *const _) as *mut _ }
+    unsafe { objc_getClass(name.as_ptr() as *const _) }
 }
 
 pub(super) fn flip_position(view: id, position: &mut NSPoint) {
