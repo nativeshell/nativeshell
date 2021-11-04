@@ -14,7 +14,6 @@ use cocoa::{
     base::{id, nil, NO, YES},
     foundation::{NSInteger, NSUInteger},
 };
-use lazy_static::lazy_static;
 use objc::{
     class,
     declare::ClassDecl,
@@ -23,6 +22,7 @@ use objc::{
     runtime::{Class, Object, Sel},
     sel, sel_impl,
 };
+use once_cell::sync::Lazy;
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -175,7 +175,7 @@ impl PlatformMenu {
             let menu: id = NSMenu::alloc(nil).initWithTitle_(*to_nsstring(""));
             let () = msg_send![menu, setAutoenablesItems: NO];
 
-            let target: id = msg_send![MENU_ITEM_TARGET_CLASS.0, new];
+            let target: id = msg_send![*MENU_ITEM_TARGET_CLASS, new];
             let target = StrongPtr::new(target);
 
             let () = msg_send![menu, setDelegate:*target];
@@ -534,32 +534,25 @@ impl PlatformMenu {
     }
 }
 
-struct MenuItemTargetClass(*const Class);
-// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
-unsafe impl Send for MenuItemTargetClass {}
-unsafe impl Sync for MenuItemTargetClass {}
+static MENU_ITEM_TARGET_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
+    let target_superclass = class!(NSObject);
+    let mut decl = ClassDecl::new("IMMenuItemTarget", target_superclass).unwrap();
 
-lazy_static! {
-    static ref MENU_ITEM_TARGET_CLASS: MenuItemTargetClass = unsafe {
-        let target_superclass = class!(NSObject);
-        let mut decl = ClassDecl::new("IMMenuItemTarget", target_superclass).unwrap();
+    decl.add_ivar::<*mut c_void>("imState");
 
-        decl.add_ivar::<*mut c_void>("imState");
+    decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+    decl.add_method(
+        sel!(onAction:),
+        on_action as extern "C" fn(&Object, Sel, id),
+    );
 
-        decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
-        decl.add_method(
-            sel!(onAction:),
-            on_action as extern "C" fn(&Object, Sel, id),
-        );
+    decl.add_method(
+        sel!(menuWillOpen:),
+        menu_will_open as extern "C" fn(&Object, Sel, id),
+    );
 
-        decl.add_method(
-            sel!(menuWillOpen:),
-            menu_will_open as extern "C" fn(&Object, Sel, id),
-        );
-
-        MenuItemTargetClass(decl.register())
-    };
-}
+    decl.register()
+});
 
 extern "C" fn dealloc(this: &Object, _sel: Sel) {
     unsafe {
