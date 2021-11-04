@@ -2,6 +2,10 @@
 
 ![](https://nativeshell.dev/screenshot-dev.png "Screenshot")
 
+## Sponsors
+
+<a href="https://superlist.com"><img src="https://nativeshell.dev/superlist.png" width="300" style="margin-top:20px"/></a>
+
 ## Features
 
 - Leverages existing Flutter desktop embedder on each platform
