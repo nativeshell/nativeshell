@@ -29,7 +29,6 @@ use cocoa::{
 };
 use core_foundation::base::CFRelease;
 use core_graphics::event::CGEventType;
-use lazy_static::lazy_static;
 use objc::{
     class,
     declare::ClassDecl,
@@ -38,6 +37,7 @@ use objc::{
     runtime::{Class, Object, Sel},
     sel, sel_impl,
 };
+use once_cell::sync::Lazy;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -93,7 +93,7 @@ impl PlatformWindow {
                 | NSWindowStyleMask::NSClosableWindowMask
                 | NSWindowStyleMask::NSResizableWindowMask
                 | NSWindowStyleMask::NSMiniaturizableWindowMask;
-            let window: id = msg_send![WINDOW_CLASS.0, alloc];
+            let window: id = msg_send![*WINDOW_CLASS, alloc];
             let window = window.initWithContentRect_styleMask_backing_defer_(
                 rect,
                 style,
@@ -106,7 +106,7 @@ impl PlatformWindow {
             NSWindow::setAllowsAutomaticWindowTabbing_(*window, NO);
             NSWindow::setTabbingMode_(*window, NSWindowTabbingMode::NSWindowTabbingModeDisallowed);
 
-            let platform_delegate: id = msg_send![WINDOW_DELEGATE_CLASS.0, new];
+            let platform_delegate: id = msg_send![*WINDOW_DELEGATE_CLASS, new];
             let platform_delegate = StrongPtr::new(platform_delegate);
 
             window.setDelegate_(*platform_delegate);
@@ -923,115 +923,108 @@ impl PlatformWindow {
     }
 }
 
-struct WindowClass(*const Class);
-// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
-unsafe impl Send for WindowClass {}
-unsafe impl Sync for WindowClass {}
-struct WindowDelegateClass(*const Class);
-// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
-unsafe impl Send for WindowDelegateClass {}
-unsafe impl Sync for WindowDelegateClass {}
-
-lazy_static! {
-    static ref WINDOW_CLASS: WindowClass = unsafe {
-        // FlutterView doesn't override acceptsFirstMouse: so we do it here
-        {
-            let mut class = class_decl_from_name("FlutterView");
-            class.add_method(
-                sel!(acceptsFirstMouse:),
-                accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
-            );
-        }
-
-        let window_superclass = class!(NSWindow);
-        let mut decl = ClassDecl::new("IMFlutterWindow", window_superclass).unwrap();
-
-        decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
-
-        decl.add_method(sel!(layoutIfNeeded), layout_if_needed as extern "C" fn(&mut Object, Sel));
-
-        decl.add_method(
-            sel!(sendEvent:),
-            send_event as extern "C" fn(&mut Object, Sel, id),
+static WINDOW_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
+    // FlutterView doesn't override acceptsFirstMouse: so we do it here
+    {
+        let mut class = class_decl_from_name("FlutterView");
+        class.add_method(
+            sel!(acceptsFirstMouse:),
+            accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
         );
+    }
 
-        decl.add_method(
-            sel!(canBecomeKeyWindow),
-            can_become_key_window as extern "C" fn(&Object, Sel) -> BOOL,
-        );
+    let window_superclass = class!(NSWindow);
+    let mut decl = ClassDecl::new("IMFlutterWindow", window_superclass).unwrap();
 
-        decl.add_method(
-            sel!(draggingEntered:),
-            dragging_entered as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
-        );
+    decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
 
-        decl.add_method(
-            sel!(draggingUpdated:),
-            dragging_updated as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
-        );
+    decl.add_method(
+        sel!(layoutIfNeeded),
+        layout_if_needed as extern "C" fn(&mut Object, Sel),
+    );
 
-        decl.add_method(
-            sel!(draggingExited:),
-            dragging_exited as extern "C" fn(&mut Object, Sel, id),
-        );
+    decl.add_method(
+        sel!(sendEvent:),
+        send_event as extern "C" fn(&mut Object, Sel, id),
+    );
 
-        decl.add_method(
-            sel!(performDragOperation:),
-            perform_drag_operation as extern "C" fn(&mut Object, Sel, id) -> BOOL,
-        );
+    decl.add_method(
+        sel!(canBecomeKeyWindow),
+        can_become_key_window as extern "C" fn(&Object, Sel) -> BOOL,
+    );
 
-        decl.add_method(
-            sel!(draggingSession:sourceOperationMaskForDraggingContext:),
-            source_operation_mask_for_dragging_context
-                as extern "C" fn(&mut Object, Sel, id, NSInteger) -> NSDragOperation,
-        );
+    decl.add_method(
+        sel!(draggingEntered:),
+        dragging_entered as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
+    );
 
-        decl.add_method(
-            sel!(draggingSession:endedAtPoint:operation:),
-            dragging_session_ended_at_point
-                as extern "C" fn(&mut Object, Sel, id, NSPoint, NSDragOperation),
-        );
+    decl.add_method(
+        sel!(draggingUpdated:),
+        dragging_updated as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
+    );
 
-        decl.add_ivar::<*mut c_void>("imState");
+    decl.add_method(
+        sel!(draggingExited:),
+        dragging_exited as extern "C" fn(&mut Object, Sel, id),
+    );
 
-        WindowClass(decl.register())
-    };
-    static ref WINDOW_DELEGATE_CLASS: WindowDelegateClass = unsafe {
-        let delegate_superclass = class!(NSResponder);
-        let mut decl = ClassDecl::new("IMFlutterWindowDelegate", delegate_superclass).unwrap();
+    decl.add_method(
+        sel!(performDragOperation:),
+        perform_drag_operation as extern "C" fn(&mut Object, Sel, id) -> BOOL,
+    );
 
-        decl.add_method(
-            sel!(windowDidMove:),
-            window_did_move as extern "C" fn(&Object, Sel, id),
-        );
+    decl.add_method(
+        sel!(draggingSession:sourceOperationMaskForDraggingContext:),
+        source_operation_mask_for_dragging_context
+            as extern "C" fn(&mut Object, Sel, id, NSInteger) -> NSDragOperation,
+    );
 
-        decl.add_method(
-            sel!(windowShouldClose:),
-            window_should_close as extern "C" fn(&Object, Sel, id) -> BOOL,
-        );
+    decl.add_method(
+        sel!(draggingSession:endedAtPoint:operation:),
+        dragging_session_ended_at_point
+            as extern "C" fn(&mut Object, Sel, id, NSPoint, NSDragOperation),
+    );
 
-        decl.add_method(
-            sel!(windowWillClose:),
-            window_will_close as extern "C" fn(&Object, Sel, id),
-        );
+    decl.add_ivar::<*mut c_void>("imState");
 
-        decl.add_method(
-            sel!(windowDidBecomeKey:),
-            window_did_become_key as extern "C" fn(&Object, Sel, id),
-        );
+    decl.register()
+});
 
-        decl.add_method(
-            sel!(windowDidResignKey:),
-            window_did_resign_key as extern "C" fn(&Object, Sel, id),
-        );
+static WINDOW_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
+    let delegate_superclass = class!(NSResponder);
+    let mut decl = ClassDecl::new("IMFlutterWindowDelegate", delegate_superclass).unwrap();
 
-        decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+    decl.add_method(
+        sel!(windowDidMove:),
+        window_did_move as extern "C" fn(&Object, Sel, id),
+    );
 
-        decl.add_ivar::<*mut c_void>("imState");
+    decl.add_method(
+        sel!(windowShouldClose:),
+        window_should_close as extern "C" fn(&Object, Sel, id) -> BOOL,
+    );
 
-        WindowDelegateClass(decl.register())
-    };
-}
+    decl.add_method(
+        sel!(windowWillClose:),
+        window_will_close as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidBecomeKey:),
+        window_did_become_key as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidResignKey:),
+        window_did_resign_key as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+
+    decl.add_ivar::<*mut c_void>("imState");
+
+    decl.register()
+});
 
 fn with_state<F>(this: &Object, callback: F)
 where
