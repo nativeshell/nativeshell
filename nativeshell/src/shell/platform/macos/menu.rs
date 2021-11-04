@@ -203,16 +203,15 @@ impl PlatformMenu {
     pub fn update_from_menu(&self, menu: Menu, manager: &MenuManager) -> PlatformResult<()> {
         let mut previous_menu = self.previous_menu.borrow_mut();
 
-        let diff = update_diff(&previous_menu.items, &menu.items, |a, b| {
+        let mut diff = update_diff(&previous_menu.items, &menu.items, |a, b| {
             Self::can_update(a, b)
         });
 
         // First remove items from menu; This is necessary in case we're reordering a
         // item with submenu - we have to remove it first otherwise we get exception
         // if adding same submenu while it already exists
-        let diff: Vec<_> = diff
-            .iter()
-            .filter(|res| match res {
+        diff.retain(|res| {
+            match res {
                 DiffResult::Remove(res) => {
                     let item = self.id_to_menu_item.borrow_mut().remove(&res.id);
                     if let Some(item) = item {
@@ -225,8 +224,8 @@ impl PlatformMenu {
                     false
                 }
                 _ => true,
-            })
-            .collect();
+            }
+        });
 
         for (i, d) in diff.iter().enumerate() {
             match d {
