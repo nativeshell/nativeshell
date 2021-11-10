@@ -1,6 +1,6 @@
 use super::{all_bindings::*, flutter_sys::FlutterDesktopGetDpiForMonitor};
 use crate::shell::{IPoint, IRect, Point, Rect};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::{
     cell::{Ref, RefCell},
     cmp::{self, Ordering},
@@ -163,11 +163,9 @@ struct Global {
 
 unsafe impl Sync for Global {}
 
-lazy_static! {
-    static ref GLOBAL: Global = Global {
-        displays: RefCell::new(None),
-    };
-}
+static GLOBAL: Lazy<Global> = Lazy::new(|| Global {
+    displays: RefCell::new(None),
+});
 
 struct DisplayState {
     original: PhysicalDisplay,

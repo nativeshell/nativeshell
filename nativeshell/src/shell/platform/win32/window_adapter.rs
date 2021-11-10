@@ -1,5 +1,5 @@
 use super::{all_bindings::*, util::direct_composition_supported};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -9,15 +9,12 @@ struct Global {
     window_class: RefCell<Weak<WindowClass>>,
 }
 
-// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
 unsafe impl Send for Global {}
 unsafe impl Sync for Global {}
 
-lazy_static! {
-    static ref GLOBAL: Global = Global {
-        window_class: RefCell::new(Weak::new()),
-    };
-}
+static GLOBAL: Lazy<Global> = Lazy::new(|| Global {
+    window_class: RefCell::new(Weak::new()),
+});
 
 struct WindowClass {
     pub class_name: String,
