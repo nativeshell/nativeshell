@@ -1,7 +1,7 @@
 use super::{all_bindings::*, bindings::Windows::Win32::Graphics::Dxgi::*};
 use crate::util::OkLog;
 use detour::RawDetour;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::{
     cell::Cell,
     ffi::c_void,
@@ -331,19 +331,17 @@ struct Global {
     resize_buffers: Option<ResizeBuffersT>,
 }
 
-lazy_static! {
-    static ref GLOBAL: Mutex<Global> = {
-        Mutex::new(Global {
-            create_target_for_hwnd: None,
-            dcomposition_create_device: None,
-            d3d11_create_device: None,
-            create_swap_chain_for_hwnd: None,
-            create_swap_chain_for_composition: None,
-            present1: None,
-            resize_buffers: None,
-        })
-    };
-}
+static GLOBAL: Lazy<Mutex<Global>> = Lazy::new(|| {
+    Mutex::new(Global {
+        create_target_for_hwnd: None,
+        dcomposition_create_device: None,
+        d3d11_create_device: None,
+        create_swap_chain_for_hwnd: None,
+        create_swap_chain_for_composition: None,
+        present1: None,
+        resize_buffers: None,
+    })
+});
 
 pub(super) fn init_dxgi_hook() {
     let mut global = GLOBAL.lock().unwrap();

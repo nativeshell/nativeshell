@@ -6,7 +6,6 @@ use cocoa::{
     foundation::{NSArray, NSUInteger},
 };
 use core::panic;
-use lazy_static::lazy_static;
 use libc::c_void;
 use objc::{
     class,
@@ -16,6 +15,7 @@ use objc::{
     runtime::{Class, Object, Protocol, Sel},
     sel, sel_impl,
 };
+use once_cell::sync::Lazy;
 use std::{
     cell::{Cell, RefCell},
     mem::ManuallyDrop,
@@ -117,7 +117,7 @@ impl ApplicationDelegateManager {
             execute_after: RefCell::new(None),
         });
         let object = autoreleasepool(|| unsafe {
-            let object: id = msg_send![APPLICATION_DELEGATE_CLASS.0, new];
+            let object: id = msg_send![*APPLICATION_DELEGATE_CLASS, new];
             let weak = Rc::downgrade(&state);
             let state_ptr = weak.into_raw() as *mut c_void;
             (*object).set_ivar("imState", state_ptr);
@@ -151,107 +151,100 @@ impl ApplicationDelegateManager {
     }
 }
 
-struct ApplicationDelegateClass(*const Class);
-// Send is required when other dependencies apply the lazy_static feature 'spin_no_std'
-unsafe impl Send for ApplicationDelegateClass {}
-unsafe impl Sync for ApplicationDelegateClass {}
-
-lazy_static! {
-    static ref APPLICATION_DELEGATE_CLASS: ApplicationDelegateClass = unsafe {
-        let superclass = class!(NSObject);
-        let mut decl = ClassDecl::new("IMApplicationDeleagte", superclass).unwrap();
-        decl.add_ivar::<*mut c_void>("imState");
-        if let Some(protocol) = Protocol::get("NSApplicationDelegate") {
-            decl.add_protocol(protocol);
-        }
-        decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
-        decl.add_method(
-            sel!(applicationWillFinishLaunching:),
-            will_finish_launching as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidFinishLaunching:),
-            did_finish_launching as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationWillBecomeActive:),
-            will_become_active as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidBecomeActive:),
-            did_become_active as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationWillResignActive:),
-            will_resign_active as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidResignActive:),
-            did_resign_active as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationShouldTerminate:),
-            should_terminate as extern "C" fn(&Object, Sel, id) -> NSUInteger,
-        );
-        decl.add_method(
-            sel!(applicationShouldTerminateAfterLastWindowClosed:),
-            should_terminate_after_last_window_closed as extern "C" fn(&Object, Sel, id) -> BOOL,
-        );
-        decl.add_method(
-            sel!(applicationWillTerminate:),
-            will_terminate as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationWillHide:),
-            will_hide as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidHide:),
-            did_hide as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationWillUnhide:),
-            will_unhide as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidUnhide:),
-            did_unhide as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationWillUpdate:),
-            will_update as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidUpdate:),
-            did_update as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationShouldHandleReopen:hasVisibleWindows:),
-            should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
-        );
-        decl.add_method(
-            sel!(application:willPresentError:),
-            will_present_error as extern "C" fn(&Object, Sel, id, id) -> id,
-        );
-        decl.add_method(
-            sel!(applicationDidChangeScreenParameters:),
-            did_change_screen_parameters as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(applicationDidChangeOcclusionState:),
-            did_change_occlusion_state as extern "C" fn(&Object, Sel, id),
-        );
-        decl.add_method(
-            sel!(application:openFiles:),
-            open_files as extern "C" fn(&Object, Sel, id, id),
-        );
-        decl.add_method(
-            sel!(application:openURLs:),
-            open_urls as extern "C" fn(&Object, Sel, id, id),
-        );
-        ApplicationDelegateClass(decl.register())
-    };
-}
+static APPLICATION_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
+    let superclass = class!(NSObject);
+    let mut decl = ClassDecl::new("IMApplicationDeleagte", superclass).unwrap();
+    decl.add_ivar::<*mut c_void>("imState");
+    if let Some(protocol) = Protocol::get("NSApplicationDelegate") {
+        decl.add_protocol(protocol);
+    }
+    decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+    decl.add_method(
+        sel!(applicationWillFinishLaunching:),
+        will_finish_launching as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidFinishLaunching:),
+        did_finish_launching as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationWillBecomeActive:),
+        will_become_active as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidBecomeActive:),
+        did_become_active as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationWillResignActive:),
+        will_resign_active as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidResignActive:),
+        did_resign_active as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationShouldTerminate:),
+        should_terminate as extern "C" fn(&Object, Sel, id) -> NSUInteger,
+    );
+    decl.add_method(
+        sel!(applicationShouldTerminateAfterLastWindowClosed:),
+        should_terminate_after_last_window_closed as extern "C" fn(&Object, Sel, id) -> BOOL,
+    );
+    decl.add_method(
+        sel!(applicationWillTerminate:),
+        will_terminate as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationWillHide:),
+        will_hide as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidHide:),
+        did_hide as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationWillUnhide:),
+        will_unhide as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidUnhide:),
+        did_unhide as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationWillUpdate:),
+        will_update as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidUpdate:),
+        did_update as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationShouldHandleReopen:hasVisibleWindows:),
+        should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
+    );
+    decl.add_method(
+        sel!(application:willPresentError:),
+        will_present_error as extern "C" fn(&Object, Sel, id, id) -> id,
+    );
+    decl.add_method(
+        sel!(applicationDidChangeScreenParameters:),
+        did_change_screen_parameters as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(applicationDidChangeOcclusionState:),
+        did_change_occlusion_state as extern "C" fn(&Object, Sel, id),
+    );
+    decl.add_method(
+        sel!(application:openFiles:),
+        open_files as extern "C" fn(&Object, Sel, id, id),
+    );
+    decl.add_method(
+        sel!(application:openURLs:),
+        open_urls as extern "C" fn(&Object, Sel, id, id),
+    );
+    decl.register()
+});
 
 extern "C" fn dealloc(this: &Object, _sel: Sel) {
     unsafe {
