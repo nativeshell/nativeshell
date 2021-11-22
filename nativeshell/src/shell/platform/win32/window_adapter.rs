@@ -9,9 +9,6 @@ struct Global {
     window_class: RefCell<Weak<WindowClass>>,
 }
 
-unsafe impl Send for Global {}
-unsafe impl Sync for Global {}
-
 static GLOBAL: Lazy<Global> = Lazy::new(|| Global {
     window_class: RefCell::new(Weak::new()),
 });
