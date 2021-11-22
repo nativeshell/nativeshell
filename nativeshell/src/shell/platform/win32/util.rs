@@ -17,6 +17,7 @@ pub unsafe fn as_u8_slice<T: Sized>(p: &T) -> &[u8] {
 }
 
 pub fn get_raw_ptr<T>(t: &T) -> usize {
+    #[repr(transparent)]
     struct Extractor(usize);
     unsafe {
         let s = &*(t as *const _ as *const Extractor);
@@ -31,6 +32,7 @@ pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T>
     if ptr.is_null() {
         None
     } else {
+        #[repr(transparent)]
         struct ComObject(windows::RawPtr);
         let e = ComObject(ptr);
         let t = &*(&e as *const _ as *const T);
