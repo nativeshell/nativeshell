@@ -1,8 +1,7 @@
 use super::{all_bindings::*, flutter_sys::FlutterDesktopGetDpiForMonitor};
 use crate::shell::{IPoint, IRect, Point, Rect};
-use once_cell::sync::Lazy;
 use std::{
-    cell::{Ref, RefCell},
+    cell::RefCell,
     cmp::{self, Ordering},
 };
 
@@ -21,6 +20,7 @@ pub struct Display {
     pub handle: isize,
 }
 
+#[derive(Clone, Debug)]
 pub struct Displays {
     pub displays: Vec<Display>,
 }
@@ -106,18 +106,18 @@ impl Displays {
         }
     }
 
-    pub fn get_displays() -> Ref<'static, Displays> {
-        if GLOBAL.displays.borrow().is_none() {
-            GLOBAL
-                .displays
-                .borrow_mut()
-                .replace(Displays::new(displays_from_system()));
-        }
-        Ref::map(GLOBAL.displays.borrow(), |d| d.as_ref().unwrap())
+    pub fn get_displays() -> Displays {
+        DISPLAYS.with(|displays| {
+            let mut displays = displays.borrow_mut();
+            if displays.is_none() {
+                displays.replace(Displays::new(displays_from_system()));
+            }
+            displays.as_ref().unwrap().clone()
+        })
     }
 
     pub fn displays_changed() {
-        GLOBAL.displays.borrow_mut().take();
+        DISPLAYS.with(|displays| displays.borrow_mut().take());
     }
 }
 
@@ -157,15 +157,9 @@ fn displays_from_system() -> Vec<PhysicalDisplay> {
     }
 }
 
-struct Global {
-    displays: RefCell<Option<Displays>>,
+thread_local! {
+    static DISPLAYS: RefCell<Option<Displays>> = RefCell::new(None);
 }
-
-unsafe impl Sync for Global {}
-
-static GLOBAL: Lazy<Global> = Lazy::new(|| Global {
-    displays: RefCell::new(None),
-});
 
 struct DisplayState {
     original: PhysicalDisplay,
