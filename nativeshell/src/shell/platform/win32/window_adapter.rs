@@ -1,20 +1,12 @@
 use super::{all_bindings::*, util::direct_composition_supported};
-use once_cell::sync::Lazy;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
 };
 
-struct Global {
-    window_class: RefCell<Weak<WindowClass>>,
+thread_local! {
+    static WINDOW_CLASS: RefCell<Weak<WindowClass>> = RefCell::new(Weak::new());
 }
-
-unsafe impl Send for Global {}
-unsafe impl Sync for Global {}
-
-static GLOBAL: Lazy<Global> = Lazy::new(|| Global {
-    window_class: RefCell::new(Weak::new()),
-});
 
 struct WindowClass {
     pub class_name: String,
@@ -22,15 +14,17 @@ struct WindowClass {
 
 impl WindowClass {
     pub fn get() -> Rc<Self> {
-        let res = GLOBAL.window_class.borrow().upgrade();
-        match res {
-            Some(class) => class,
-            None => {
-                let res = Rc::new(Self::new());
-                GLOBAL.window_class.replace(Rc::downgrade(&res));
-                res
+        WINDOW_CLASS.with(|window_class| {
+            let res = window_class.borrow().upgrade();
+            match res {
+                Some(class) => class,
+                None => {
+                    let res = Rc::new(Self::new());
+                    window_class.replace(Rc::downgrade(&res));
+                    res
+                }
             }
-        }
+        })
     }
 
     fn new() -> Self {
