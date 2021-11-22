@@ -20,7 +20,7 @@ use super::{
     display::Displays,
     error::PlatformResult,
     flutter_sys::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
-    util::{as_u8_slice, clamp, BoolResultExt, GET_X_LPARAM, GET_Y_LPARAM},
+    util::{as_u8_slice, BoolResultExt, GET_X_LPARAM, GET_Y_LPARAM},
 };
 
 pub struct WindowBaseState {
@@ -293,8 +293,8 @@ impl WindowBaseState {
             std::cmp::min(max_content.height, max_frame.height),
         );
 
-        position.cx = clamp(position.cx, min_size.width, max_size.width);
-        position.cy = clamp(position.cy, min_size.height, max_size.height);
+        position.cx = position.cx.clamp(min_size.width, max_size.width);
+        position.cy = position.cy.clamp(min_size.height, max_size.height);
 
         Ok(())
     }
