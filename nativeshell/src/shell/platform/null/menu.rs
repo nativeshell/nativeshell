@@ -5,7 +5,6 @@ use std::{
 
 use super::error::{PlatformError, PlatformResult};
 use crate::shell::{api_model::Menu, Context, MenuDelegate, MenuHandle, MenuManager};
-use objc::{msg_send, sel, sel_impl};
 
 pub struct PlatformMenu {}
 
