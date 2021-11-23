@@ -9,15 +9,8 @@ use std::{
     slice,
 };
 
-use windows::{
-    core::{implement, HRESULT},
-    Win32::{
-        Foundation::{HWND, POINTL},
-        System::Com::IDataObject,
-        UI::Shell::IDropTargetHelper,
-    },
-};
 use Windows::{
+    core::{implement, HRESULT},
     core::{Error, RawPtr},
     Win32::{
         Foundation::{
@@ -33,6 +26,11 @@ use Windows::{
             Ole::ReleaseStgMedium,
         },
         UI::{Shell::SHCreateMemStream, WindowsAndMessaging::MK_LBUTTON},
+    },
+    Win32::{
+        Foundation::{HWND, POINTL},
+        System::Com::IDataObject,
+        UI::Shell::IDropTargetHelper,
     },
 };
 

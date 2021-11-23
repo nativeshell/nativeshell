@@ -1,7 +1,9 @@
 #![allow(clippy::forget_copy)] // windows-rs !implement macro
 
-use windows::{
+use Windows::{
+    core::Interface,
     core::{implement, IUnknown},
+    Win32::Foundation::BOOL,
     Win32::{
         Foundation::PWSTR,
         UI::{
@@ -17,7 +19,6 @@ use windows::{
         },
     },
 };
-use Windows::{core::Interface, Win32::Foundation::BOOL};
 
 use windows as Windows;
 
