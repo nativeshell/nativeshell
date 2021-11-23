@@ -4,10 +4,19 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use windows::Win32::{Foundation::{DRAGDROP_S_DROP, POINT, POINTL, SIZE}, System::{Com::IDataObject, Ole::{DROPEFFECT_NONE, DoDragDrop, IDropSource, IDropTarget, RegisterDragDrop, RevokeDragDrop}}, UI::{
+use windows::Win32::{
+    Foundation::{DRAGDROP_S_DROP, POINT, POINTL, SIZE},
+    System::{
+        Com::IDataObject,
+        Ole::{
+            DoDragDrop, IDropSource, IDropTarget, RegisterDragDrop, RevokeDragDrop, DROPEFFECT_NONE,
+        },
+    },
+    UI::{
         Shell::{IDragSourceHelper, SHDRAGIMAGE},
         WindowsAndMessaging::GetCursorPos,
-    }};
+    },
+};
 
 use crate::{
     shell::{
