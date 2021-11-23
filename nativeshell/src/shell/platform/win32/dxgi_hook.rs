@@ -1,4 +1,3 @@
-use super::{all_bindings::*, bindings::Windows::Win32::Graphics::Dxgi::*};
 use crate::util::OkLog;
 use detour::RawDetour;
 use once_cell::sync::Lazy;
@@ -9,7 +8,19 @@ use std::{
     slice,
     sync::Mutex,
 };
-use windows::{Guid, IUnknown, Interface, RawPtr, HRESULT};
+use windows::{
+    core::{IUnknown, Interface, RawPtr, GUID, HRESULT},
+    Win32::{
+        Foundation::{BOOL, HWND},
+        Graphics::Dxgi::{
+            Common::DXGI_FORMAT, IDXGIAdapter, IDXGIDevice, IDXGIFactory, IDXGIFactory2,
+            IDXGISwapChain1, DXGI_PRESENT_PARAMETERS, DXGI_SWAP_CHAIN_DESC1,
+            DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
+        },
+        System::LibraryLoader::{GetModuleHandleW, GetProcAddress, LoadLibraryW},
+        UI::WindowsAndMessaging::GetParent,
+    },
+};
 
 type CreateTargetForHwndT = unsafe extern "system" fn(
     this: RawPtr,
@@ -18,7 +29,7 @@ type CreateTargetForHwndT = unsafe extern "system" fn(
     target: *mut ::std::option::Option<IUnknown>,
 ) -> HRESULT;
 
-type DCompositionCreateDeviceT = fn(usize, *const Guid, *mut *mut ::std::ffi::c_void) -> HRESULT;
+type DCompositionCreateDeviceT = fn(usize, *const GUID, *mut *mut ::std::ffi::c_void) -> HRESULT;
 
 type D3D11CreateDeviceT = fn(
     usize,
@@ -76,7 +87,7 @@ unsafe extern "system" fn create_target_for_hwnd(
 
 unsafe extern "system" fn dcomposition_create_device(
     dxgi_device: usize,
-    iid: *const ::windows::Guid,
+    iid: *const GUID,
     dcomposition_device: *mut *mut ::std::ffi::c_void,
 ) -> HRESULT {
     let mut global = GLOBAL.lock().unwrap();
@@ -84,7 +95,7 @@ unsafe extern "system" fn dcomposition_create_device(
         global.dcomposition_create_device.as_ref().unwrap()(dxgi_device, iid, dcomposition_device);
     if global.create_target_for_hwnd.is_none() {
         let device = &*(dcomposition_device as *const Option<IUnknown>);
-        let vtable = ::windows::Interface::vtable(device.as_ref().unwrap());
+        let vtable = ::windows::core::Interface::vtable(device.as_ref().unwrap());
         let myvtable: &[usize] = std::slice::from_raw_parts(std::mem::transmute(vtable), 7);
 
         let dt = ManuallyDrop::new(Box::new(
@@ -180,7 +191,7 @@ unsafe fn present1(
 unsafe fn hook_swap_chain(swap_chain: IDXGISwapChain1) {
     let mut global = GLOBAL.lock().unwrap();
     if global.present1.is_none() {
-        let vtable = ::windows::Interface::vtable(&swap_chain);
+        let vtable = ::windows::core::Interface::vtable(&swap_chain);
         let dt = ManuallyDrop::new(Box::new(
             RawDetour::new(vtable.22 as *const (), present1 as *const ()).unwrap(),
         ));
@@ -189,7 +200,7 @@ unsafe fn hook_swap_chain(swap_chain: IDXGISwapChain1) {
         global.present1.replace(mem::transmute(dt.trampoline()));
     }
     if global.resize_buffers.is_none() {
-        let vtable = ::windows::Interface::vtable(&swap_chain);
+        let vtable = ::windows::core::Interface::vtable(&swap_chain);
         let dt = ManuallyDrop::new(Box::new(
             RawDetour::new(vtable.13 as *const (), resize_buffers as *const ()).unwrap(),
         ));
@@ -262,7 +273,7 @@ unsafe extern "system" fn d3d11_create_device(
     pp_device: *mut ::std::option::Option<IUnknown>,
     p_feature_level: *mut c_void,
     pp_immediate_context: *mut ::std::option::Option<IUnknown>,
-) -> ::windows::HRESULT {
+) -> windows::core::HRESULT {
     let mut global = GLOBAL.lock().unwrap();
     let res = global.d3d11_create_device.as_ref().unwrap()(
         p_adapter,
@@ -287,7 +298,7 @@ unsafe extern "system" fn d3d11_create_device(
                 .and_then(|f| f.cast::<IDXGIFactory2>().ok());
 
             if let Some(factory) = factory {
-                let vtable = ::windows::Interface::vtable(&factory);
+                let vtable = ::windows::core::Interface::vtable(&factory);
 
                 let dt = ManuallyDrop::new(Box::new(
                     RawDetour::new(

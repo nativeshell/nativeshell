@@ -1,6 +1,27 @@
 #![allow(clippy::forget_copy)] // windows-rs !implement macro
 
-use super::{all_bindings::*, bindings::*, util::create_instance};
+use windows::{
+    core::{implement, IUnknown},
+    Win32::{
+        Foundation::PWSTR,
+        UI::{
+            Input::KeyboardAndMouse::{
+                GetKeyboardLayout, GetKeyboardLayoutList, MapVirtualKeyW, ToUnicodeEx, VK_CONTROL,
+                VK_MENU, VK_SHIFT, VK_SPACE,
+            },
+            TextServices::{
+                CLSID_TF_InputProcessorProfiles, ITfInputProcessorProfiles,
+                ITfLanguageProfileNotifySink, ITfSource, HKL, TF_INVALID_COOKIE,
+            },
+            WindowsAndMessaging::{MAPVK_VK_TO_VSC, MAPVK_VSC_TO_VK},
+        },
+    },
+};
+use Windows::{core::Interface, Win32::Foundation::BOOL};
+
+use windows as Windows;
+
+use super::util::create_instance;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -278,11 +299,11 @@ impl LanguageProfileNotifySink {
         Self { target }
     }
 
-    fn OnLanguageChange(&self, _langid: u16) -> windows::Result<BOOL> {
+    fn OnLanguageChange(&self, _langid: u16) -> windows::core::Result<BOOL> {
         Ok(true.into())
     }
 
-    fn OnLanguageChanged(&self) -> ::windows::Result<()> {
+    fn OnLanguageChanged(&self) -> ::windows::core::Result<()> {
         if let Some(target) = self.target.upgrade() {
             target.keyboard_layout_changed();
         }

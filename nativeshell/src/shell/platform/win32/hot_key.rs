@@ -1,4 +1,15 @@
-use super::{all_bindings::*, run_loop::PlatformRunLoopHotKeyDelegate};
+use windows::Win32::{
+    Foundation::HWND,
+    UI::{
+        Input::KeyboardAndMouse::{
+            MapVirtualKeyW, RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT,
+            MOD_CONTROL, MOD_SHIFT, MOD_WIN,
+        },
+        WindowsAndMessaging::MAPVK_VSC_TO_VK,
+    },
+};
+
+use super::run_loop::PlatformRunLoopHotKeyDelegate;
 
 use std::{cell::RefCell, collections::HashMap, rc::Weak};
 

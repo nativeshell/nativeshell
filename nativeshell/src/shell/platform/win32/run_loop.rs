@@ -6,7 +6,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::all_bindings::*;
+use windows::Win32::{
+    Foundation::{HWND, LPARAM, LRESULT, WPARAM},
+    UI::WindowsAndMessaging::{
+        DispatchMessageW, GetMessageW, PostMessageW, SetTimer, TranslateMessage, MSG,
+        WINDOW_EX_STYLE, WINDOW_STYLE, WM_HOTKEY, WM_QUIT, WM_TIMER, WM_USER,
+    },
+};
 
 use super::window_adapter::WindowAdapter;
 

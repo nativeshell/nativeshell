@@ -1,6 +1,10 @@
 use std::sync::Once;
 
-use super::all_bindings::*;
+use windows::Win32::{
+    Foundation::BOOL,
+    System::LibraryLoader::{FreeLibrary, GetProcAddress, LoadLibraryW},
+    UI::WindowsAndMessaging::SetProcessDPIAware,
+};
 
 fn set_per_monitor_aware() -> bool {
     const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2: isize = -4;

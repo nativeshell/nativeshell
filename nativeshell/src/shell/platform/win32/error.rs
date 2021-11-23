@@ -5,7 +5,7 @@ pub enum PlatformError {
     UnknownError,
     LaunchEngineFailure,
     SendMessageFailure { channel: String },
-    WindowsError(windows::Error),
+    WindowsError(windows::core::Error),
     NotAvailable,
     OtherError { error: String },
 }
@@ -37,8 +37,8 @@ impl Display for PlatformError {
 
 impl std::error::Error for PlatformError {}
 
-impl From<windows::Error> for PlatformError {
-    fn from(src: windows::Error) -> PlatformError {
+impl From<windows::core::Error> for PlatformError {
+    fn from(src: windows::core::Error) -> PlatformError {
         PlatformError::WindowsError(src)
     }
 }

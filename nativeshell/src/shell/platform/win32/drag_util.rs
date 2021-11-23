@@ -7,16 +7,34 @@ use std::{
 };
 
 use widestring::WideCStr;
-use windows::Guid;
+use windows::{
+    core::GUID,
+    Win32::{
+        Foundation::{HANDLE, HWND, POINT},
+        Graphics::Gdi::{
+            CreateDIBSection, GetDC, ReleaseDC, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
+            DIB_RGB_COLORS, HBITMAP,
+        },
+        System::{
+            Com::{IDataObject, DVASPECT_CONTENT, FORMATETC, STGMEDIUM, TYMED, TYMED_HGLOBAL},
+            Memory::{GlobalLock, GlobalSize, GlobalUnlock},
+            Ole::{
+                ReleaseStgMedium, DROPEFFECT_COPY, DROPEFFECT_LINK, DROPEFFECT_MOVE,
+                DROPEFFECT_NONE,
+            },
+        },
+        UI::Shell::DROPFILES,
+    },
+};
 
 use crate::shell::api_model::{DragEffect, ImageData};
 
-use super::{all_bindings::*, util::as_u8_slice};
+use super::util::as_u8_slice;
 
 use byte_slice_cast::*;
 
 #[allow(non_upper_case_globals)]
-pub const CLSID_DragDropHelper: Guid = Guid::from_values(
+pub const CLSID_DragDropHelper: GUID = GUID::from_values(
     0x4657278a,
     0x411b,
     0x11d2,
@@ -128,7 +146,7 @@ pub fn create_dragimage_bitmap(image: &ImageData) -> HBITMAP {
 pub struct DataUtil {}
 
 impl DataUtil {
-    pub fn get_data(object: IDataObject, format: u32) -> windows::Result<Vec<u8>> {
+    pub fn get_data(object: IDataObject, format: u32) -> windows::core::Result<Vec<u8>> {
         let mut format = Self::get_format(format);
 
         unsafe {
@@ -163,7 +181,7 @@ impl DataUtil {
                 .unwrap();
             let mut offset = 0;
             loop {
-                let str = WideCStr::from_slice_with_nul(&data[offset..]).unwrap();
+                let str = WideCStr::from_slice_truncate(&data[offset..]).unwrap();
                 if str.is_empty() {
                     break;
                 }
@@ -188,7 +206,7 @@ impl DataUtil {
 
     pub fn extract_url_w(buffer: &[u8]) -> String {
         let data = buffer.as_slice_of::<u16>().unwrap();
-        let str = WideCStr::from_slice_with_nul(data).unwrap();
+        let str = WideCStr::from_slice_truncate(data).unwrap();
         str.to_string_lossy()
     }
 

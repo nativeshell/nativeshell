@@ -4,6 +4,31 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use windows::Win32::{
+    Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
+    Graphics::{
+        Dwm::DwmExtendFrameIntoClientArea,
+        Gdi::{ClientToScreen, ScreenToClient},
+    },
+    UI::{
+        Controls::MARGINS,
+        Input::KeyboardAndMouse::ReleaseCapture,
+        WindowsAndMessaging::{
+            DestroyWindow, EnableMenuItem, GetSystemMenu, GetWindowLongW, GetWindowPlacement,
+            GetWindowRect, IsWindowVisible, SendMessageW, SetForegroundWindow, SetWindowLongW,
+            SetWindowPlacement, SetWindowPos, SetWindowTextW, ShowWindow, GWL_EXSTYLE, GWL_STYLE,
+            HTBOTTOM, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTCAPTION, HTCLIENT, HTLEFT, HTRIGHT, HTTOP,
+            HTTOPLEFT, HTTOPRIGHT, HTTRANSPARENT, MF_BYCOMMAND, MF_DISABLED, MF_ENABLED, MF_GRAYED,
+            SC_CLOSE, SHOW_WINDOW_CMD, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+            SWP_NOZORDER, SW_HIDE, SW_SHOW, WINDOWPLACEMENT, WINDOWPOS, WINDOW_EX_STYLE,
+            WINDOW_STYLE, WM_CLOSE, WM_DESTROY, WM_DISPLAYCHANGE, WM_DWMCOMPOSITIONCHANGED,
+            WM_NCCALCSIZE, WM_NCHITTEST, WM_NCLBUTTONDOWN, WM_WINDOWPOSCHANGING, WS_BORDER,
+            WS_CAPTION, WS_DLGFRAME, WS_EX_LAYOUTRTL, WS_EX_NOREDIRECTIONBITMAP, WS_MAXIMIZEBOX,
+            WS_MINIMIZEBOX, WS_OVERLAPPEDWINDOW, WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
+        },
+    },
+};
+
 use crate::{
     shell::{
         api_model::{
@@ -16,7 +41,6 @@ use crate::{
 };
 
 use super::{
-    all_bindings::*,
     display::Displays,
     error::PlatformResult,
     flutter_sys::{FlutterDesktopGetDpiForHWND, FlutterDesktopGetDpiForMonitor},
@@ -608,7 +632,7 @@ impl WindowBaseState {
             WM_NCHITTEST => {
                 if self.remove_border() {
                     let res = self.do_hit_test(GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param));
-                    Some(LRESULT(res as i32))
+                    Some(LRESULT(res as isize))
                 } else {
                     None
                 }
@@ -629,9 +653,9 @@ impl WindowBaseState {
                 if self.remove_border() {
                     let res = self.do_hit_test(GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param));
                     if res != HTCLIENT {
-                        Some(LRESULT(HTTRANSPARENT))
+                        Some(LRESULT(HTTRANSPARENT as isize))
                     } else {
-                        Some(LRESULT(res as i32))
+                        Some(LRESULT(res as isize))
                     }
                 } else {
                     None
