@@ -1,6 +1,6 @@
 [package]
 name = "nativeshell"
-version = "0.1.11"
+version = "0.1.12"
 authors = ["Matej Knopp <matej.knopp@gmail.com>"]
 edition = "2018"
 description = "NativeShell Rust package"
