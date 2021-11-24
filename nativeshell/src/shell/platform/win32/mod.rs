@@ -20,26 +20,3 @@ pub mod window;
 pub mod window_adapter;
 pub mod window_base;
 pub mod window_menu;
-
-#[allow(dead_code)]
-mod bindings {
-    ::windows::include_bindings!();
-}
-
-// This bit of a lie, it doesn't have dxgi
-mod all_bindings {
-    pub use super::bindings::Windows::Win32::{
-        Foundation::*,
-        Graphics::{Dwm::*, Gdi::*},
-        Storage::StructuredStorage::*,
-        System::{
-            Com::*, DataExchange::*, Diagnostics::Debug::*, LibraryLoader::*, Memory::*,
-            SystemServices::*, Threading::*,
-        },
-        UI::{
-            Controls::*, KeyboardAndMouseInput::*, Shell::*, TextServices::*,
-            WindowsAndMessaging::*,
-        },
-    };
-    pub use windows::*;
-}

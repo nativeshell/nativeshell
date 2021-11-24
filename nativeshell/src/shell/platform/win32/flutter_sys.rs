@@ -1,9 +1,9 @@
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+
 #[allow(non_camel_case_types)]
 pub type size_t = usize;
 #[allow(clippy::upper_case_acronyms)]
 pub type UINT = u32;
-
-use super::all_bindings::*;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

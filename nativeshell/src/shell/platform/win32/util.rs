@@ -1,7 +1,16 @@
-use super::{
-    all_bindings::*,
-    error::{PlatformError, PlatformResult},
+use windows::{
+    core::{Interface, RawPtr, GUID, HRESULT},
+    Win32::{
+        Foundation::{GetLastError, BOOL, LPARAM, PWSTR},
+        System::{
+            Com::{CoCreateInstance, CLSCTX_ALL},
+            DataExchange::GetClipboardFormatNameW,
+            Diagnostics::Debug::FACILITY_WIN32,
+        },
+    },
 };
+
+use super::error::{PlatformError, PlatformResult};
 
 pub(super) fn to_utf16(string: &str) -> Vec<u16> {
     let mut res: Vec<u16> = string.encode_utf16().collect();
@@ -28,12 +37,12 @@ pub fn get_raw_ptr<T>(t: &T) -> usize {
 /// # Safety
 ///
 /// ptr must point to a valid COM object instance
-pub unsafe fn com_object_from_ptr<T: Clone>(ptr: ::windows::RawPtr) -> Option<T> {
+pub unsafe fn com_object_from_ptr<T: Clone>(ptr: RawPtr) -> Option<T> {
     if ptr.is_null() {
         None
     } else {
         #[repr(transparent)]
-        struct ComObject(windows::RawPtr);
+        struct ComObject(RawPtr);
         let e = ComObject(ptr);
         let t = &*(&e as *const _ as *const T);
         Some(t.clone())
@@ -76,7 +85,7 @@ impl BoolResultExt for BOOL {
     }
 }
 
-pub fn create_instance<T: Interface>(clsid: &Guid) -> Result<T> {
+pub fn create_instance<T: Interface>(clsid: &GUID) -> windows::core::Result<T> {
     unsafe { CoCreateInstance(clsid, None, CLSCTX_ALL) }
 }
 

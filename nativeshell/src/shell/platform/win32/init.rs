@@ -1,7 +1,12 @@
 use std::ptr::null_mut;
 
+use windows::Win32::System::{
+    Com::{CoInitializeEx, COINIT_APARTMENTTHREADED},
+    LibraryLoader::LoadLibraryW,
+    Ole::OleInitialize,
+};
+
 use super::{
-    all_bindings::*,
     dpi::become_dpi_aware,
     dxgi_hook::init_dxgi_hook,
     error::{PlatformError, PlatformResult},

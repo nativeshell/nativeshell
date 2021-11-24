@@ -3,13 +3,16 @@ use std::collections::HashMap;
 use byte_slice_cast::AsByteSlice;
 use log::warn;
 use widestring::WideCString;
+use windows::Win32::System::{
+    Com::IDataObject, DataExchange::RegisterClipboardFormatW, SystemServices::CF_HDROP,
+};
 
 use crate::{
     codec::{MessageCodec, StandardMethodCodec, Value},
     shell::{api_constants::*, ContextOptions},
 };
 
-use super::{all_bindings::*, drag_util::DataUtil};
+use super::drag_util::DataUtil;
 
 pub trait DragDataAdapter {
     // Retrieve drag data from data object; This is called when receiving drop;
@@ -79,7 +82,7 @@ impl UrlsDragDataAdapter {
         }
     }
 
-    fn get_url(&self, data_object: IDataObject) -> windows::Result<String> {
+    fn get_url(&self, data_object: IDataObject) -> windows::core::Result<String> {
         let data = DataUtil::get_data(data_object.clone(), self.format_inet_url_w);
         if data.is_ok() {
             return data.map(|d| DataUtil::extract_url_w(&d));

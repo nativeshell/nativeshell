@@ -9,11 +9,34 @@ use std::{
     slice,
 };
 
-use windows::HRESULT;
+use Windows::{
+    core::{implement, HRESULT},
+    core::{Error, RawPtr},
+    Win32::{
+        Foundation::{
+            BOOL, DRAGDROP_S_CANCEL, DRAGDROP_S_DROP, DRAGDROP_S_USEDEFAULTCURSORS, E_NOTIMPL,
+            POINT, S_FALSE, S_OK,
+        },
+        System::{
+            Com::{
+                IAdviseSink, IEnumFORMATETC, IEnumSTATDATA, IStream, DATADIR_GET, FORMATETC,
+                STGMEDIUM, STGMEDIUM_0, STREAM_SEEK_END, TYMED_HGLOBAL, TYMED_ISTREAM,
+            },
+            Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock},
+            Ole::ReleaseStgMedium,
+        },
+        UI::{Shell::SHCreateMemStream, WindowsAndMessaging::MK_LBUTTON},
+    },
+    Win32::{
+        Foundation::{HWND, POINTL},
+        System::Com::IDataObject,
+        UI::Shell::IDropTargetHelper,
+    },
+};
+
+use windows as Windows;
 
 use super::{
-    all_bindings::*,
-    bindings::*,
     drag_util::{CLSID_DragDropHelper, DataUtil},
     util::{com_object_from_ptr, create_instance, get_raw_ptr},
 };
@@ -31,7 +54,7 @@ pub trait DropTargetDelegate {
 // DropTarget
 //
 
-#[implement(Windows::Win32::System::Com::IDropTarget)]
+#[implement(Windows::Win32::System::Ole::IDropTarget)]
 pub(super) struct DropTarget {
     drop_target_helper: IDropTargetHelper,
     hwnd: HWND,
@@ -55,7 +78,7 @@ impl DropTarget {
         _grfkeystate: u32,
         pt: POINTL,
         pdweffect: *mut u32,
-    ) -> ::windows::Result<()> {
+    ) -> ::windows::core::Result<()> {
         unsafe {
             if let (Some(delegate), Some(p_data_obj)) = //
                 (self.delegate.upgrade(), pdataobj)
@@ -76,7 +99,7 @@ impl DropTarget {
         _grfkeystate: u32,
         pt: POINTL,
         pdweffect: *mut u32,
-    ) -> ::windows::Result<()> {
+    ) -> ::windows::core::Result<()> {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 *pdweffect = delegate.drag_over(&pt, *pdweffect);
@@ -90,7 +113,7 @@ impl DropTarget {
         Ok(())
     }
 
-    fn DragLeave(&self) -> ::windows::Result<()> {
+    fn DragLeave(&self) -> ::windows::core::Result<()> {
         unsafe {
             if let Some(delegate) = self.delegate.upgrade() {
                 delegate.drag_leave();
@@ -107,7 +130,7 @@ impl DropTarget {
         _grfkeystate: u32,
         pt: POINTL,
         pdweffect: *mut u32,
-    ) -> ::windows::Result<()> {
+    ) -> ::windows::core::Result<()> {
         unsafe {
             if let (Some(delegate), Some(pdataobj)) = //
                 (self.delegate.upgrade(), pdataobj)
@@ -153,7 +176,7 @@ impl EnumFORMATETC {
         mut celt: u32,
         rgelt: *mut FORMATETC,
         pcelt_fetched: *mut u32,
-    ) -> ::windows::HRESULT {
+    ) -> ::windows::core::HRESULT {
         let mut offset = 0;
         let dest: &mut [FORMATETC] = unsafe { slice::from_raw_parts_mut(rgelt, celt as usize) };
         while celt > 0 && self.remaining() > 0 {
@@ -175,7 +198,7 @@ impl EnumFORMATETC {
         }
     }
 
-    fn Skip(&mut self, mut celt: u32) -> ::windows::HRESULT {
+    fn Skip(&mut self, mut celt: u32) -> ::windows::core::HRESULT {
         while celt > 0 && self.remaining() > 0 {
             celt -= 1;
             self.index += 1;
@@ -187,12 +210,12 @@ impl EnumFORMATETC {
         }
     }
 
-    fn Reset(&mut self) -> ::windows::HRESULT {
+    fn Reset(&mut self) -> ::windows::core::HRESULT {
         self.index = 0;
         S_OK
     }
 
-    fn Clone(&self) -> ::windows::Result<IEnumFORMATETC> {
+    fn Clone(&self) -> ::windows::core::Result<IEnumFORMATETC> {
         let clone = EnumFORMATETC::new_(self.formats.clone(), self.index);
         Ok(clone.into())
     }
@@ -226,7 +249,7 @@ impl DataObject {
         }
     }
 
-    fn GetData(&self, pformatetc_in: *const FORMATETC) -> ::windows::Result<STGMEDIUM> {
+    fn GetData(&self, pformatetc_in: *const FORMATETC) -> ::windows::core::Result<STGMEDIUM> {
         let format = unsafe { &*pformatetc_in };
 
         // println!(
@@ -266,11 +289,11 @@ impl DataObject {
 
                         if let Some(data) = data {
                             let stream = SHCreateMemStream(data.as_ptr(), data.len() as u32);
-                            stream.clone().unwrap().Seek(0, STREAM_SEEK_END).ok_log();
+                            stream.as_ref().unwrap().Seek(0, STREAM_SEEK_END).ok_log();
                             let res = Ok(STGMEDIUM {
                                 tymed: TYMED_ISTREAM.0 as u32,
                                 Anonymous: STGMEDIUM_0 {
-                                    pstm: get_raw_ptr(&stream) as windows::RawPtr,
+                                    pstm: get_raw_ptr(&stream) as RawPtr,
                                 },
                                 pUnkForRelease: None,
                             });
@@ -292,11 +315,11 @@ impl DataObject {
         &self,
         _pformatetc: *const FORMATETC,
         _pmedium: *mut STGMEDIUM,
-    ) -> ::windows::Result<()> {
+    ) -> ::windows::core::Result<()> {
         Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn QueryGetData(&self, pformatetc: *const FORMATETC) -> ::windows::Result<()> {
+    fn QueryGetData(&self, pformatetc: *const FORMATETC) -> ::windows::core::Result<()> {
         self.with_data_or(
             |data| {
                 let format = unsafe { &*pformatetc };
@@ -316,7 +339,7 @@ impl DataObject {
     fn GetCanonicalFormatEtc(
         &self,
         _pformatectin: *const FORMATETC,
-    ) -> ::windows::Result<FORMATETC> {
+    ) -> ::windows::core::Result<FORMATETC> {
         Err(Error::fast_error(E_NOTIMPL))
     }
 
@@ -325,7 +348,7 @@ impl DataObject {
         pformatetc: *const FORMATETC,
         pmedium: *const STGMEDIUM,
         frelease: BOOL,
-    ) -> ::windows::Result<()> {
+    ) -> ::windows::core::Result<()> {
         let format = unsafe { &*pformatetc };
 
         self.with_data_or(
@@ -393,7 +416,7 @@ impl DataObject {
         )
     }
 
-    fn EnumFormatEtc(&self, dwdirection: u32) -> ::windows::Result<IEnumFORMATETC> {
+    fn EnumFormatEtc(&self, dwdirection: u32) -> ::windows::core::Result<IEnumFORMATETC> {
         let mut formats = Vec::<FORMATETC>::new();
 
         self.with_data_or(
@@ -416,15 +439,15 @@ impl DataObject {
         _pformatetc: *const FORMATETC,
         _advf: u32,
         _padvsink: &Option<IAdviseSink>,
-    ) -> ::windows::Result<u32> {
+    ) -> ::windows::core::Result<u32> {
         Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn DUnadvise(&self, _dwconnection: u32) -> ::windows::Result<()> {
+    fn DUnadvise(&self, _dwconnection: u32) -> ::windows::core::Result<()> {
         Err(Error::fast_error(DATA_E_FORMATETC))
     }
 
-    fn EnumDAdvise(&self) -> ::windows::Result<IEnumSTATDATA> {
+    fn EnumDAdvise(&self) -> ::windows::core::Result<IEnumSTATDATA> {
         Err(Error::fast_error(DATA_E_FORMATETC))
     }
 }
@@ -433,7 +456,7 @@ impl DataObject {
 // DropSource
 //
 
-#[implement(Windows::Win32::System::Com::IDropSource)]
+#[implement(Windows::Win32::System::Ole::IDropSource)]
 pub struct DropSource {}
 
 #[allow(non_snake_case)]
@@ -442,7 +465,11 @@ impl DropSource {
         Self {}
     }
 
-    fn QueryContinueDrag(&self, f_escape_pressed: BOOL, grf_key_state: u32) -> ::windows::HRESULT {
+    fn QueryContinueDrag(
+        &self,
+        f_escape_pressed: BOOL,
+        grf_key_state: u32,
+    ) -> ::windows::core::HRESULT {
         if f_escape_pressed.as_bool() {
             DRAGDROP_S_CANCEL
         } else if grf_key_state & MK_LBUTTON as u32 == 0 {
@@ -452,7 +479,7 @@ impl DropSource {
         }
     }
 
-    fn GiveFeedback(&self, _dw_effect: u32) -> ::windows::HRESULT {
+    fn GiveFeedback(&self, _dw_effect: u32) -> ::windows::core::HRESULT {
         DRAGDROP_S_USEDEFAULTCURSORS
     }
 }

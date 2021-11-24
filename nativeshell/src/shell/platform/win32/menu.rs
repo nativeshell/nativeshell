@@ -3,8 +3,18 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use windows::Win32::{
+    Foundation::PWSTR,
+    Graphics::Gdi::{HBITMAP, HBRUSH},
+    UI::WindowsAndMessaging::{
+        CreatePopupMenu, DestroyMenu, InsertMenuItemW, RemoveMenu, SetMenuInfo, SetMenuItemInfoW,
+        HMENU, MENUINFO, MENUINFO_STYLE, MENUITEMINFOW, MFS_CHECKED, MFS_DISABLED, MFS_ENABLED,
+        MFT_RADIOCHECK, MFT_SEPARATOR, MFT_STRING, MF_BYCOMMAND, MIIM_FTYPE, MIIM_ID, MIIM_STATE,
+        MIIM_STRING, MIIM_SUBMENU, MIM_MENUDATA, MIM_STYLE,
+    },
+};
+
 use super::{
-    all_bindings::*,
     error::{PlatformError, PlatformResult},
     util::to_utf16,
 };
