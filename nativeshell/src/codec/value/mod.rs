@@ -10,7 +10,7 @@ pub use self::{
     serializer::to_value,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Null,
     Bool(bool),
@@ -55,36 +55,6 @@ impl_from!(Value::F64List, Vec<f64>);
 impl_from!(Value::List, Vec<Value>);
 impl_from!(Value::Map, HashMap<Value, Value>);
 
-#[allow(clippy::if_same_then_else)]
-fn eq_map(m1: &HashMap<Value, Value>, m2: &HashMap<Value, Value>) -> bool {
-    if m1.len() != m2.len() {
-        false
-    } else if !m1.keys().all(|k| m2.contains_key(k)) {
-        false
-    } else {
-        m1.keys().all(|k| m1.get(k) == m2.get(k))
-    }
-}
-
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Value::Null, Value::Null) => true,
-            (Value::Bool(a), Value::Bool(b)) => a.eq(b),
-            (Value::I64(a), Value::I64(b)) => a.eq(b),
-            (Value::F64(a), Value::F64(b)) => a.eq(b),
-            (Value::String(a), Value::String(b)) => a.eq(b),
-            (Value::U8List(a), Value::U8List(b)) => a.eq(b),
-            (Value::I32List(a), Value::I32List(b)) => a.eq(b),
-            (Value::I64List(a), Value::I64List(b)) => a.eq(b),
-            (Value::F64List(a), Value::F64List(b)) => a.eq(b),
-            (Value::List(a), Value::List(b)) => a.eq(b),
-            (Value::Map(a), Value::Map(b)) => eq_map(a, b),
-            (_, _) => false,
-        }
-    }
-}
-
 impl Eq for Value {}
 
 fn hash_f64<H: std::hash::Hasher>(value: f64, state: &mut H) {
@@ -101,6 +71,7 @@ fn hash_map<H: std::hash::Hasher>(map: &HashMap<Value, Value>, state: &mut H) {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl std::hash::Hash for Value {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
