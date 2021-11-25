@@ -243,6 +243,10 @@ static APPLICATION_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
         sel!(application:openURLs:),
         open_urls as extern "C" fn(&Object, Sel, id, id),
     );
+    decl.add_method(
+        sel!(application:continueUserActivity:restorationHandler:),
+        continue_user_activity as extern "C" fn(&Object, Sel, id, id, id),
+    );
     decl.register()
 });
 
@@ -443,6 +447,17 @@ extern "C" fn open_urls(this: &Object, _sel: Sel, _sender: id, urls: id) {
     with_delegate(this, |delegate| {
         delegate.application_open_urls(&u);
     })
+}
+
+extern "C" fn continue_user_activity(
+    _this: &Object,
+    _sel: Sel,
+    _sender: id,
+    _acctivity: id,
+    _restoration_handler: id,
+) {
+    println!("\nLink clicked!\nContinue user activity!");
+    eprintln!("\nLink clicked!\nContinue user activity!");
 }
 
 //
