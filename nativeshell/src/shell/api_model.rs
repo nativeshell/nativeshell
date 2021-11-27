@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::codec::Value;
 
-use super::{HotKeyHandle, MenuHandle, Point, Rect, Size, status_item_manager::StatusItemHandle};
+use super::{status_item_manager::StatusItemHandle, HotKeyHandle, MenuHandle, Point, Rect, Size};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -332,25 +332,61 @@ pub struct HotKeyPressed {
 }
 
 #[derive(serde::Deserialize, Debug)]
- #[serde(rename_all = "camelCase")]
- pub struct StatusItemCreateRequest {}
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemCreateRequest {}
 
- #[derive(serde::Deserialize)]
- #[serde(rename_all = "camelCase")]
- pub struct StatusItemDestroyRequest {
-     pub handle: StatusItemHandle,
- }
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemDestroyRequest {
+    pub handle: StatusItemHandle,
+}
 
- #[derive(serde::Deserialize, Debug)]
- #[serde(rename_all = "camelCase")]
- pub struct StatusItemSetImageRequest {
-     pub handle: StatusItemHandle,
-     pub image: Vec<ImageData>,
- }
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetImageRequest {
+    pub handle: StatusItemHandle,
+    pub image: Vec<ImageData>,
+}
 
- #[derive(serde::Deserialize, Debug)]
- #[serde(rename_all = "camelCase")]
- pub struct StatusItemSetMenuRequest {
-     pub handle: StatusItemHandle,
-     pub menu: Option<MenuHandle>,
- }
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetHighlightedRequest {
+    pub handle: StatusItemHandle,
+    pub highlighted: bool,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetMenuRequest {
+    pub handle: StatusItemHandle,
+    pub menu: Option<MenuHandle>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemGetGeometryRequest {
+    pub handle: StatusItemHandle,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StatusItemActionType {
+    LeftMouseDown,
+    LeftMouseUp,
+    RightMouseDown,
+    RightMouseUp,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemAction {
+    pub handle: StatusItemHandle,
+    pub action: StatusItemActionType,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemGeometry {
+    pub origin: Point,
+    pub size: Size,
+}

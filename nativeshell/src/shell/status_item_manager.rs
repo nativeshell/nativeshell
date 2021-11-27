@@ -1,38 +1,57 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    rc::{Rc, Weak},
+};
 
 use crate::{
     codec::{
         value::{from_value, to_value},
         MethodCall, MethodCallReply, MethodCallResult, Value,
     },
+    util::{Late, OkLog},
     Error, Result,
 };
 
 use super::{
     api_constants::{channel, method},
     api_model::{
-        StatusItemCreateRequest, StatusItemDestroyRequest, StatusItemSetImageRequest,
-        StatusItemSetMenuRequest,
+        StatusItemAction, StatusItemActionType, StatusItemCreateRequest, StatusItemDestroyRequest,
+        StatusItemGeometry, StatusItemGetGeometryRequest, StatusItemSetHighlightedRequest,
+        StatusItemSetImageRequest, StatusItemSetMenuRequest,
     },
-    platform::status_item::PlatformStatusItem,
-    Context, EngineHandle, MenuDelegate, MethodCallHandler, RegisteredMethodCallHandler,
+    platform::status_item::{PlatformStatusItem, PlatformStatusItemManager},
+    Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider,
+    RegisteredMethodCallHandler,
 };
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct StatusItemHandle(pub(crate) i64);
 
+pub trait StatusItemDelegate {
+    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType);
+}
+
 pub struct StatusItemManager {
     context: Context,
     status_item_map: HashMap<StatusItemHandle, Rc<PlatformStatusItem>>,
+    platform_manager: Rc<PlatformStatusItemManager>,
     next_handle: StatusItemHandle,
+    weak_self: Late<Weak<RefCell<StatusItemManager>>>,
+    invoker_provider: Late<MethodInvokerProvider>,
 }
 
 impl StatusItemManager {
     pub(super) fn new(context: Context) -> RegisteredMethodCallHandler<Self> {
+        let platform_manager = Rc::new(PlatformStatusItemManager::new());
+        platform_manager.assign_weak_self(Rc::downgrade(&platform_manager));
         Self {
             context: context.clone(),
             status_item_map: HashMap::new(),
             next_handle: StatusItemHandle(1),
+            platform_manager,
+            weak_self: Late::new(),
+            invoker_provider: Late::new(),
         }
         .register(context, channel::STATUS_ITEM_MANAGER)
     }
@@ -46,11 +65,13 @@ impl StatusItemManager {
         self.next_handle.0 += 1;
 
         let status_item = Rc::new(PlatformStatusItem::new(
-            self.context.clone(),
             handle,
+            self.weak_self.clone(),
             engine,
         ));
         status_item.assign_weak_self(Rc::downgrade(&status_item));
+        self.platform_manager
+            .register_status_item(status_item.clone());
 
         self.status_item_map.insert(handle, status_item);
         Ok(handle)
@@ -66,6 +87,12 @@ impl StatusItemManager {
     fn set_image(&self, request: StatusItemSetImageRequest) -> Result<()> {
         let item = self.get_platform_status_item(request.handle)?;
         item.set_image(request.image);
+        Ok(())
+    }
+
+    fn set_highlighted(&self, request: StatusItemSetHighlightedRequest) -> Result<()> {
+        let item = self.get_platform_status_item(request.handle)?;
+        item.set_highlighted(request.highlighted);
         Ok(())
     }
 
@@ -87,6 +114,11 @@ impl StatusItemManager {
         } else {
             Err(Error::InvalidContext)
         }
+    }
+
+    fn get_geometry(&self, request: StatusItemGetGeometryRequest) -> Result<StatusItemGeometry> {
+        let item = self.get_platform_status_item(request.handle)?;
+        Ok(item.get_geometry())
     }
 
     fn map_result<T>(result: Result<T>) -> MethodCallResult<Value>
@@ -123,7 +155,41 @@ impl MethodCallHandler for StatusItemManager {
                 let request: StatusItemSetMenuRequest = from_value(&call.args).unwrap();
                 reply.send(Self::map_result(self.set_menu(request)));
             }
+            method::status_item::SET_HIGHLIGHTED => {
+                let request: StatusItemSetHighlightedRequest = from_value(&call.args).unwrap();
+                reply.send(Self::map_result(self.set_highlighted(request)));
+            }
+            method::status_item::GET_GEOMETRY => {
+                let request: StatusItemGetGeometryRequest = from_value(&call.args).unwrap();
+                reply.send(Self::map_result(self.get_geometry(request)));
+            }
             _ => {}
+        }
+    }
+
+    fn assign_weak_self(&mut self, weak_self: Weak<RefCell<Self>>) {
+        self.weak_self.set(weak_self);
+    }
+
+    fn assign_invoker_provider(&mut self, provider: MethodInvokerProvider) {
+        self.invoker_provider.set(provider);
+    }
+}
+
+impl StatusItemDelegate for StatusItemManager {
+    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType) {
+        let item = self.status_item_map.get(&handle);
+        if let Some(item) = item {
+            let invoker = self
+                .invoker_provider
+                .get_method_invoker_for_engine(item.engine);
+            invoker
+                .call_method(
+                    method::status_item::ON_ACTION,
+                    to_value(&StatusItemAction { handle, action }).unwrap(),
+                    |_| {},
+                )
+                .ok_log();
         }
     }
 }

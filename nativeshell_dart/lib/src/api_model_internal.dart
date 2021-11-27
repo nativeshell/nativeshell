@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
-import 'api_model.dart';
-import 'menu.dart';
+import 'package:nativeshell/nativeshell.dart';
+import 'package:nativeshell/src/util.dart';
 
 class PopupMenuRequest {
   PopupMenuRequest({
@@ -139,5 +139,52 @@ class KeyboardMap {
     final map = value as Map;
     final keys = map['keys'] as List;
     return KeyboardMap(keys: keys.map(KeyboardKey.deserialize).toList());
+  }
+}
+
+class StatusItemGeometry {
+  StatusItemGeometry({
+    required this.origin,
+    required this.size,
+  });
+
+  final Offset origin;
+  final Size size;
+
+  static StatusItemGeometry deserialize(dynamic value) {
+    final map = value as Map;
+    return StatusItemGeometry(
+        origin: OffsetExt.deserialize(map['origin']),
+        size: SizeExt.deserialize(map['size']));
+  }
+
+  @override
+  String toString() {
+    return 'StatusItemGeometry { $origin, $size }';
+  }
+}
+
+enum StatusItemActionType {
+  leftMouseDown,
+  leftMouseUp,
+  rightMouseDown,
+  rightMouseUp,
+}
+
+class StatusItemAction {
+  StatusItemAction({
+    required this.handle,
+    required this.action,
+  });
+
+  final StatusItemHandle handle;
+  final StatusItemActionType action;
+
+  static StatusItemAction deserialize(dynamic value) {
+    final map = value as Map;
+    return StatusItemAction(
+      handle: StatusItemHandle(map['handle']),
+      action: enumFromString(StatusItemActionType.values, map['action']),
+    );
   }
 }

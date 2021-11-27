@@ -294,7 +294,9 @@ impl PlatformWindow {
     }
 
     unsafe fn set_frame_size(&self, size: Size) {
-        self.platform_window.setFrameSize(size.into());
+        let mut frame = NSWindow::frame(*self.platform_window);
+        frame.size = size.into();
+        NSWindow::setFrame_display_(*self.platform_window, frame, YES);
     }
 
     unsafe fn get_frame_size(&self) -> Size {

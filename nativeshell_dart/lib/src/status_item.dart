@@ -9,12 +9,30 @@ import 'menu.dart';
 class StatusItem {
   StatusItem._({
     required this.handle,
+    this.onLeftMouseDown,
+    this.onLeftMouseUp,
+    this.onRightMouseDown,
+    this.onRightMouseUp,
   });
 
   final StatusItemHandle handle;
+  final VoidCallback? onLeftMouseDown;
+  final VoidCallback? onLeftMouseUp;
+  final VoidCallback? onRightMouseDown;
+  final VoidCallback? onRightMouseUp;
 
-  static Future<StatusItem> create() {
-    return _StatusItemManager.instance.createStatusItem();
+  static Future<StatusItem> create({
+    VoidCallback? onLeftMouseDown,
+    VoidCallback? onLeftMouseUp,
+    VoidCallback? onRightMouseDown,
+    VoidCallback? onRightMouseUp,
+  }) {
+    return _StatusItemManager.instance.createStatusItem(
+      onLeftMouseDown: onLeftMouseDown,
+      onLeftMouseUp: onLeftMouseUp,
+      onRightMouseDown: onRightMouseDown,
+      onRightMouseUp: onRightMouseUp,
+    );
   }
 
   Future<void> dispose() async {
@@ -39,8 +57,16 @@ class StatusItem {
     await prev?.state.unmaterialize();
   }
 
+  Future<void> setHighlighted(bool highlighted) async {
+    return _StatusItemManager.instance.setHighlighted(this, highlighted);
+  }
+
   Future<void> setImages(List<ImageInfo> images) {
     return _StatusItemManager.instance.setImages(this, images);
+  }
+
+  Future<StatusItemGeometry> getGeometry() {
+    return _StatusItemManager.instance.getGeometry(this);
   }
 
   void _checkDisposed() {
@@ -76,6 +102,7 @@ final _statusItemChannel = MethodChannel(Channels.statusItemManager);
 
 class _StatusItemManager {
   static final instance = _StatusItemManager();
+  final items = <int, StatusItem>{};
 
   _StatusItemManager() {
     _statusItemChannel.setMethodCallHandler(_onMethodCall);
@@ -85,15 +112,44 @@ class _StatusItemManager {
     return _statusItemChannel.invokeMethod(method, arg);
   }
 
-  Future<dynamic> _onMethodCall(MethodCall call) async {}
+  Future<dynamic> _onMethodCall(MethodCall call) async {
+    if (call.method == Methods.statusItemOnAction) {
+      final action = StatusItemAction.deserialize(call.arguments);
+      final item = items[action.handle.value];
+      if (item != null) {
+        if (action.action == StatusItemActionType.leftMouseDown) {
+          item.onLeftMouseDown?.call();
+        } else if (action.action == StatusItemActionType.leftMouseUp) {
+          item.onLeftMouseUp?.call();
+        } else if (action.action == StatusItemActionType.rightMouseDown) {
+          item.onRightMouseDown?.call();
+        } else if (action.action == StatusItemActionType.rightMouseUp) {
+          item.onRightMouseUp?.call();
+        }
+      }
+    }
+  }
 
-  Future<StatusItem> createStatusItem() async {
+  Future<StatusItem> createStatusItem({
+    VoidCallback? onLeftMouseDown,
+    VoidCallback? onLeftMouseUp,
+    VoidCallback? onRightMouseDown,
+    VoidCallback? onRightMouseUp,
+  }) async {
     final handle =
         StatusItemHandle(await _invoke(Methods.statusItemCreate, {}));
-    return StatusItem._(handle: handle);
+    final item = StatusItem._(
+        handle: handle,
+        onLeftMouseDown: onLeftMouseDown,
+        onLeftMouseUp: onLeftMouseUp,
+        onRightMouseDown: onRightMouseDown,
+        onRightMouseUp: onRightMouseUp);
+    items[handle.value] = item;
+    return item;
   }
 
   Future<void> destroyStatusItem(StatusItem item) async {
+    items.remove(item.handle.value);
     await _invoke(Methods.statusItemDestroy, {'handle': item.handle.value});
   }
 
@@ -119,6 +175,20 @@ class _StatusItemManager {
     await _invoke(Methods.statusItemSetMenu, {
       'handle': item.handle.value,
       'menu': menu?.value,
+    });
+  }
+
+  Future<StatusItemGeometry> getGeometry(StatusItem item) async {
+    final geometry = await _invoke(Methods.statusItemGetGeometry, {
+      'handle': item.handle.value,
+    });
+    return StatusItemGeometry.deserialize(geometry);
+  }
+
+  Future<void> setHighlighted(StatusItem item, bool highlighted) async {
+    await _invoke(Methods.statusItemSetHighlighted, {
+      'handle': item.handle.value,
+      'highlighted': highlighted,
     });
   }
 }

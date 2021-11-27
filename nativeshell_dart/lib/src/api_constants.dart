@@ -87,6 +87,10 @@ class Methods {
   static final statusItemDestroy = 'StatusItem.destroy';
   static final statusItemSetImage = 'StatusItem.setImage';
   static final statusItemSetMenu = 'StatusItem.setMenu';
+  static final statusItemSetHighlighted = 'StatusItem.setHighlighted';
+  static final statusItemGetGeometry = 'StatusItem.getGeometry';
+
+  static final statusItemOnAction = 'StatusItem.onAction';
 }
 
 class Keys {

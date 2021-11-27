@@ -124,6 +124,10 @@ pub(crate) mod method {
         pub const DESTROY: &str = "StatusItem.destroy";
         pub const SET_IMAGE: &str = "StatusItem.setImage";
         pub const SET_MENU: &str = "StatusItem.setMenu";
+        pub const SET_HIGHLIGHTED: &str = "StatusItem.setHighlighted";
+        pub const GET_GEOMETRY: &str = "StatusItem.getGeometry";
+
+        pub const ON_ACTION: &str = "StatusItem.onAction";
     }
 }
 
