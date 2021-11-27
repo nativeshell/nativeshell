@@ -9,6 +9,7 @@ class Channels {
   static final menuManager = 'nativeshell/menu-manager';
   static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
   static final hotKeyManager = 'nativeshell/hot-key-manager';
+  static final statusItemManager = 'nativeshell/status-item-manager';
 }
 
 class Events {
@@ -80,6 +81,12 @@ class Methods {
   static final hotKeyCreate = 'HotKey.create';
   static final hotKeyDestroy = 'HotKey.destroy';
   static final hotKeyOnPressed = 'HotKey.onPressed';
+
+  // StatusItem
+  static final statusItemCreate = 'StatusItem.create';
+  static final statusItemDestroy = 'StatusItem.destroy';
+  static final statusItemSetImage = 'StatusItem.setImage';
+  static final statusItemSetMenu = 'StatusItem.setMenu';
 }
 
 class Keys {

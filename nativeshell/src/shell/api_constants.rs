@@ -18,6 +18,9 @@ pub(crate) mod channel {
 
     // Flutter channel for managing hot keys
     pub const HOT_KEY_MANAGER: &str = "nativeshell/hot-key-manager";
+
+    // Flutter channel for managing status items
+    pub const STATUS_ITEM_MANAGER: &str = "nativeshell/status-item-manager";
 }
 
 pub const CURRENT_API_VERSION: i32 = 1;
@@ -114,6 +117,13 @@ pub(crate) mod method {
         pub const CREATE: &str = "HotKey.create";
         pub const DESTROY: &str = "HotKey.destroy";
         pub const ON_PRESSED: &str = "HotKey.onPressed";
+    }
+
+    pub mod status_item {
+        pub const CREATE: &str = "StatusItem.create";
+        pub const DESTROY: &str = "StatusItem.destroy";
+        pub const SET_IMAGE: &str = "StatusItem.setImage";
+        pub const SET_MENU: &str = "StatusItem.setMenu";
     }
 }
 
