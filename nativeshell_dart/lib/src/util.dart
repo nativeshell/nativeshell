@@ -8,13 +8,13 @@ String enumToString<T>(T enumItem) {
 
 T enumFromString<T>(
   List<T> enumValues,
-  String value,
-  T defaultValue,
-) {
+  String value, [
+  T? defaultValue,
+]) {
   // ignore: unnecessary_cast
   return enumValues.singleWhere(
       (enumItem) => enumToString(enumItem).toLowerCase() == value.toLowerCase(),
-      orElse: () => defaultValue);
+      orElse: () => defaultValue!);
 }
 
 Future<ImageInfo?> loadImage(
