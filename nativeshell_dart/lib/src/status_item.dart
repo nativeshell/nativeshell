@@ -46,6 +46,10 @@ class StatusItem {
     return _StatusItemManager.instance.setImage(this, image);
   }
 
+  Future<void> setImages(List<ImageInfo> images) {
+    return _StatusItemManager.instance.setImages(this, images);
+  }
+
   Future<void> showMenu(Menu menu) async {
     final handle = await menu.state.materialize();
     await _StatusItemManager.instance.showMenu(this, handle);
@@ -54,10 +58,6 @@ class StatusItem {
 
   Future<void> setHighlighted(bool highlighted) async {
     return _StatusItemManager.instance.setHighlighted(this, highlighted);
-  }
-
-  Future<void> setImages(List<ImageInfo> images) {
-    return _StatusItemManager.instance.setImages(this, images);
   }
 
   Future<StatusItemGeometry> getGeometry() {
