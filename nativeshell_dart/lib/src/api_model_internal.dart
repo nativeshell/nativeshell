@@ -3,6 +3,30 @@ import 'dart:ui';
 import 'package:nativeshell/nativeshell.dart';
 import 'package:nativeshell/src/util.dart';
 
+class WindowActivationRequest {
+  WindowActivationRequest({
+    required this.activateApplication,
+  });
+
+  final bool activateApplication;
+
+  dynamic serialize() => {
+        'activateApplication': activateApplication,
+      };
+}
+
+class WindowDeactivationRequest {
+  WindowDeactivationRequest({
+    required this.deactivateApplication,
+  });
+
+  final bool deactivateApplication;
+
+  dynamic serialize() => {
+        'deactivateApplication': deactivateApplication,
+      };
+}
+
 class PopupMenuRequest {
   PopupMenuRequest({
     required this.handle,
@@ -139,28 +163,6 @@ class KeyboardMap {
     final map = value as Map;
     final keys = map['keys'] as List;
     return KeyboardMap(keys: keys.map(KeyboardKey.deserialize).toList());
-  }
-}
-
-class StatusItemGeometry {
-  StatusItemGeometry({
-    required this.origin,
-    required this.size,
-  });
-
-  final Offset origin;
-  final Size size;
-
-  static StatusItemGeometry deserialize(dynamic value) {
-    final map = value as Map;
-    return StatusItemGeometry(
-        origin: OffsetExt.deserialize(map['origin']),
-        size: SizeExt.deserialize(map['size']));
-  }
-
-  @override
-  String toString() {
-    return 'StatusItemGeometry { $origin, $size }';
   }
 }
 

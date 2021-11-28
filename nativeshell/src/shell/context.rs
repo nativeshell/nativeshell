@@ -14,8 +14,7 @@ use super::{
     },
     status_item_manager::StatusItemManager,
     EngineManager, HotKeyManager, JoinHandle, KeyboardMapManager, MenuManager, MessageManager,
-    RegisteredAsyncMethodCallHandler, RegisteredMethodCallHandler, RunLoop, WindowManager,
-    WindowMethodChannel,
+    RegisteredMethodCallHandler, RunLoop, WindowManager, WindowMethodChannel,
 };
 
 pub struct ContextOptions {

@@ -60,8 +60,18 @@ class Window {
     await _invokeMethod(Methods.windowHide);
   }
 
-  Future<bool> activate() async {
-    return await _invokeMethod(Methods.windowActivate);
+  Future<bool> activate({bool activateApplication = true}) async {
+    return await _invokeMethod(
+        Methods.windowActivate,
+        WindowActivationRequest(activateApplication: activateApplication)
+            .serialize());
+  }
+
+  Future<bool> deactivate({bool deactivateApplication = false}) async {
+    return await _invokeMethod(
+        Methods.windowDeactivate,
+        WindowDeactivationRequest(deactivateApplication: deactivateApplication)
+            .serialize());
   }
 
   Future<GeometryFlags> setGeometry(Geometry request,
@@ -99,6 +109,11 @@ class Window {
     return _invokeMethod(Methods.windowRestorePositionFromString, position);
   }
 
+  Future<WindowFlags> getWindowFlags() async {
+    return WindowFlags.deserialize(
+        await _invokeMethod(Methods.windowGetWindowFlags));
+  }
+
   static LocalWindow of(BuildContext context) => WindowState.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
@@ -121,6 +136,7 @@ class Window {
   final visibilityChangedEvent = Event<bool>();
   final closeRequestEvent = VoidEvent();
   final closeEvent = VoidEvent();
+  final windowFlagsEvent = Event<WindowFlags>();
 
   void onMessage(String message, dynamic arguments) {
     if (message == Events.windowInitialize) {
@@ -133,6 +149,9 @@ class Window {
         _showCompleter!.complete();
         _showCompleter = null;
       }
+    } else if (message == Events.windowFlagsChanged) {
+      final flags = WindowFlags.deserialize(arguments);
+      windowFlagsEvent.fire(flags);
     } else if (message == Events.windowClose) {
       WindowManager.instance.windowClosed(this);
       closeEvent.fire();

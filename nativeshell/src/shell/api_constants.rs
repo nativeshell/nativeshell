@@ -54,6 +54,9 @@ pub(crate) mod method {
         // Bring window front and request focus
         pub const ACTIVATE: &str = "Window.activate";
 
+        // Unfocus window
+        pub const DEACTIVATE: &str = "Window.deactivate";
+
         // Close the window; This will terminate the isolate
         pub const CLOSE: &str = "Window.close";
 
@@ -67,6 +70,8 @@ pub(crate) mod method {
 
         pub const SET_STYLE: &str = "Window.setStyle";
         pub const SET_TITLE: &str = "Window.setTitle";
+        pub const GET_WINDOW_FLAGS: &str = "Window.getWindowFlags";
+
         pub const PERFORM_WINDOW_DRAG: &str = "Window.performWindowDrag";
 
         pub const SHOW_POPUP_MENU: &str = "Window.showPopupMenu";
@@ -123,7 +128,7 @@ pub(crate) mod method {
         pub const CREATE: &str = "StatusItem.create";
         pub const DESTROY: &str = "StatusItem.destroy";
         pub const SET_IMAGE: &str = "StatusItem.setImage";
-        pub const SET_MENU: &str = "StatusItem.setMenu";
+        pub const SHOW_MENU: &str = "StatusItem.showMenu";
         pub const SET_HIGHLIGHTED: &str = "StatusItem.setHighlighted";
         pub const GET_GEOMETRY: &str = "StatusItem.getGeometry";
 
@@ -138,6 +143,8 @@ pub(crate) mod event {
 
         // Called when window became visible or hidden (boolean argument)
         pub const VISIBILITY_CHANGED: &str = "event:Window.visibilityChanged";
+
+        pub const FLAGS_CHANGED: &str = "event:Window.flagsChanged";
 
         // Delivered when user requested closing the window; Target window is responsible
         // for actually closing the window

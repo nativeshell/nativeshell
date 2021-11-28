@@ -4,7 +4,14 @@ use std::{
 };
 
 use block::ConcreteBlock;
-use cocoa::{appkit::{NSEvent, NSEventMask, NSEventModifierFlags, NSEventType::{NSLeftMouseDown, NSLeftMouseUp, NSRightMouseDown, NSRightMouseUp}, NSScreen, NSStatusBar, NSVariableStatusItemLength, NSView, NSWindow}, base::{id, nil, NO, YES}};
+use cocoa::{
+    appkit::{
+        NSEvent, NSEventMask, NSEventModifierFlags,
+        NSEventType::{NSLeftMouseDown, NSLeftMouseUp, NSRightMouseDown, NSRightMouseUp},
+        NSScreen, NSStatusBar, NSVariableStatusItemLength, NSView, NSWindow,
+    },
+    base::{id, nil, NO, YES},
+};
 use objc::{
     class, msg_send,
     rc::{autoreleasepool, StrongPtr},
@@ -18,6 +25,7 @@ use crate::{
         EngineHandle, Point, Size,
     },
     util::LateRefCell,
+    Context,
 };
 
 use super::{menu::PlatformMenu, utils::ns_image_from};
@@ -89,12 +97,25 @@ impl PlatformStatusItem {
         });
     }
 
-    pub fn set_menu(&self, menu: Option<Rc<PlatformMenu>>) {
+    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, on_done: F)
+    where
+        F: FnOnce() + 'static,
+    {
         autoreleasepool(move || unsafe {
-            let () = msg_send![*self.status_item, setMenu:match menu {
-                Some(menu) => *menu.menu,
-                None => nil,
-            }];
+            let status_item = self.status_item.clone();
+            let button: id = msg_send![*self.status_item, button];
+            let context = Context::current().unwrap();
+
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || {
+                    let () = msg_send![*status_item, setMenu:*menu.menu];
+                    let () = msg_send![button, performClick: nil];
+                    let () = msg_send![*status_item, setMenu: nil];
+                    on_done();
+                })
+                .detach();
         });
     }
 

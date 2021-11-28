@@ -18,7 +18,7 @@ use super::{
     api_model::{
         StatusItemAction, StatusItemActionType, StatusItemCreateRequest, StatusItemDestroyRequest,
         StatusItemGeometry, StatusItemGetGeometryRequest, StatusItemSetHighlightedRequest,
-        StatusItemSetImageRequest, StatusItemSetMenuRequest,
+        StatusItemSetImageRequest, StatusItemShowMenuRequest,
     },
     platform::status_item::{PlatformStatusItem, PlatformStatusItemManager},
     Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider,
@@ -96,23 +96,31 @@ impl StatusItemManager {
         Ok(())
     }
 
-    fn set_menu(&self, request: StatusItemSetMenuRequest) -> Result<()> {
+    fn show_menu<F>(&self, request: StatusItemShowMenuRequest, on_done: F)
+    where
+        F: FnOnce(Result<()>) + 'static,
+    {
         if let Some(context) = self.context.get() {
-            let menu = match request.menu {
-                Some(menu) => Some(
-                    context
-                        .menu_manager
-                        .borrow()
-                        .borrow()
-                        .get_platform_menu(menu)?,
-                ),
-                None => None,
-            };
-            let item = self.get_platform_status_item(request.handle)?;
-            item.set_menu(menu);
-            Ok(())
+            let menu = context
+                .menu_manager
+                .borrow()
+                .borrow()
+                .get_platform_menu(request.menu);
+
+            match menu {
+                Ok(menu) => {
+                    let item = self.get_platform_status_item(request.handle);
+                    match item {
+                        Ok(item) => item.show_menu(menu, move || {
+                            on_done(Ok(()));
+                        }),
+                        Err(err) => on_done(Err(err)),
+                    }
+                }
+                Err(err) => on_done(Err(err)),
+            }
         } else {
-            Err(Error::InvalidContext)
+            on_done(Err(Error::InvalidContext))
         }
     }
 
@@ -151,9 +159,9 @@ impl MethodCallHandler for StatusItemManager {
                 let request: StatusItemSetImageRequest = from_value(&call.args).unwrap();
                 reply.send(Self::map_result(self.set_image(request)));
             }
-            method::status_item::SET_MENU => {
-                let request: StatusItemSetMenuRequest = from_value(&call.args).unwrap();
-                reply.send(Self::map_result(self.set_menu(request)));
+            method::status_item::SHOW_MENU => {
+                let request: StatusItemShowMenuRequest = from_value(&call.args).unwrap();
+                self.show_menu(request, |res| reply.send(Self::map_result(res)));
             }
             method::status_item::SET_HIGHLIGHTED => {
                 let request: StatusItemSetHighlightedRequest = from_value(&call.args).unwrap();

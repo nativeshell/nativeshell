@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:nativeshell/src/util.dart';
 
 import 'api_constants.dart';
+import 'api_model.dart';
 import 'api_model_internal.dart';
 import 'menu.dart';
 
@@ -37,7 +38,6 @@ class StatusItem {
 
   Future<void> dispose() async {
     _checkDisposed();
-    await setMenu(null);
     _disposed = true;
     await _StatusItemManager.instance.destroyStatusItem(this);
   }
@@ -46,15 +46,10 @@ class StatusItem {
     return _StatusItemManager.instance.setImage(this, image);
   }
 
-  Future<void> setMenu(Menu? menu) async {
-    if (_menu == menu) {
-      return;
-    }
-    final prev = _menu;
-    _menu = menu;
-    final handle = await _menu?.state.materialize();
-    await _StatusItemManager.instance.setMenu(this, handle);
-    await prev?.state.unmaterialize();
+  Future<void> showMenu(Menu menu) async {
+    final handle = await menu.state.materialize();
+    await _StatusItemManager.instance.showMenu(this, handle);
+    await menu.state.unmaterialize();
   }
 
   Future<void> setHighlighted(bool highlighted) async {
@@ -74,7 +69,6 @@ class StatusItem {
   }
 
   bool _disposed = false;
-  Menu? _menu;
 }
 
 class StatusItemHandle {
@@ -171,8 +165,8 @@ class _StatusItemManager {
     return setImages(item, images);
   }
 
-  Future<void> setMenu(StatusItem item, MenuHandle? menu) async {
-    await _invoke(Methods.statusItemSetMenu, {
+  Future<void> showMenu(StatusItem item, MenuHandle? menu) async {
+    await _invoke(Methods.statusItemShowMenu, {
       'handle': item.handle.value,
       'menu': menu?.value,
     });

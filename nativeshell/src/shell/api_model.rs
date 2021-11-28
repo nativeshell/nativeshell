@@ -75,6 +75,18 @@ impl WindowGeometryRequest {
 
 #[derive(serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct WindowActivateRequest {
+    pub activate_application: bool,
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowDeactivateRequest {
+    pub deactivate_application: bool,
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct PopupMenuRequest {
     pub handle: MenuHandle,
     pub position: Point,
@@ -165,8 +177,11 @@ pub struct DragRequest {
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum WindowFrame {
+    /// Normal window frame (includes title and can be resizable).
     Regular,
+    /// Window frame without title (can be resizable).
     NoTitle,
+    /// No window frame, can not be resizable.
     NoFrame,
 }
 
@@ -186,6 +201,29 @@ pub struct WindowStyle {
     pub can_maximize: bool,
     pub can_full_screen: bool,
     pub traffic_light_offset: Option<Point>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub enum BoolTransition {
+    No,
+    NoToYes,
+    Yes,
+    YesToNo,
+}
+
+impl Default for BoolTransition {
+    fn default() -> Self {
+        BoolTransition::No
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowFlags {
+    pub maximized: BoolTransition,
+    pub minimized: BoolTransition,
+    pub full_screen: BoolTransition,
+    pub active: bool,
 }
 
 //
@@ -357,9 +395,9 @@ pub struct StatusItemSetHighlightedRequest {
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct StatusItemSetMenuRequest {
+pub struct StatusItemShowMenuRequest {
     pub handle: StatusItemHandle,
-    pub menu: Option<MenuHandle>,
+    pub menu: MenuHandle,
 }
 
 #[derive(serde::Deserialize, Debug)]

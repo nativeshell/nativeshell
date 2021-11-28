@@ -15,6 +15,7 @@ class Channels {
 class Events {
   static final windowInitialize = 'event:Window.initialize';
   static final windowVisibilityChanged = 'event:Window.visibilityChanged';
+  static final windowFlagsChanged = 'event:Window.flagsChanged';
   static final windowCloseRequest = 'event:Window.closeRequest';
   static final windowClose = 'event:Window.close';
 }
@@ -33,6 +34,7 @@ class Methods {
   static final windowReadyToShow = 'Window.readyToShow';
   static final windowHide = 'Window.hide';
   static final windowActivate = 'Window.activate';
+  static final windowDeactivate = 'Window.deactivate';
   static final windowClose = 'Window.close';
   static final windowCloseWithResult = 'Window.closeWithResult';
 
@@ -52,6 +54,7 @@ class Methods {
   static final windowSavePositionToString = 'Window.savePositionToString';
   static final windowRestorePositionFromString =
       'Window.restorePositionFromString';
+  static final windowGetWindowFlags = 'Window.getWindowFlags';
 
   // Drag Driver
   static final dragDriverDraggingUpdated = 'DragDriver.draggingUpdated';
@@ -86,7 +89,7 @@ class Methods {
   static final statusItemCreate = 'StatusItem.create';
   static final statusItemDestroy = 'StatusItem.destroy';
   static final statusItemSetImage = 'StatusItem.setImage';
-  static final statusItemSetMenu = 'StatusItem.setMenu';
+  static final statusItemShowMenu = 'StatusItem.showMenu';
   static final statusItemSetHighlighted = 'StatusItem.setHighlighted';
   static final statusItemGetGeometry = 'StatusItem.getGeometry';
 

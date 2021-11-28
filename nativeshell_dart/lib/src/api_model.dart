@@ -237,3 +237,70 @@ class WindowStyle {
     return serialize().toString();
   }
 }
+
+enum BoolTransition {
+  no,
+  noToYes,
+  yes,
+  yesToNo,
+}
+
+class WindowFlags {
+  final BoolTransition maximized;
+  final BoolTransition minimized;
+  final BoolTransition fullScreen;
+  final bool active;
+
+  WindowFlags({
+    required this.maximized,
+    required this.minimized,
+    required this.fullScreen,
+    required this.active,
+  });
+
+  static WindowFlags deserialize(dynamic value) {
+    final map = value as Map;
+    return WindowFlags(
+        maximized: enumFromString(
+            BoolTransition.values, map['maximized'], BoolTransition.no),
+        minimized: enumFromString(
+            BoolTransition.values, map['minimized'], BoolTransition.no),
+        fullScreen: enumFromString(
+            BoolTransition.values, map['fullScreen'], BoolTransition.no),
+        active: map['active']);
+  }
+
+  dynamic serialize() => {
+        'maximized': enumToString(maximized),
+        'minimized': enumToString(minimized),
+        'fullScreen': enumToString(fullScreen),
+        'active': active,
+      };
+
+  @override
+  String toString() {
+    return serialize().toString();
+  }
+}
+
+class StatusItemGeometry {
+  StatusItemGeometry({
+    required this.origin,
+    required this.size,
+  });
+
+  final Offset origin;
+  final Size size;
+
+  static StatusItemGeometry deserialize(dynamic value) {
+    final map = value as Map;
+    return StatusItemGeometry(
+        origin: OffsetExt.deserialize(map['origin']),
+        size: SizeExt.deserialize(map['size']));
+  }
+
+  @override
+  String toString() {
+    return 'StatusItemGeometry { $origin, $size }';
+  }
+}

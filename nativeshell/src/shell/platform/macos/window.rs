@@ -9,8 +9,9 @@ use crate::{
     codec::Value,
     shell::{
         api_model::{
-            DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
-            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
+            BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
+            WindowFlags, WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+            WindowStyle,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
@@ -70,6 +71,7 @@ pub struct PlatformWindow {
     flutter_view: LateRefCell<StrongPtr>,
     mouse_down: Cell<bool>,
     mouse_dragged: Cell<bool>,
+    window_flags: RefCell<WindowFlags>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -131,6 +133,7 @@ impl PlatformWindow {
                 flutter_view: LateRefCell::new(),
                 mouse_down: Cell::new(false),
                 mouse_dragged: Cell::new(false),
+                window_flags: RefCell::new(WindowFlags::default()),
             }
         })
     }
@@ -477,6 +480,10 @@ impl PlatformWindow {
         self.modal_close_callback.borrow().is_some()
     }
 
+    pub fn get_window_flags(&self) -> PlatformResult<WindowFlags> {
+        Ok(self.window_flags.borrow().clone())
+    }
+
     unsafe fn actually_show(&self) {
         if self.is_modal() {
             let parent = self.parent_platform_window.as_ref().unwrap().clone().load();
@@ -612,11 +619,26 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn activate(&self) -> PlatformResult<bool> {
+    pub fn activate(&self, activate_application: bool) -> PlatformResult<bool> {
         unsafe {
-            let app = NSApplication::sharedApplication(nil);
-            NSApplication::activateIgnoringOtherApps_(app, YES);
+            if activate_application {
+                let app = NSApplication::sharedApplication(nil);
+                NSApplication::activateIgnoringOtherApps_(app, YES);
+            }
             NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
+        }
+        Ok(true)
+    }
+
+    pub fn deactivate(&self, deactivate_application: bool) -> PlatformResult<bool> {
+        unsafe {
+            let () = msg_send![*self.platform_window, resignFirstResponder];
+            NSWindow::orderBack_(*self.platform_window, nil);
+            if deactivate_application {
+                let app = NSApplication::sharedApplication(nil);
+                let () = msg_send![app, hide: nil];
+                let () = msg_send![app, unhideWithoutActivation];
+            }
         }
         Ok(true)
     }
@@ -1012,13 +1034,48 @@ static WINDOW_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     );
 
     decl.add_method(
-        sel!(windowDidBecomeKey:),
-        window_did_become_key as extern "C" fn(&Object, Sel, id),
+        sel!(windowWillMiniaturize:),
+        window_will_miniaturize as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidMiniaturize:),
+        window_did_miniaturize as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidDeminiaturize:),
+        window_did_deminiaturize as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowWillEnterFullScreen:),
+        window_will_enter_full_screen as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidEnterFullScreen:),
+        window_did_enter_full_screen as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowWillExitFullScreen:),
+        window_will_exit_full_screen as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidExitFullScreen:),
+        window_did_exit_full_screen as extern "C" fn(&Object, Sel, id),
     );
 
     decl.add_method(
         sel!(windowDidResignKey:),
         window_did_resign_key as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
+        sel!(windowDidBecomeKey:),
+        window_did_become_key as extern "C" fn(&Object, Sel, id),
     );
 
     decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
@@ -1121,21 +1178,6 @@ extern "C" fn accepts_first_mouse(_this: &Object, _sel: Sel, _event: id) -> BOOL
     YES
 }
 
-extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
-    with_state_delegate(this, |state, _delegate| {
-        if let Some(context) = state.context.get() {
-            context
-                .menu_manager
-                .borrow()
-                .borrow()
-                .get_platform_menu_manager()
-                .window_did_become_active(state.platform_window.clone());
-        }
-    });
-}
-
-extern "C" fn window_did_resign_key(_this: &Object, _: Sel, _: id) {}
-
 extern "C" fn layout_if_needed(this: &mut Object, _sel: Sel) {
     unsafe {
         with_state(this, move |state| {
@@ -1149,6 +1191,78 @@ extern "C" fn layout_if_needed(this: &mut Object, _sel: Sel) {
 extern "C" fn can_become_key_window(_this: &Object, _: Sel) -> BOOL {
     // needed for frameless windows to accept keyboard input.
     YES
+}
+
+extern "C" fn window_will_miniaturize(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().minimized = BoolTransition::NoToYes;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_did_miniaturize(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().minimized = BoolTransition::Yes;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_did_deminiaturize(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().minimized = BoolTransition::No;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_will_enter_full_screen(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().full_screen = BoolTransition::NoToYes;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_did_enter_full_screen(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().full_screen = BoolTransition::Yes;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_will_exit_full_screen(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().full_screen = BoolTransition::YesToNo;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_did_exit_full_screen(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().full_screen = BoolTransition::No;
+        delegate.flags_changed();
+    });
+}
+
+extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().active = true;
+        delegate.flags_changed();
+
+        if let Some(context) = state.context.get() {
+            context
+                .menu_manager
+                .borrow()
+                .borrow()
+                .get_platform_menu_manager()
+                .window_did_become_active(state.platform_window.clone());
+        }
+    });
+}
+
+extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        state.window_flags.borrow_mut().active = false;
+        delegate.flags_changed();
+    });
 }
 
 extern "C" fn send_event(this: &mut Object, _: Sel, e: id) {
