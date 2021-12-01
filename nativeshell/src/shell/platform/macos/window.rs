@@ -978,6 +978,12 @@ static WINDOW_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     );
 
     decl.add_method(
+        sel!(canBecomeMainWindow),
+        can_become_main_window as extern "C" fn(&Object, Sel) -> BOOL,
+    );
+
+
+    decl.add_method(
         sel!(draggingEntered:),
         dragging_entered as extern "C" fn(&mut Object, Sel, id) -> NSDragOperation,
     );
@@ -1069,13 +1075,13 @@ static WINDOW_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     );
 
     decl.add_method(
-        sel!(windowDidResignKey:),
-        window_did_resign_key as extern "C" fn(&Object, Sel, id),
+        sel!(windowDidResignMain:),
+        window_did_resign_main as extern "C" fn(&Object, Sel, id),
     );
 
     decl.add_method(
-        sel!(windowDidBecomeKey:),
-        window_did_become_key as extern "C" fn(&Object, Sel, id),
+        sel!(windowDidBecomeMain:),
+        window_did_become_main as extern "C" fn(&Object, Sel, id),
     );
 
     decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
@@ -1193,6 +1199,11 @@ extern "C" fn can_become_key_window(_this: &Object, _: Sel) -> BOOL {
     YES
 }
 
+extern "C" fn can_become_main_window(_this: &Object, _: Sel) -> BOOL {
+    // needed for frameless windows to become active.
+    YES
+}
+
 extern "C" fn window_will_miniaturize(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
         state.window_flags.borrow_mut().minimized = BoolTransition::NoToYes;
@@ -1242,7 +1253,7 @@ extern "C" fn window_did_exit_full_screen(this: &Object, _: Sel, _: id) {
     });
 }
 
-extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
+extern "C" fn window_did_become_main(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
         state.window_flags.borrow_mut().active = true;
         delegate.flags_changed();
@@ -1258,7 +1269,7 @@ extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
     });
 }
 
-extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
+extern "C" fn window_did_resign_main(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
         state.window_flags.borrow_mut().active = false;
         delegate.flags_changed();
