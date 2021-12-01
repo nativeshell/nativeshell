@@ -211,12 +211,12 @@ impl PlatformStatusItemManager {
         }
     }
 
-    pub fn register_status_item(&self, item: Rc<PlatformStatusItem>) {
-        self.items.borrow_mut().push(item);
+    pub fn register_status_item(&self, item: &Rc<PlatformStatusItem>) {
+        self.items.borrow_mut().push(item.clone());
     }
 
-    pub fn unregister_status_item(&self, item: Rc<PlatformStatusItem>) {
-        self.items.borrow_mut().retain(|i| Rc::ptr_eq(i, &item));
+    pub fn unregister_status_item(&self, item: &Rc<PlatformStatusItem>) {
+        self.items.borrow_mut().retain(|i| !Rc::ptr_eq(i, &item));
     }
 }
 

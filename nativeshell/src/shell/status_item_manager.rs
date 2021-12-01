@@ -70,8 +70,7 @@ impl StatusItemManager {
             engine,
         ));
         status_item.assign_weak_self(Rc::downgrade(&status_item));
-        self.platform_manager
-            .register_status_item(status_item.clone());
+        self.platform_manager.register_status_item(&status_item);
 
         self.status_item_map.insert(handle, status_item);
         Ok(handle)
@@ -152,7 +151,10 @@ impl MethodCallHandler for StatusItemManager {
             }
             method::status_item::DESTROY => {
                 let request: StatusItemDestroyRequest = from_value(&call.args).unwrap();
-                self.status_item_map.remove(&request.handle);
+                let item = self.status_item_map.remove(&request.handle);
+                if let Some(item) = item {
+                    self.platform_manager.unregister_status_item(&item);
+                }
                 reply.send_ok(Value::Null);
             }
             method::status_item::SET_IMAGE => {
