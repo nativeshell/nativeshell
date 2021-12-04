@@ -40,6 +40,7 @@ class Methods {
   static final windowSetGeometry = 'Window.setGeometry';
   static final windowGetGeometry = 'Window.getGeometry';
   static final windowSupportedGeometry = 'Window.supportedGeometry';
+  static final windowGetScreenId = 'Window.getScreenId';
 
   static final windowSetStyle = 'Window.setStyle';
   static final windowSetTitle = 'Window.setTitle';

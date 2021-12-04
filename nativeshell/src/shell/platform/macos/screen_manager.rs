@@ -32,7 +32,7 @@ impl PlatformScreenManager {
         Self {}
     }
 
-    unsafe fn get_screen_id(screen: id) -> i64 {
+    pub(super) unsafe fn get_screen_id(screen: id) -> i64 {
         let description = NSScreen::deviceDescription(screen);
         let device_id = NSDictionary::objectForKey_(description, *to_nsstring("NSScreenNumber"));
         msg_send![device_id, longLongValue]

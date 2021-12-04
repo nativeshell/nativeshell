@@ -64,6 +64,7 @@ pub(crate) mod method {
         pub const SET_GEOMETRY: &str = "Window.setGeometry";
         pub const GET_GEOMETRY: &str = "Window.getGeometry";
         pub const SUPPORTED_GEOMETRY: &str = "Window.supportedGeometry";
+        pub const GET_SCREEN_ID: &str = "Window.getScreenId";
 
         pub const SET_STYLE: &str = "Window.setStyle";
         pub const SET_TITLE: &str = "Window.setTitle";
