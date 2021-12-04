@@ -18,6 +18,9 @@ pub(crate) mod channel {
 
     // Flutter channel for managing hot keys
     pub const HOT_KEY_MANAGER: &str = "nativeshell/hot-key-manager";
+
+    // Flutter channel for screens
+    pub const SCREEN_MANAGER: &str = "nativeshell/screen-manager";
 }
 
 pub const CURRENT_API_VERSION: i32 = 1;
@@ -115,6 +118,13 @@ pub(crate) mod method {
         pub const CREATE: &str = "HotKey.create";
         pub const DESTROY: &str = "HotKey.destroy";
         pub const ON_PRESSED: &str = "HotKey.onPressed";
+    }
+
+    pub mod screen_manager {
+        pub const SCREENS_CHANGED: &str = "ScreenManager.screensChanged";
+        pub const GET_SCREENS: &str = "ScreenManager.getScreens";
+        pub const LOGICAL_TO_SYSTEM: &str = "ScreenManager.logicalToSystem";
+        pub const SYSTEM_TO_LOGICAL: &str = "ScreenManager.systemToLogical";
     }
 }
 

@@ -9,6 +9,7 @@ class Channels {
   static final menuManager = 'nativeshell/menu-manager';
   static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
   static final hotKeyManager = 'nativeshell/hot-key-manager';
+  static final screenManager = 'nativeshell/screen-manager';
 }
 
 class Events {
@@ -82,6 +83,12 @@ class Methods {
   static final hotKeyCreate = 'HotKey.create';
   static final hotKeyDestroy = 'HotKey.destroy';
   static final hotKeyOnPressed = 'HotKey.onPressed';
+
+  // ScreenManager
+  static final screenManagerScreensChanged = 'ScreenManager.screensChanged';
+  static final screenManagerGetScreens = 'ScreenManager.getScreens';
+  static final screenManagerLogicalToSystem = 'ScreenManager.logicalToSystem';
+  static final screenManagerSystemToLogical = 'ScreenManager.systemToLogical';
 }
 
 class Keys {
