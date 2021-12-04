@@ -10,6 +10,7 @@ class Channels {
   static final keyboardMapManager = 'nativeshell/keyboard-map-manager';
   static final hotKeyManager = 'nativeshell/hot-key-manager';
   static final statusItemManager = 'nativeshell/status-item-manager';
+  static final screenManager = 'nativeshell/screen-manager';
 }
 
 class Events {
@@ -92,8 +93,13 @@ class Methods {
   static final statusItemShowMenu = 'StatusItem.showMenu';
   static final statusItemSetHighlighted = 'StatusItem.setHighlighted';
   static final statusItemGetGeometry = 'StatusItem.getGeometry';
-
   static final statusItemOnAction = 'StatusItem.onAction';
+
+  // ScreenManager
+  static final screenManagerScreensChanged = 'ScreenManager.screensChanged';
+  static final screenManagerGetScreens = 'ScreenManager.getScreens';
+  static final screenManagerLogicalToSystem = 'ScreenManager.logicalToSystem';
+  static final screenManagerSystemToLogical = 'ScreenManager.systemToLogical';
 }
 
 class Keys {
