@@ -8,6 +8,7 @@ import 'api_model.dart';
 import 'api_model_internal.dart';
 import 'event.dart';
 import 'menu.dart';
+import 'screen.dart';
 import 'util.dart';
 import 'window_manager.dart';
 import 'window_method_channel.dart';
@@ -91,6 +92,17 @@ class Window {
   Future<GeometryFlags> supportedGeometry() async {
     return GeometryFlags.deserialize(
         await _invokeMethod(Methods.windowSupportedGeometry));
+  }
+
+  // Screen might be null temporarily - this can happen when connecting or
+  // disconnecting displays.
+  Future<Screen?> getScreen() async {
+    final screenId = await _invokeMethod(Methods.windowGetScreenId) as int;
+    final screens = Screen.getAllScreens().cast<Screen?>();
+    return screens.firstWhere(
+      (screen) => screen!.id == screenId,
+      orElse: () => null,
+    );
   }
 
   Future<void> setTitle(String title) {
