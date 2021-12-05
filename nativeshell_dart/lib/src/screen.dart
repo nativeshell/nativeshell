@@ -49,4 +49,17 @@ class Screen {
 
   @override
   String toString() => serialize().toString();
+
+  @override
+  bool operator ==(other) =>
+      identical(this, other) ||
+      (other is Screen &&
+          other.id == id &&
+          other.main == main &&
+          other.frame == frame &&
+          other.visibleFrame == visibleFrame &&
+          other.scalingFactor == scalingFactor);
+
+  @override
+  int get hashCode => Object.hash(id, main, frame, visibleFrame, scalingFactor);
 }

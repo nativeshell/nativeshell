@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -38,10 +39,22 @@ class ScreenManager {
   List<Screen> screens = [];
 
   Future<void> _update() async {
-    final screens = await _screenManagerChannel
-        .invokeListMethod(Methods.screenManagerGetScreens);
-    this.screens =
-        screens!.map((screen) => Screen.deserialize(screen)).toList();
-    Screen.onScreensChanged.fire();
+    final screens = (await _screenManagerChannel
+            .invokeListMethod(Methods.screenManagerGetScreens))!
+        .map((screen) => Screen.deserialize(screen))
+        .toList()
+      ..sort((a, b) {
+        final aOffset = a.frame.topLeft;
+        final bOffset = b.frame.topLeft;
+        if (aOffset.dy == bOffset.dy) {
+          return aOffset.dx.compareTo(bOffset.dx);
+        } else {
+          return aOffset.dy.compareTo(bOffset.dy);
+        }
+      });
+    if (!listEquals(screens, this.screens)) {
+      this.screens = screens;
+      Screen.onScreensChanged.fire();
+    }
   }
 }
