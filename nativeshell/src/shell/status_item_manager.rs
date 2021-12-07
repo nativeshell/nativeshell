@@ -17,8 +17,8 @@ use super::{
     api_constants::{channel, method},
     api_model::{
         StatusItemAction, StatusItemActionType, StatusItemCreateRequest, StatusItemDestroyRequest,
-        StatusItemGeometry, StatusItemGetGeometryRequest, StatusItemSetHighlightedRequest,
-        StatusItemSetImageRequest, StatusItemShowMenuRequest,
+        StatusItemGeometry, StatusItemGetGeometryRequest, StatusItemGetScreenIdRequest,
+        StatusItemSetHighlightedRequest, StatusItemSetImageRequest, StatusItemShowMenuRequest,
     },
     platform::status_item::{PlatformStatusItem, PlatformStatusItemManager},
     Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider,
@@ -128,6 +128,11 @@ impl StatusItemManager {
         Ok(item.get_geometry())
     }
 
+    fn get_screen_id(&self, request: StatusItemGetScreenIdRequest) -> Result<i64> {
+        let item = self.get_platform_status_item(request.handle)?;
+        Ok(item.get_screen_id())
+    }
+
     fn map_result<T>(result: Result<T>) -> MethodCallResult<Value>
     where
         T: serde::Serialize,
@@ -172,6 +177,10 @@ impl MethodCallHandler for StatusItemManager {
             method::status_item::GET_GEOMETRY => {
                 let request: StatusItemGetGeometryRequest = from_value(&call.args).unwrap();
                 reply.send(Self::map_result(self.get_geometry(request)));
+            }
+            method::status_item::GET_SCREEN_ID => {
+                let request: StatusItemGetScreenIdRequest = from_value(&call.args).unwrap();
+                reply.send(Self::map_result(self.get_screen_id(request)));
             }
             _ => {}
         }

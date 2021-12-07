@@ -94,6 +94,7 @@ class Methods {
   static final statusItemShowMenu = 'StatusItem.showMenu';
   static final statusItemSetHighlighted = 'StatusItem.setHighlighted';
   static final statusItemGetGeometry = 'StatusItem.getGeometry';
+  static final statusItemGetScreenId = 'StatusItem.getScreenId';
   static final statusItemOnAction = 'StatusItem.onAction';
 
   // ScreenManager

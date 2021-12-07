@@ -28,7 +28,7 @@ use crate::{
     Context,
 };
 
-use super::{menu::PlatformMenu, utils::ns_image_from};
+use super::{menu::PlatformMenu, utils::ns_image_from, screen_manager::PlatformScreenManager};
 
 pub struct PlatformStatusItem {
     handle: StatusItemHandle,
@@ -157,6 +157,15 @@ impl PlatformStatusItem {
                 ),
                 size: Size::wh(button_frame.size.width, button_frame.size.height),
             }
+        })
+    }
+
+    pub fn get_screen_id(&self) -> i64 {
+        autoreleasepool(move || unsafe {
+            let button: id = msg_send![*self.status_item, button];
+            let window: id = msg_send![button, window];
+            let screen = NSWindow::screen(window);
+            PlatformScreenManager::get_screen_id(screen)
         })
     }
 }

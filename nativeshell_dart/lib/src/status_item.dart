@@ -6,6 +6,7 @@ import 'api_constants.dart';
 import 'api_model.dart';
 import 'api_model_internal.dart';
 import 'menu.dart';
+import 'screen.dart';
 
 class StatusItem {
   StatusItem._({
@@ -62,6 +63,10 @@ class StatusItem {
 
   Future<StatusItemGeometry> getGeometry() {
     return _StatusItemManager.instance.getGeometry(this);
+  }
+
+  Future<Screen?> getScreen() {
+    return _StatusItemManager.instance.getScreen(this);
   }
 
   void _checkDisposed() {
@@ -177,6 +182,19 @@ class _StatusItemManager {
       'handle': item.handle.value,
     });
     return StatusItemGeometry.deserialize(geometry);
+  }
+
+  // Screen might be null temporarily - this can happen when connecting or
+  // disconnecting displays.
+  Future<Screen?> getScreen(StatusItem item) async {
+    final screenId = await _invoke(Methods.statusItemGetScreenId, {
+      'handle': item.handle.value,
+    }) as int;
+    final screens = Screen.getAllScreens().cast<Screen?>();
+    return screens.firstWhere(
+      (screen) => screen!.id == screenId,
+      orElse: () => null,
+    );
   }
 
   Future<void> setHighlighted(StatusItem item, bool highlighted) async {

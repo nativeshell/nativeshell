@@ -406,6 +406,12 @@ pub struct StatusItemGetGeometryRequest {
     pub handle: StatusItemHandle,
 }
 
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemGetScreenIdRequest {
+    pub handle: StatusItemHandle,
+}
+
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum StatusItemActionType {
