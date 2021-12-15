@@ -1,5 +1,6 @@
 use super::utils::from_nsstring;
 use crate::shell::{platform::platform_impl::utils::superclass, Context, ContextRef};
+use block::{Block, RcBlock};
 use cocoa::{
     appkit::{NSApplication, NSApplicationTerminateReply},
     base::{id, nil, BOOL, NO, YES},
@@ -82,6 +83,14 @@ pub trait ApplicationDelegate {
     fn application_did_change_occlusion_state(&mut self) {}
 
     fn application_open_urls(&mut self, _urls: &[Url]) {}
+
+    fn application_continue_user_activity(
+        &mut self,
+        _user_activity: id, /* NSUserActivity */
+        _restoration_handler: Box<dyn FnOnce(id /* NSArray<id<NSUserActivityRestoring>> */)>,
+    ) -> bool {
+        false
+    }
 }
 
 struct DelegateState {
@@ -242,6 +251,10 @@ static APPLICATION_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     decl.add_method(
         sel!(application:openURLs:),
         open_urls as extern "C" fn(&Object, Sel, id, id),
+    );
+    decl.add_method(
+        sel!(application:continueUserActivity:restorationHandler:),
+        continue_user_activity as extern "C" fn(&Object, Sel, id, id, id),
     );
     decl.register()
 });
@@ -443,6 +456,23 @@ extern "C" fn open_urls(this: &Object, _sel: Sel, _sender: id, urls: id) {
     with_delegate(this, |delegate| {
         delegate.application_open_urls(&u);
     })
+}
+
+extern "C" fn continue_user_activity(
+    this: &Object,
+    _sel: Sel,
+    _sender: id,
+    activity: id,
+    restoration_handler: id,
+) {
+    let restoration_handler = restoration_handler as *mut Block<(id,), ()>;
+    let restoration_handler = unsafe { RcBlock::copy(restoration_handler) };
+    with_delegate(this, |delegate| {
+        let f = Box::new(move |a: id| {
+            unsafe { restoration_handler.call((a,)) };
+        });
+        delegate.application_continue_user_activity(activity, f);
+    });
 }
 
 //
