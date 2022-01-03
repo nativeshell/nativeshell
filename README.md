@@ -57,3 +57,6 @@ cargo run
 
 For more information read the [introductory post](https://matejknopp.com/post/introducing-nativeshell/) or go to [nativeshell.dev](https://nativeshell.dev).
 
+## Community
+
+Feel free to join us [on Slack](https://join.slack.com/t/superlist-community/shared_invite/zt-10cpx277q-uZ~pmjlTWg9QQzH64OK9_w) or [Discord](https://discord.gg/SrKMdxuuMK) and say hello 👋.
