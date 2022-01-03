@@ -288,17 +288,17 @@ impl DragContext {
     }
 
     fn prepare_data(&self, request: &mut DragRequest) -> TargetList {
-        let mut properties = &mut request.data.properties;
+        let properties = &mut request.data.properties;
         let mut data = self.data.borrow_mut();
         data.clear();
 
         if let Some(context) = self.context.get() {
             for a in &context.options.custom_drag_data_adapters {
-                data.append(&mut a.prepare_drag_data(&mut properties));
+                data.append(&mut a.prepare_drag_data(properties));
             }
         }
         for a in &self.data_adapters {
-            data.append(&mut a.prepare_drag_data(&mut properties));
+            data.append(&mut a.prepare_drag_data(properties));
         }
 
         let targets = TargetList::new(&[]);
