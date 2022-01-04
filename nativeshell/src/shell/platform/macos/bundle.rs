@@ -49,7 +49,7 @@ pub(crate) fn macos_exec_bundle() {
         let bundle_executable = find_bundle_executable(path);
         match bundle_executable {
             Ok(Some(bundle_executable)) => {
-                let args: Vec<String> = std::env::args().collect();
+                let args: Vec<String> = std::env::args().skip(1).collect();
                 let err = exec::Command::new(bundle_executable).args(&args).exec();
                 warn!("Exec failed with: {:?}", err);
             }
