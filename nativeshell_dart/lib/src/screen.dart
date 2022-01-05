@@ -6,7 +6,6 @@ import 'screen_internal.dart';
 class Screen {
   Screen({
     required this.id,
-    required this.main,
     required this.frame,
     required this.visibleFrame,
     required this.scalingFactor,
@@ -15,13 +14,17 @@ class Screen {
   static List<Screen> getAllScreens() => ScreenManager.instance.screens;
   static final onScreensChanged = VoidEvent();
 
+  // Returns screen that currently has keyboard focus. In rare circumstances
+  // this may be null (i.e. when calling during screen configuration change)
+  static Future<Screen?> getMainScreen() =>
+      ScreenManager.instance.getMainScreen();
+
   static Future<Offset> logicalToSystem(Offset logical) async =>
       ScreenManager.instance.logicalToSystem(logical);
   static Future<Offset> systemToLogical(Offset system) async =>
       ScreenManager.instance.systemToLogical(system);
 
   final int id;
-  final bool main;
   final Rect frame;
   final Rect visibleFrame;
   final double scalingFactor;
@@ -30,7 +33,6 @@ class Screen {
     final map = screen as Map;
     return Screen(
       id: map['id'],
-      main: map['main'],
       frame: RectExt.deserialize(map['frame']),
       visibleFrame: RectExt.deserialize(map['visibleFrame']),
       scalingFactor: map['scalingFactor'],
@@ -40,7 +42,6 @@ class Screen {
   dynamic serialize() {
     return {
       'id': id,
-      'main': main,
       'frame': frame.serialize(),
       'visibleFrame': visibleFrame.serialize(),
       'scalingFactor': scalingFactor,
@@ -55,11 +56,10 @@ class Screen {
       identical(this, other) ||
       (other is Screen &&
           other.id == id &&
-          other.main == main &&
           other.frame == frame &&
           other.visibleFrame == visibleFrame &&
           other.scalingFactor == scalingFactor);
 
   @override
-  int get hashCode => Object.hash(id, main, frame, visibleFrame, scalingFactor);
+  int get hashCode => Object.hash(id, frame, visibleFrame, scalingFactor);
 }

@@ -46,7 +46,6 @@ impl PlatformScreenManager {
                 let screen = NSArray::objectAtIndex(screens, i);
                 let s = Screen {
                     id: Self::get_screen_id(screen),
-                    main: NSScreen::mainScreen(nil) == screen,
                     frame: NSScreen::frame(screen).into(),
                     visible_frame: NSScreen::visibleFrame(screen).into(),
                     scaling_factor: NSScreen::backingScaleFactor(screen),
@@ -55,5 +54,12 @@ impl PlatformScreenManager {
             }
         });
         res
+    }
+
+    pub fn get_main_screen(&self) -> i64 {
+        autoreleasepool(|| unsafe {
+            let screen = NSScreen::mainScreen(nil);
+            Self::get_screen_id(screen)
+        })
     }
 }

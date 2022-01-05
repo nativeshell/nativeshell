@@ -358,7 +358,6 @@ pub struct HotKeyPressed {
 #[serde(rename_all = "camelCase")]
 pub struct Screen {
     pub id: i64,
-    pub main: bool,
     pub frame: Rect,
     pub visible_frame: Rect,
     pub scaling_factor: f64,

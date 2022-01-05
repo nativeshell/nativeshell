@@ -88,6 +88,7 @@ class Methods {
   // ScreenManager
   static final screenManagerScreensChanged = 'ScreenManager.screensChanged';
   static final screenManagerGetScreens = 'ScreenManager.getScreens';
+  static final screenManagerGetMainScreen = 'ScreenManager.getMainScreen';
   static final screenManagerLogicalToSystem = 'ScreenManager.logicalToSystem';
   static final screenManagerSystemToLogical = 'ScreenManager.systemToLogical';
 }
