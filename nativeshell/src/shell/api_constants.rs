@@ -142,6 +142,7 @@ pub(crate) mod method {
     pub mod screen_manager {
         pub const SCREENS_CHANGED: &str = "ScreenManager.screensChanged";
         pub const GET_SCREENS: &str = "ScreenManager.getScreens";
+        pub const GET_MAIN_SCREEN: &str = "ScreenManager.getMainScreen";
         pub const LOGICAL_TO_SYSTEM: &str = "ScreenManager.logicalToSystem";
         pub const SYSTEM_TO_LOGICAL: &str = "ScreenManager.systemToLogical";
     }

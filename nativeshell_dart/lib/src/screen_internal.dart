@@ -17,6 +17,14 @@ class ScreenManager {
     await _update();
   }
 
+  Future<Screen?> getMainScreen() async {
+    final mainScreenId = await _screenManagerChannel
+        .invokeMethod(Methods.screenManagerGetMainScreen);
+    return screens
+        .cast<Screen?>()
+        .firstWhere((screen) => screen?.id == mainScreenId, orElse: () => null);
+  }
+
   Future<Offset> logicalToSystem(Offset logical) async {
     return OffsetExt.deserialize(await _screenManagerChannel.invokeMethod(
         Methods.screenManagerLogicalToSystem, logical.serialize()));

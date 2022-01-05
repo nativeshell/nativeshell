@@ -46,6 +46,10 @@ impl MethodCallHandler for ScreenManager {
                 let screens = self.platform_manager.get_screens();
                 reply.send_ok(to_value(screens).unwrap());
             }
+            method::screen_manager::GET_MAIN_SCREEN => {
+                let id = self.platform_manager.get_main_screen();
+                reply.send_ok(to_value(id).unwrap());
+            }
             // macOS does the mapping
             method::screen_manager::LOGICAL_TO_SYSTEM => {
                 reply.send_ok(call.args);
