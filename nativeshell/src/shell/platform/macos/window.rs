@@ -12,7 +12,7 @@ use crate::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
             WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
-            WindowStateFlags, WindowStyle,
+            WindowStateFlags, WindowStyle, WindowCollectionBehavior,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
@@ -488,6 +488,51 @@ impl PlatformWindow {
 
     pub fn is_modal(&self) -> bool {
         self.modal_close_callback.borrow().is_some()
+    }
+
+    pub fn set_collection_behavior(
+        &self,
+        behavior: WindowCollectionBehavior,
+    ) -> PlatformResult<()> {
+        let mut b = NSWindowCollectionBehavior::empty();
+
+        if behavior.can_join_all_spaces {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces;
+        }
+        if behavior.move_to_active_space {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace;
+        }
+        if behavior.managed {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorManaged;
+        }
+        if behavior.transient {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorTransient;
+        }
+        if behavior.participates_in_cycle {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorParticipatesInCycle;
+        }
+        if behavior.ignores_cycle {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle;
+        }
+        if behavior.full_screen_primary {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenPrimary;
+        }
+        if behavior.full_screen_auxiliary {
+            b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary;
+        }
+        if behavior.full_screen_none {
+            b |= unsafe { std::mem::transmute((1 << 9) as NSUInteger) };
+        }
+        if behavior.allows_tiling {
+            b |= unsafe { std::mem::transmute((1 << 11) as NSUInteger) };
+        }
+        if behavior.disallows_tiling {
+            b |= unsafe { std::mem::transmute((1 << 12) as NSUInteger) };
+        }
+        unsafe {
+            NSWindow::setCollectionBehavior_(*self.platform_window, b);
+        }
+        Ok(())
     }
 
     unsafe fn actually_show(&self) {

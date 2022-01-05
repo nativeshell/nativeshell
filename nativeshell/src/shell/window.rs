@@ -16,12 +16,12 @@ use super::{
     api_constants::*,
     api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
-        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowDeactivateRequest,
-        WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags, WindowStyle,
+        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowCollectionBehavior,
+        WindowDeactivateRequest, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+        WindowStateFlags, WindowStyle,
     },
-    platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
-    WindowMethodInvoker,
+    WindowMethodInvoker, platform::window::PlatformWindow,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -179,6 +179,12 @@ impl Window {
     fn set_title(&self, title: String) -> Result<()> {
         self.platform_window()
             .set_title(title)
+            .map_err(|e| e.into())
+    }
+
+    fn set_collection_behavior(&self, behavior: WindowCollectionBehavior) -> Result<()> {
+        self.platform_window()
+            .set_collection_behavior(behavior)
             .map_err(|e| e.into())
     }
 
@@ -343,6 +349,11 @@ impl Window {
             }
             method::window::SET_TITLE => {
                 return Self::reply(reply, &arg, |title| self.set_title(title));
+            }
+            method::window::SET_COLLECTION_BEHAVIOR => {
+                return Self::reply(reply, &arg, |behavior| {
+                    self.set_collection_behavior(behavior)
+                });
             }
             method::window::SAVE_POSITION_TO_STRING => {
                 return Self::reply(reply, &arg, |()| self.save_position_to_string());

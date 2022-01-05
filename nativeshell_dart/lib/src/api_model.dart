@@ -243,6 +243,52 @@ class WindowStyle {
   }
 }
 
+// MacOS specific;
+class WindowCollectionBehavior {
+  final bool canJoinAllSpaces;
+  final bool moveToActiveSpace;
+  final bool managed;
+  final bool transient;
+  final bool stationary;
+  final bool participatesInCycle;
+  final bool ignoresCycle;
+  final bool fullScreenPrimary;
+  final bool fullScreenAuxiliary;
+  final bool fullScreenNone;
+  final bool allowsTiling;
+  final bool disallowsTiling;
+
+  WindowCollectionBehavior({
+    this.canJoinAllSpaces = false,
+    this.moveToActiveSpace = false,
+    this.managed = false,
+    this.transient = false,
+    this.stationary = false,
+    this.participatesInCycle = false,
+    this.ignoresCycle = false,
+    this.fullScreenPrimary = false,
+    this.fullScreenAuxiliary = false,
+    this.fullScreenNone = false,
+    this.allowsTiling = false,
+    this.disallowsTiling = false,
+  });
+
+  dynamic serialize() => {
+        'canJoinAllSpaces': canJoinAllSpaces,
+        'moveToActiveSpace': moveToActiveSpace,
+        'managed': managed,
+        'transient': transient,
+        'stationary': stationary,
+        'participatesInCycle': participatesInCycle,
+        'ignoresCycle': ignoresCycle,
+        'fullScreenPrimary': fullScreenPrimary,
+        'fullScreenAuxiliary': fullScreenAuxiliary,
+        'fullScreenNone': fullScreenNone,
+        'allowsTiling': allowsTiling,
+        'disallowsTiling': disallowsTiling,
+      };
+}
+
 enum BoolTransition {
   no,
   noToYes,
