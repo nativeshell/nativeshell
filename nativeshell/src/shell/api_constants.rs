@@ -75,6 +75,7 @@ pub(crate) mod method {
         pub const SET_STYLE: &str = "Window.setStyle";
         pub const SET_TITLE: &str = "Window.setTitle";
         pub const GET_WINDOW_FLAGS: &str = "Window.getWindowFlags";
+        pub const SET_COLLECTION_BEHAVIOR: &str = "Window.setCollectionBehavior";
 
         pub const PERFORM_WINDOW_DRAG: &str = "Window.performWindowDrag";
 

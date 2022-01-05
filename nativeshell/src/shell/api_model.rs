@@ -226,6 +226,23 @@ pub struct WindowFlags {
     pub active: bool,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowCollectionBehavior {
+    pub can_join_all_spaces: bool,
+    pub move_to_active_space: bool,
+    pub managed: bool,
+    pub transient: bool,
+    pub stationary: bool,
+    pub participates_in_cycle: bool,
+    pub ignores_cycle: bool,
+    pub full_screen_primary: bool,
+    pub full_screen_auxiliary: bool,
+    pub full_screen_none: bool,
+    pub allows_tiling: bool,
+    pub disallows_tiling: bool,
+}
+
 //
 // Menu
 //

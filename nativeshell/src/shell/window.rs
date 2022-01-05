@@ -16,8 +16,9 @@ use super::{
     api_constants::*,
     api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
-        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowDeactivateRequest,
-        WindowFlags, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
+        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowCollectionBehavior,
+        WindowDeactivateRequest, WindowFlags, WindowGeometry, WindowGeometryFlags,
+        WindowGeometryRequest, WindowStyle,
     },
     platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
@@ -194,6 +195,12 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn set_collection_behavior(&self, behavior: WindowCollectionBehavior) -> Result<()> {
+        self.platform_window()
+            .set_collection_behavior(behavior)
+            .map_err(|e| e.into())
+    }
+
     fn perform_window_drag(&self) -> Result<()> {
         self.platform_window()
             .perform_window_drag()
@@ -351,6 +358,11 @@ impl Window {
             }
             method::window::GET_WINDOW_FLAGS => {
                 return Self::reply(reply, &arg, |()| self.get_window_flags());
+            }
+            method::window::SET_COLLECTION_BEHAVIOR => {
+                return Self::reply(reply, &arg, |behavior| {
+                    self.set_collection_behavior(behavior)
+                });
             }
             method::window::PERFORM_WINDOW_DRAG => {
                 return Self::reply(reply, &arg, |()| self.perform_window_drag());

@@ -57,6 +57,7 @@ class Methods {
   static final windowRestorePositionFromString =
       'Window.restorePositionFromString';
   static final windowGetWindowFlags = 'Window.getWindowFlags';
+  static final windowSetCollectionBehavior = 'Window.setCollectionBehavior';
 
   // Drag Driver
   static final dragDriverDraggingUpdated = 'DragDriver.draggingUpdated';

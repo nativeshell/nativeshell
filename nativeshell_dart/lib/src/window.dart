@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedantic/pedantic.dart';
@@ -124,6 +125,12 @@ class Window {
   Future<WindowFlags> getWindowFlags() async {
     return WindowFlags.deserialize(
         await _invokeMethod(Methods.windowGetWindowFlags));
+  }
+
+  // MacOS specific;
+  Future<void> setCollectionBehavior(WindowCollectionBehavior behavior) {
+    return _invokeMethod(
+        Methods.windowSetCollectionBehavior, behavior.serialize());
   }
 
   static LocalWindow of(BuildContext context) => WindowState.of(context).window;
