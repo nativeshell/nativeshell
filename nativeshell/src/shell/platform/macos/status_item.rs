@@ -8,7 +8,7 @@ use cocoa::{
     appkit::{
         NSEvent, NSEventMask, NSEventModifierFlags,
         NSEventType::{NSLeftMouseDown, NSLeftMouseUp, NSRightMouseDown, NSRightMouseUp},
-        NSScreen, NSStatusBar, NSVariableStatusItemLength, NSView, NSWindow,
+        NSStatusBar, NSVariableStatusItemLength, NSView, NSWindow,
     },
     base::{id, nil, NO, YES},
 };
@@ -28,7 +28,11 @@ use crate::{
     Context,
 };
 
-use super::{menu::PlatformMenu, utils::ns_image_from, screen_manager::PlatformScreenManager};
+use super::{
+    menu::PlatformMenu,
+    screen_manager::PlatformScreenManager,
+    utils::{global_screen_frame, ns_image_from},
+};
 
 pub struct PlatformStatusItem {
     handle: StatusItemHandle,
@@ -133,7 +137,8 @@ impl PlatformStatusItem {
             let window: id = msg_send![button, window];
             let window_frame = NSWindow::frame(window);
             let button_frame = NSView::frame(button);
-            let screen_frame = NSScreen::frame(NSWindow::screen(window));
+            // let screen_frame = NSScreen::frame(NSWindow::screen(window));
+            let screen_frame = global_screen_frame();
 
             // println!(
             //     "button_frame: {:?} {:?}",
@@ -151,7 +156,7 @@ impl PlatformStatusItem {
             StatusItemGeometry {
                 origin: Point::xy(
                     window_frame.origin.x + button_frame.origin.x,
-                    screen_frame.size.height
+                    screen_frame.y2()
                         - (window_frame.origin.y + button_frame.origin.y)
                         - button_frame.size.height,
                 ),
