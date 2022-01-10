@@ -101,6 +101,27 @@ where
             height: T::cast_number(scaled_height),
         }
     }
+
+    pub fn union(r1: &_Rect<T>, r2: &_Rect<T>) -> _Rect<T> {
+        let x = if r1.x.lt(&r2.x) { r1.x } else { r2.x };
+        let y = if r1.y.lt(&r2.y) { r1.y } else { r2.y };
+        let x2 = if r1.x2().gt(&r2.x2()) {
+            r1.x2()
+        } else {
+            r2.x2()
+        };
+        let y2 = if r1.y2().gt(&r2.y2()) {
+            r1.y2()
+        } else {
+            r2.y2()
+        };
+        _Rect {
+            x,
+            y,
+            width: x2 - x,
+            height: y2 - y,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
