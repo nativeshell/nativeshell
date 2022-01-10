@@ -1,6 +1,6 @@
 use crate::shell::{api_model::ImageData, Point, Rect, Size};
 use cocoa::{
-    appkit::{NSImage, NSView},
+    appkit::{NSImage, NSScreen, NSView},
     base::{id, nil},
     foundation::{NSArray, NSPoint, NSRect, NSSize, NSString},
 };
@@ -14,7 +14,7 @@ use objc::{
     class,
     declare::ClassDecl,
     msg_send,
-    rc::StrongPtr,
+    rc::{autoreleasepool, StrongPtr},
     runtime::{objc_getClass, Class, Object},
     sel, sel_impl,
 };
@@ -110,6 +110,19 @@ pub fn to_nsstring(string: &str) -> StrongPtr {
 //         data.into()
 //     }
 // }
+
+pub fn global_screen_frame() -> Rect {
+    let mut res = Rect::default();
+    autoreleasepool(|| unsafe {
+        let screens = NSScreen::screens(nil);
+        for i in 0..NSArray::count(screens) {
+            let screen = NSArray::objectAtIndex(screens, i);
+            let screen_frame: Rect = NSScreen::frame(screen).into();
+            res = Rect::union(&res, &screen_frame);
+        }
+    });
+    res
+}
 
 pub fn to_nsdata(data: &[u8]) -> StrongPtr {
     unsafe {
