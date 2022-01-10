@@ -18,7 +18,7 @@ use crate::{
 };
 use cocoa::{
     appkit::{
-        CGPoint, NSApplication, NSEvent, NSEventType, NSScreen, NSView, NSViewHeightSizable,
+        CGPoint, NSApplication, NSEvent, NSEventType, NSView, NSViewHeightSizable,
         NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
         NSWindowTabbingMode, NSWindowTitleVisibility,
     },
@@ -276,20 +276,20 @@ impl PlatformWindow {
     }
 
     unsafe fn set_frame_origin(&self, position: Point) {
-        let screen_frame = NSScreen::frame(self.platform_window.screen());
+        let screen_frame = global_screen_frame();
         let position = Point {
             x: position.x,
-            y: screen_frame.size.height - position.y,
+            y: screen_frame.y2() - position.y,
         };
         self.platform_window.setFrameTopLeftPoint_(position.into());
     }
 
     unsafe fn get_frame_origin(&self) -> Point {
-        let screen_frame = NSScreen::frame(self.platform_window.screen());
+        let screen_frame = global_screen_frame();
         let window_frame = NSWindow::frame(*self.platform_window);
         Point {
             x: window_frame.origin.x,
-            y: screen_frame.size.height - (window_frame.origin.y + window_frame.size.height),
+            y: screen_frame.y2() - (window_frame.origin.y + window_frame.size.height),
         }
     }
 
@@ -302,12 +302,12 @@ impl PlatformWindow {
     }
 
     unsafe fn set_content_position(&self, position: Point) {
-        let screen_frame = NSScreen::frame(self.platform_window.screen());
+        let screen_frame = global_screen_frame();
         let content_size = NSView::frame(self.platform_window.contentView()).size;
         let content_rect = NSRect::new(
             Point {
                 x: position.x,
-                y: screen_frame.size.height - (position.y + content_size.height),
+                y: screen_frame.y2() - (position.y + content_size.height),
             }
             .into(),
             content_size,
@@ -317,12 +317,12 @@ impl PlatformWindow {
     }
 
     unsafe fn get_content_position(&self) -> Point {
-        let screen_frame = NSScreen::frame(self.platform_window.screen());
+        let screen_frame = global_screen_frame();
         let window_frame = NSWindow::frame(*self.platform_window);
         let content_rect = self.platform_window.contentRectForFrameRect_(window_frame);
         Point {
             x: content_rect.origin.x,
-            y: screen_frame.size.height - (content_rect.origin.y + content_rect.size.height),
+            y: screen_frame.y2() - (content_rect.origin.y + content_rect.size.height),
         }
     }
 
