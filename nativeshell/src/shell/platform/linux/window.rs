@@ -16,8 +16,9 @@ use crate::{
     codec::Value,
     shell::{
         api_model::{
-            DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowFrame,
-            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
+            BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
+            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStatus,
+            WindowStyle,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
@@ -37,12 +38,14 @@ use super::{
 
 pub type PlatformWindowType = gtk::Window;
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Default, PartialEq, Clone)]
 struct WindowState {
     width: i32,
     height: i32,
+    is_minimized: bool,
     is_maximized: bool,
     is_fullscreen: bool,
+    is_active: bool,
 }
 
 pub struct PlatformWindow {
@@ -201,13 +204,26 @@ impl PlatformWindow {
     }
 
     fn on_window_state_changed(&self, state: &EventWindowState) {
-        let mut window_state = self.window_state.borrow_mut();
-        window_state.is_maximized = state
-            .new_window_state()
-            .contains(gdk::WindowState::MAXIMIZED);
-        window_state.is_fullscreen = state
-            .new_window_state()
-            .contains(gdk::WindowState::FULLSCREEN);
+        let status_changed = {
+            let mut window_state = self.window_state.borrow_mut();
+            let prev_state = window_state.clone();
+            window_state.is_maximized = state
+                .new_window_state()
+                .contains(gdk::WindowState::MAXIMIZED);
+            window_state.is_fullscreen = state
+                .new_window_state()
+                .contains(gdk::WindowState::FULLSCREEN);
+            window_state.is_minimized = state
+                .new_window_state()
+                .contains(gdk::WindowState::ICONIFIED);
+            window_state.is_active = state.new_window_state().contains(gdk::WindowState::FOCUSED);
+            *window_state != prev_state
+        };
+        if status_changed {
+            if let Some(delegate) = self.delegate.upgrade() {
+                delegate.status_changed();
+            }
+        }
     }
 
     fn connect_drag_drop_events(&self) {
@@ -581,6 +597,28 @@ impl PlatformWindow {
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         self.window.set_title(&title);
         Ok(())
+    }
+
+    pub fn get_window_status(&self) -> PlatformResult<WindowStatus> {
+        let status = self.window_state.borrow();
+        Ok(WindowStatus {
+            maximized: if status.is_maximized {
+                BoolTransition::Yes
+            } else {
+                BoolTransition::No
+            },
+            minimized: if status.is_minimized {
+                BoolTransition::Yes
+            } else {
+                BoolTransition::No
+            },
+            full_screen: if status.is_fullscreen {
+                BoolTransition::Yes
+            } else {
+                BoolTransition::No
+            },
+            active: status.is_active,
+        })
     }
 
     pub fn save_position_to_string(&self) -> PlatformResult<String> {
