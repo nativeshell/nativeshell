@@ -182,8 +182,13 @@ class GeometryFlags {
 }
 
 enum WindowFrame {
+  /// Normal window frame (includes title and can be resizable).
   regular,
+
+  /// Window frame without title (can be resizable).
   noTitle,
+
+  /// No window frame, can not be resizable.
   noFrame,
 }
 
@@ -231,6 +236,51 @@ class WindowStyle {
         canMaximize: map['canMaximize'],
         canFullScreen: map['canFullScreen']);
   }
+
+  @override
+  String toString() {
+    return serialize().toString();
+  }
+}
+
+enum BoolTransition {
+  no,
+  noToYes,
+  yes,
+  yesToNo,
+}
+
+class WindowStatus {
+  final BoolTransition maximized;
+  final BoolTransition minimized;
+  final BoolTransition fullScreen;
+  final bool active;
+
+  WindowStatus({
+    required this.maximized,
+    required this.minimized,
+    required this.fullScreen,
+    required this.active,
+  });
+
+  static WindowStatus deserialize(dynamic value) {
+    final map = value as Map;
+    return WindowStatus(
+        maximized: enumFromString(
+            BoolTransition.values, map['maximized'], BoolTransition.no),
+        minimized: enumFromString(
+            BoolTransition.values, map['minimized'], BoolTransition.no),
+        fullScreen: enumFromString(
+            BoolTransition.values, map['fullScreen'], BoolTransition.no),
+        active: map['active']);
+  }
+
+  dynamic serialize() => {
+        'maximized': enumToString(maximized),
+        'minimized': enumToString(minimized),
+        'fullScreen': enumToString(fullScreen),
+        'active': active,
+      };
 
   @override
   String toString() {

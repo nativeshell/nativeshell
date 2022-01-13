@@ -188,6 +188,29 @@ pub struct WindowStyle {
     pub traffic_light_offset: Option<Point>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub enum BoolTransition {
+    No,
+    NoToYes,
+    Yes,
+    YesToNo,
+}
+
+impl Default for BoolTransition {
+    fn default() -> Self {
+        BoolTransition::No
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowStatus {
+    pub maximized: BoolTransition,
+    pub minimized: BoolTransition,
+    pub full_screen: BoolTransition,
+    pub active: bool,
+}
+
 //
 // Menu
 //

@@ -14,6 +14,7 @@ class Channels {
 class Events {
   static final windowInitialize = 'event:Window.initialize';
   static final windowVisibilityChanged = 'event:Window.visibilityChanged';
+  static final windowStatusChanged = 'event:Window.statusChanged';
   static final windowCloseRequest = 'event:Window.closeRequest';
   static final windowClose = 'event:Window.close';
 }
@@ -41,6 +42,7 @@ class Methods {
 
   static final windowSetStyle = 'Window.setStyle';
   static final windowSetTitle = 'Window.setTitle';
+  static final windowGetWindowStatus = 'Window.getWindowStatus';
   static final windowPerformWindowDrag = 'Window.performWindowDrag';
 
   static final windowShowPopupMenu = 'Window.showPopupMenu';

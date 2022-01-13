@@ -5,7 +5,7 @@ use crate::{
     shell::{
         api_model::{
             DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowGeometry,
-            WindowGeometryFlags, WindowGeometryRequest, WindowStyle,
+            WindowGeometryFlags, WindowGeometryRequest, WindowStatus, WindowStyle,
         },
         Context, PlatformWindowDelegate,
     },
@@ -84,6 +84,10 @@ impl PlatformWindow {
     }
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
+    pub fn get_window_status(&self) -> PlatformResult<WindowStatus> {
         Err(PlatformError::NotImplemented)
     }
 
