@@ -10,8 +10,8 @@ use crate::{
     shell::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
-            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStatus,
-            WindowStyle,
+            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+            WindowStateFlags, WindowStyle,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
@@ -71,7 +71,7 @@ pub struct PlatformWindow {
     flutter_view: LateRefCell<StrongPtr>,
     mouse_down: Cell<bool>,
     mouse_dragged: Cell<bool>,
-    window_status: RefCell<WindowStatus>,
+    window_state_flags: RefCell<WindowStateFlags>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -133,7 +133,7 @@ impl PlatformWindow {
                 flutter_view: LateRefCell::new(),
                 mouse_down: Cell::new(false),
                 mouse_dragged: Cell::new(false),
-                window_status: RefCell::new(WindowStatus::default()),
+                window_state_flags: RefCell::new(WindowStateFlags::default()),
             }
         })
     }
@@ -474,8 +474,8 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn get_window_status(&self) -> PlatformResult<WindowStatus> {
-        Ok(self.window_status.borrow().clone())
+    pub fn get_window_state_flags(&self) -> PlatformResult<WindowStateFlags> {
+        Ok(self.window_state_flags.borrow().clone())
     }
 
     pub fn is_modal(&self) -> bool {
@@ -1188,57 +1188,57 @@ extern "C" fn can_become_main_window(_this: &Object, _: Sel) -> BOOL {
 
 extern "C" fn window_will_miniaturize(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().minimized = BoolTransition::NoToYes;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().minimized = BoolTransition::NoToYes;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_did_miniaturize(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().minimized = BoolTransition::Yes;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().minimized = BoolTransition::Yes;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_did_deminiaturize(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().minimized = BoolTransition::No;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().minimized = BoolTransition::No;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_will_enter_full_screen(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().full_screen = BoolTransition::NoToYes;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().full_screen = BoolTransition::NoToYes;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_did_enter_full_screen(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().full_screen = BoolTransition::Yes;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().full_screen = BoolTransition::Yes;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_will_exit_full_screen(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().full_screen = BoolTransition::YesToNo;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().full_screen = BoolTransition::YesToNo;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_did_exit_full_screen(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().full_screen = BoolTransition::No;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().full_screen = BoolTransition::No;
+        delegate.state_flags_changed();
     });
 }
 
 extern "C" fn window_did_become_main(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().active = true;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().active = true;
+        delegate.state_flags_changed();
 
         if let Some(context) = state.context.get() {
             context
@@ -1253,8 +1253,8 @@ extern "C" fn window_did_become_main(this: &Object, _: Sel, _: id) {
 
 extern "C" fn window_did_resign_main(this: &Object, _: Sel, _: id) {
     with_state_delegate(this, |state, delegate| {
-        state.window_status.borrow_mut().active = false;
-        delegate.status_changed();
+        state.window_state_flags.borrow_mut().active = false;
+        delegate.state_flags_changed();
     });
 }
 

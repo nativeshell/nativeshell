@@ -250,22 +250,22 @@ enum BoolTransition {
   yesToNo,
 }
 
-class WindowStatus {
+class WindowStateFlags {
   final BoolTransition maximized;
   final BoolTransition minimized;
   final BoolTransition fullScreen;
   final bool active;
 
-  WindowStatus({
+  WindowStateFlags({
     required this.maximized,
     required this.minimized,
     required this.fullScreen,
     required this.active,
   });
 
-  static WindowStatus deserialize(dynamic value) {
+  static WindowStateFlags deserialize(dynamic value) {
     final map = value as Map;
-    return WindowStatus(
+    return WindowStateFlags(
         maximized: enumFromString(
             BoolTransition.values, map['maximized'], BoolTransition.no),
         minimized: enumFromString(

@@ -17,8 +17,8 @@ use crate::{
     shell::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
-            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStatus,
-            WindowStyle,
+            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+            WindowStateFlags, WindowStyle,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
@@ -204,7 +204,7 @@ impl PlatformWindow {
     }
 
     fn on_window_state_changed(&self, state: &EventWindowState) {
-        let status_changed = {
+        let state_flags_changed = {
             let mut window_state = self.window_state.borrow_mut();
             let prev_state = window_state.clone();
             window_state.is_maximized = state
@@ -219,9 +219,9 @@ impl PlatformWindow {
             window_state.is_active = state.new_window_state().contains(gdk::WindowState::FOCUSED);
             *window_state != prev_state
         };
-        if status_changed {
+        if state_flags_changed {
             if let Some(delegate) = self.delegate.upgrade() {
-                delegate.status_changed();
+                delegate.state_flags_changed();
             }
         }
     }
@@ -599,25 +599,25 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn get_window_status(&self) -> PlatformResult<WindowStatus> {
-        let status = self.window_state.borrow();
-        Ok(WindowStatus {
-            maximized: if status.is_maximized {
+    pub fn get_window_state_flags(&self) -> PlatformResult<WindowStateFlags> {
+        let state = self.window_state.borrow();
+        Ok(WindowStateFlags {
+            maximized: if state.is_maximized {
                 BoolTransition::Yes
             } else {
                 BoolTransition::No
             },
-            minimized: if status.is_minimized {
+            minimized: if state.is_minimized {
                 BoolTransition::Yes
             } else {
                 BoolTransition::No
             },
-            full_screen: if status.is_fullscreen {
+            full_screen: if state.is_fullscreen {
                 BoolTransition::Yes
             } else {
                 BoolTransition::No
             },
-            active: status.is_active,
+            active: state.is_active,
         })
     }
 

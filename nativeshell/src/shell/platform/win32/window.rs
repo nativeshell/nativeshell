@@ -25,7 +25,8 @@ use crate::{
     shell::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
-            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStatus, WindowStyle,
+            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags,
+            WindowStyle,
         },
         Context, IPoint, PlatformWindowDelegate, Point,
     },
@@ -62,7 +63,7 @@ pub struct PlatformWindow {
     ready_to_show: Cell<bool>,
     show_when_ready: Cell<bool>,
     mouse_state: RefCell<MouseState>,
-    window_status: RefCell<WindowStatus>,
+    window_state_flags: RefCell<WindowStateFlags>,
 }
 
 struct MouseState {
@@ -94,7 +95,7 @@ impl PlatformWindow {
             mouse_state: RefCell::new(MouseState {
                 last_button_down: None,
             }),
-            window_status: RefCell::new(WindowStatus::default()),
+            window_state_flags: RefCell::new(WindowStateFlags::default()),
         }
     }
 
@@ -316,8 +317,8 @@ impl PlatformWindow {
         self.state.borrow().restore_position_from_string(position)
     }
 
-    pub fn get_window_status(&self) -> PlatformResult<WindowStatus> {
-        Ok(self.window_status.borrow().clone())
+    pub fn get_window_state_flags(&self) -> PlatformResult<WindowStateFlags> {
+        Ok(self.window_state_flags.borrow().clone())
     }
 
     pub fn set_style(&self, style: WindowStyle) -> PlatformResult<()> {
@@ -460,34 +461,34 @@ impl PlatformWindow {
         }
     }
 
-    fn update_status(&self, new_status: WindowStatus) {
-        if *self.window_status.borrow() != new_status {
-            self.window_status.replace(new_status);
+    fn update_state_flags(&self, new_state_flags: WindowStateFlags) {
+        if *self.window_state_flags.borrow() != new_state_flags {
+            self.window_state_flags.replace(new_state_flags);
             if let Some(delegate) = self.delegate() {
-                delegate.status_changed();
+                delegate.state_flags_changed();
             }
         }
     }
 
     fn on_wmsize(&self, w_param: WPARAM) {
-        let mut new_status = self.window_status.borrow().clone();
-        new_status.maximized = if w_param.0 as u32 & SIZE_MAXIMIZED != 0 {
+        let mut new_state_flags = self.window_state_flags.borrow().clone();
+        new_state_flags.maximized = if w_param.0 as u32 & SIZE_MAXIMIZED != 0 {
             BoolTransition::Yes
         } else {
             BoolTransition::No
         };
-        new_status.minimized = if w_param.0 as u32 & SIZE_MINIMIZED != 0 {
+        new_state_flags.minimized = if w_param.0 as u32 & SIZE_MINIMIZED != 0 {
             BoolTransition::Yes
         } else {
             BoolTransition::No
         };
-        self.update_status(new_status);
+        self.update_state_flags(new_state_flags);
     }
 
     fn on_wmactivate(&self, w_param: WPARAM) {
-        let mut new_status = self.window_status.borrow().clone();
-        new_status.active = w_param.0 as u32 & (WA_ACTIVE | WA_CLICKACTIVE) != 0;
-        self.update_status(new_status);
+        let mut new_state_flags = self.window_state_flags.borrow().clone();
+        new_state_flags.active = w_param.0 as u32 & (WA_ACTIVE | WA_CLICKACTIVE) != 0;
+        self.update_state_flags(new_state_flags);
     }
 
     fn handle_message(

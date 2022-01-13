@@ -204,7 +204,7 @@ impl Default for BoolTransition {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct WindowStatus {
+pub struct WindowStateFlags {
     pub maximized: BoolTransition,
     pub minimized: BoolTransition,
     pub full_screen: BoolTransition,
