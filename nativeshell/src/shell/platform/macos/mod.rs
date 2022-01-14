@@ -12,6 +12,7 @@ pub mod keyboard_map;
 pub mod menu;
 pub mod run_loop;
 pub mod screen_manager;
+mod utils;
 pub mod window;
 
 #[allow(dead_code)]
