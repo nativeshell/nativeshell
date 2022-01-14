@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use gdk::{Event, EventType, EventWindowState, WMDecoration, WMFunction};
+use gdk::{Display, Event, EventType, EventWindowState, WMDecoration, WMFunction};
 use glib::{Cast, ObjectExt};
 use gtk::{
     prelude::{ContainerExt, GtkWindowExt, OverlayExt, WidgetExt},
@@ -31,6 +31,7 @@ use super::{
     error::{PlatformError, PlatformResult},
     flutter::View,
     menu::PlatformMenu,
+    screen_manager::PlatformScreenManager,
     size_widget::{create_size_widget, size_widget_set_min_size},
     utils::{get_session_type, synthetize_button_up, translate_event_to_window, SessionType},
     window_menu::WindowMenu,
@@ -597,6 +598,18 @@ impl PlatformWindow {
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         self.window.set_title(&title);
         Ok(())
+    }
+
+    pub fn get_screen_id(&self) -> PlatformResult<i64> {
+        if let Some(display) = Display::default() {
+            let monitor = display.monitor_at_window(&self.window.window().unwrap());
+            Ok(monitor
+                .as_ref()
+                .map(PlatformScreenManager::get_monitor_id)
+                .unwrap_or(0))
+        } else {
+            Ok(0)
+        }
     }
 
     pub fn get_window_state_flags(&self) -> PlatformResult<WindowStateFlags> {
