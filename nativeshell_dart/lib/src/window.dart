@@ -99,6 +99,11 @@ class Window {
     return _invokeMethod(Methods.windowRestorePositionFromString, position);
   }
 
+  Future<WindowStateFlags> getWindowStateFlags() async {
+    return WindowStateFlags.deserialize(
+        await _invokeMethod(Methods.windowGetWindowStateFlags));
+  }
+
   static LocalWindow of(BuildContext context) => WindowState.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
@@ -121,6 +126,7 @@ class Window {
   final visibilityChangedEvent = Event<bool>();
   final closeRequestEvent = VoidEvent();
   final closeEvent = VoidEvent();
+  final windowStateFlagsEvent = Event<WindowStateFlags>();
 
   void onMessage(String message, dynamic arguments) {
     if (message == Events.windowInitialize) {
@@ -136,6 +142,9 @@ class Window {
     } else if (message == Events.windowClose) {
       WindowManager.instance.windowClosed(this);
       closeEvent.fire();
+    } else if (message == Events.WindowStateFlagsChanged) {
+      final stateFlags = WindowStateFlags.deserialize(arguments);
+      windowStateFlagsEvent.fire(stateFlags);
     }
   }
 

@@ -17,7 +17,7 @@ use super::{
     api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
         PopupMenuResponse, SetMenuRequest, WindowGeometry, WindowGeometryFlags,
-        WindowGeometryRequest, WindowStyle,
+        WindowGeometryRequest, WindowStateFlags, WindowStyle,
     },
     platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
@@ -155,6 +155,12 @@ impl Window {
     fn set_style(&self, style: WindowStyle) -> Result<()> {
         self.platform_window()
             .set_style(style)
+            .map_err(|e| e.into())
+    }
+
+    fn get_window_state_flags(&self) -> Result<WindowStateFlags> {
+        self.platform_window()
+            .get_window_state_flags()
             .map_err(|e| e.into())
     }
 
@@ -314,6 +320,9 @@ impl Window {
             method::window::SET_STYLE => {
                 return Self::reply(reply, &arg, |style| self.set_style(style));
             }
+            method::window::GET_WINDOW_STATE_FLAGS => {
+                return Self::reply(reply, &arg, |()| self.get_window_state_flags());
+            }
             method::window::SET_TITLE => {
                 return Self::reply(reply, &arg, |title| self.set_title(title));
             }
@@ -361,6 +370,7 @@ pub trait PlatformWindowDelegate {
     fn visibility_changed(&self, visible: bool);
     fn did_request_close(&self);
     fn will_close(&self);
+    fn state_flags_changed(&self);
 
     fn dragging_exited(&self);
     fn dragging_updated(&self, info: &DraggingInfo);
@@ -384,6 +394,13 @@ impl PlatformWindowDelegate for Window {
         if let Some(context) = self.context.get() {
             self.broadcast_message(event::window::CLOSE, Value::Null);
             context.window_manager.borrow_mut().remove_window(self);
+        }
+    }
+
+    fn state_flags_changed(&self) {
+        let flags = self.platform_window.borrow().get_window_state_flags();
+        if let Ok(flags) = flags {
+            self.broadcast_message(event::window::STATE_FLAGS_CHANGED, to_value(flags).unwrap());
         }
     }
 

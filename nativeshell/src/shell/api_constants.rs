@@ -64,6 +64,7 @@ pub(crate) mod method {
 
         pub const SET_STYLE: &str = "Window.setStyle";
         pub const SET_TITLE: &str = "Window.setTitle";
+        pub const GET_WINDOW_STATE_FLAGS: &str = "Window.getWindowStateFlags";
         pub const PERFORM_WINDOW_DRAG: &str = "Window.performWindowDrag";
 
         pub const SHOW_POPUP_MENU: &str = "Window.showPopupMenu";
@@ -124,6 +125,9 @@ pub(crate) mod event {
 
         // Called when window became visible or hidden (boolean argument)
         pub const VISIBILITY_CHANGED: &str = "event:Window.visibilityChanged";
+
+        // Called when window state flags have changed
+        pub const STATE_FLAGS_CHANGED: &str = "event:Window.stateFlagsChanged";
 
         // Delivered when user requested closing the window; Target window is responsible
         // for actually closing the window
