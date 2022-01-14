@@ -470,7 +470,7 @@ impl Flutter<'_> {
             .options
             .dart_defines
             .iter()
-            .map(|d| base64::encode(d))
+            .map(base64::encode)
             .collect();
         let defines = format!("--DartDefines={}", defines.join(","));
 
