@@ -60,7 +60,7 @@ impl PlatformScreenManager {
                 let s = Screen {
                     id: Self::get_screen_id(screen),
                     frame: Self::flip_rect(&NSScreen::frame(screen).into(), &global_frame),
-                    visible_frame: Self::flip_rect(
+                    work_area: Self::flip_rect(
                         &NSScreen::visibleFrame(screen).into(),
                         &global_frame,
                     ),

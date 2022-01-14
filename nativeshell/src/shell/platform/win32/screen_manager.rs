@@ -33,7 +33,7 @@ impl PlatformScreenManager {
             .map(|d| Screen {
                 id: d.id,
                 frame: d.logical.clone(),
-                visible_frame: d.work.clone(),
+                work_area: d.work.clone(),
                 scaling_factor: d.scale,
             })
             .collect())

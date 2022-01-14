@@ -7,7 +7,7 @@ class Screen {
   Screen({
     required this.id,
     required this.frame,
-    required this.visibleFrame,
+    required this.workArea,
     required this.scalingFactor,
   });
 
@@ -26,7 +26,7 @@ class Screen {
 
   final int id;
   final Rect frame;
-  final Rect visibleFrame;
+  final Rect workArea;
   final double scalingFactor;
 
   static Screen deserialize(dynamic screen) {
@@ -34,7 +34,7 @@ class Screen {
     return Screen(
       id: map['id'],
       frame: RectExt.deserialize(map['frame']),
-      visibleFrame: RectExt.deserialize(map['visibleFrame']),
+      workArea: RectExt.deserialize(map['workArea']),
       scalingFactor: map['scalingFactor'],
     );
   }
@@ -43,7 +43,7 @@ class Screen {
     return {
       'id': id,
       'frame': frame.serialize(),
-      'visibleFrame': visibleFrame.serialize(),
+      'workArea': workArea.serialize(),
       'scalingFactor': scalingFactor,
     };
   }
@@ -57,9 +57,9 @@ class Screen {
       (other is Screen &&
           other.id == id &&
           other.frame == frame &&
-          other.visibleFrame == visibleFrame &&
+          other.workArea == workArea &&
           other.scalingFactor == scalingFactor);
 
   @override
-  int get hashCode => Object.hash(id, frame, visibleFrame, scalingFactor);
+  int get hashCode => Object.hash(id, frame, workArea, scalingFactor);
 }

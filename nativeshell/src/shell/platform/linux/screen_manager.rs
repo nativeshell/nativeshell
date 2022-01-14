@@ -51,7 +51,7 @@ impl PlatformScreenManager {
         Screen {
             id: Self::get_monitor_id(monitor),
             frame: Self::convert_rect(monitor.geometry()),
-            visible_frame: Self::convert_rect(monitor.workarea()),
+            work_area: Self::convert_rect(monitor.workarea()),
             scaling_factor: monitor.scale_factor() as f64,
         }
     }

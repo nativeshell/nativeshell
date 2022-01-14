@@ -359,6 +359,6 @@ pub struct HotKeyPressed {
 pub struct Screen {
     pub id: i64,
     pub frame: Rect,
-    pub visible_frame: Rect,
+    pub work_area: Rect,
     pub scaling_factor: f64,
 }
