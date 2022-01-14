@@ -17,6 +17,7 @@ path-slash = "0.1.4"
 dunce = "1.0.1"
 copy_dir = "0.1.2"
 yaml-rust = "0.4"
+base64 = "0.13.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tar = "0.4"

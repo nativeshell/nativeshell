@@ -37,6 +37,11 @@ pub struct FlutterOptions<'a> {
     // it relative to flutter path.
     pub local_engine_src_path: Option<&'a Path>,
 
+    // Additional key-value pairs that will be available as constants from the
+    // String.fromEnvironment, bool.fromEnvironment, int.fromEnvironment, and
+    // double.fromEnvironment constructors.
+    pub dart_defines: &'a [&'a str],
+
     // macOS: Allow specifying extra pods to be built in addition to pods from
     // Flutter plugins. For example: macos_extra_pods: &["pod 'Sparkle'"],
     pub macos_extra_pods: &'a [&'a str],
@@ -50,6 +55,7 @@ impl Default for FlutterOptions<'_> {
             flutter_path: None,
             local_engine: None,
             local_engine_src_path: None,
+            dart_defines: &[],
             macos_extra_pods: &[],
         }
     }
@@ -458,6 +464,16 @@ impl Flutter<'_> {
             )],
         };
 
+        // flutter help assemble is lying about how defines are passed in. They
+        // need to be base64 encoded, concatenated and passed through --DartDefines
+        let defines: Vec<String> = self
+            .options
+            .dart_defines
+            .iter()
+            .map(base64::encode)
+            .collect();
+        let defines = format!("--DartDefines={}", defines.join(","));
+
         let mut command = self.create_flutter_command()?;
         command.current_dir(&working_dir);
 
@@ -482,6 +498,7 @@ impl Flutter<'_> {
                 "--define=TargetFile={}",
                 rebased.join(&self.options.target_file).to_str().unwrap()
             ))
+            .arg(defines)
             .arg("-v")
             .arg("--suppress-analytics")
             .args(actions);
