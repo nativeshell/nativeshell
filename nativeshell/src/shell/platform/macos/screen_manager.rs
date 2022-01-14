@@ -8,9 +8,9 @@ use cocoa::{
 };
 use objc::{class, msg_send, rc::autoreleasepool, sel, sel_impl};
 
-use crate::shell::{api_model::Screen, screen_manager::ScreenManagerDelegate};
+use crate::shell::{api_model::Screen, screen_manager::ScreenManagerDelegate, Rect};
 
-use super::utils::to_nsstring;
+use super::utils::{global_screen_frame, to_nsstring};
 
 pub struct PlatformScreenManager {}
 
@@ -38,16 +38,29 @@ impl PlatformScreenManager {
         msg_send![device_id, longLongValue]
     }
 
+    fn flip_rect(rect: &Rect, global_screen_frame: &Rect) -> Rect {
+        Rect {
+            x: rect.x,
+            y: global_screen_frame.y2() - rect.y2(),
+            width: rect.width,
+            height: rect.height,
+        }
+    }
+
     pub fn get_screens(&self) -> Vec<Screen> {
         let mut res = Vec::new();
         autoreleasepool(|| unsafe {
+            let global_frame = global_screen_frame();
             let screens = NSScreen::screens(nil);
             for i in 0..NSArray::count(screens) {
                 let screen = NSArray::objectAtIndex(screens, i);
                 let s = Screen {
                     id: Self::get_screen_id(screen),
-                    frame: NSScreen::frame(screen).into(),
-                    visible_frame: NSScreen::visibleFrame(screen).into(),
+                    frame: Self::flip_rect(&NSScreen::frame(screen).into(), &global_frame),
+                    visible_frame: Self::flip_rect(
+                        &NSScreen::visibleFrame(screen).into(),
+                        &global_frame,
+                    ),
                     scaling_factor: NSScreen::backingScaleFactor(screen),
                 };
                 res.push(s);
