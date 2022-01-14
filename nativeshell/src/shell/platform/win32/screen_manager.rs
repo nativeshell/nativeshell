@@ -53,7 +53,7 @@ impl PlatformScreenManager {
         let res = displays
             .displays
             .iter()
-            .find(|d| d.handle == monitor.0)
+            .find(|d| d.handle == monitor)
             .map(|d| d.id);
         Ok(res.unwrap_or(0))
     }

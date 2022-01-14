@@ -19,7 +19,7 @@ use std::{
 pub struct PhysicalDisplay {
     physical: IRect,
     scale: f64,
-    handle: isize, // hmonitor
+    handle: HMONITOR,
 }
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ pub struct Display {
     pub physical: IRect,
     pub logical: Rect,
     pub scale: f64,
-    pub handle: isize,
+    pub handle: HMONITOR,
     pub work: Rect,
     pub id: i64,
 }
@@ -55,7 +55,7 @@ impl Displays {
         let mut monitor_info_ex = MONITORINFOEXW::default();
         let mut monitor_info: &mut MONITORINFO = unsafe { transmute(&mut monitor_info_ex) };
         monitor_info.cbSize = mem::size_of::<MONITORINFOEXW>() as u32;
-        unsafe { GetMonitorInfoW(HMONITOR(d.original.handle), monitor_info as *mut _) };
+        unsafe { GetMonitorInfoW(d.original.handle, monitor_info as *mut _) };
         // Only used as key in map, don't care about null termination
         let name = String::from_utf16_lossy(&monitor_info_ex.szDevice);
         let physical = d.original.physical.clone();
@@ -189,7 +189,7 @@ extern "system" fn enum_monitors(
                 rect.bottom - rect.top,
             ),
             scale: FlutterDesktopGetDpiForMonitor(hmonitor.0) as f64 / 96.0,
-            handle: hmonitor.0,
+            handle: hmonitor,
         });
     }
     true.into()
@@ -386,6 +386,8 @@ impl Work {
 
 #[cfg(test)]
 mod tests {
+    use windows::Win32::Graphics::Gdi::HMONITOR;
+
     use crate::shell::{IPoint, IRect, Point, Rect};
 
     use super::{Displays, PhysicalDisplay};
@@ -396,22 +398,22 @@ mod tests {
             PhysicalDisplay {
                 physical: IRect::xywh(0, 0, 1920, 1080),
                 scale: 2.0,
-                handle: 0,
+                handle: HMONITOR(0),
             },
             PhysicalDisplay {
                 physical: IRect::xywh(1920, 0, 1920, 1080),
                 scale: 1.0,
-                handle: 0,
+                handle: HMONITOR(0),
             },
             PhysicalDisplay {
                 physical: IRect::xywh(-1920, 0, 1920, 1080),
                 scale: 2.0,
-                handle: 0,
+                handle: HMONITOR(0),
             },
             PhysicalDisplay {
                 physical: IRect::xywh(-(1920 + 1024), 0, 1024, 1024),
                 scale: 1.0,
-                handle: 0,
+                handle: HMONITOR(0),
             },
         ];
 
@@ -464,12 +466,12 @@ mod tests {
             PhysicalDisplay {
                 physical: IRect::xywh(-3840, 14, 3840, 2160),
                 scale: 2.0,
-                handle: 0,
+                handle: HMONITOR(0),
             },
             PhysicalDisplay {
                 physical: IRect::xywh(0, 0, 1920, 1080),
                 scale: 1.25,
-                handle: 0,
+                handle: HMONITOR(0),
             },
         ];
         let displays = Displays::new(d);
