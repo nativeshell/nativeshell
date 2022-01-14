@@ -50,7 +50,7 @@ impl MethodCallHandler for ScreenManager {
         reply: crate::codec::MethodCallReply<Value>,
         engine: super::EngineHandle,
     ) {
-        self.engines.insert(engine.clone());
+        self.engines.insert(engine);
         match call.method.as_str() {
             method::screen_manager::GET_SCREENS => {
                 let screens = self.platform_manager.get_screens();
