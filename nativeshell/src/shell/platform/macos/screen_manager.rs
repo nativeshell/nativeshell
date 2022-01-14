@@ -79,10 +79,12 @@ impl PlatformScreenManager {
         })
     }
 
+    // macOS does the mapping
     pub fn logical_to_system(&self, offset: Point) -> PlatformResult<Point> {
         Ok(offset)
     }
 
+    // macOS does the mapping
     pub fn system_to_logical(&self, offset: Point) -> PlatformResult<Point> {
         Ok(offset)
     }

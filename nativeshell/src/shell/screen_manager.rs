@@ -60,7 +60,6 @@ impl MethodCallHandler for ScreenManager {
                 let id = self.platform_manager.get_main_screen();
                 reply.send(Self::map_result(id.map_err(Error::from)));
             }
-            // macOS does the mapping
             method::screen_manager::LOGICAL_TO_SYSTEM => {
                 let offset = self
                     .platform_manager
