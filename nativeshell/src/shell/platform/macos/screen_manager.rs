@@ -8,9 +8,12 @@ use cocoa::{
 };
 use objc::{class, msg_send, rc::autoreleasepool, sel, sel_impl};
 
-use crate::shell::{api_model::Screen, screen_manager::ScreenManagerDelegate, Rect};
+use crate::shell::{api_model::Screen, screen_manager::ScreenManagerDelegate, Point, Rect};
 
-use super::utils::{global_screen_frame, to_nsstring};
+use super::{
+    error::PlatformResult,
+    utils::{global_screen_frame, to_nsstring},
+};
 
 pub struct PlatformScreenManager {}
 
@@ -47,7 +50,7 @@ impl PlatformScreenManager {
         }
     }
 
-    pub fn get_screens(&self) -> Vec<Screen> {
+    pub fn get_screens(&self) -> PlatformResult<Vec<Screen>> {
         let mut res = Vec::new();
         autoreleasepool(|| unsafe {
             let global_frame = global_screen_frame();
@@ -66,13 +69,21 @@ impl PlatformScreenManager {
                 res.push(s);
             }
         });
-        res
+        Ok(res)
     }
 
-    pub fn get_main_screen(&self) -> i64 {
+    pub fn get_main_screen(&self) -> PlatformResult<i64> {
         autoreleasepool(|| unsafe {
             let screen = NSScreen::mainScreen(nil);
-            Self::get_screen_id(screen)
+            Ok(Self::get_screen_id(screen))
         })
+    }
+
+    pub fn logical_to_system(&self, offset: Point) -> PlatformResult<Point> {
+        Ok(offset)
+    }
+
+    pub fn system_to_logical(&self, offset: Point) -> PlatformResult<Point> {
+        Ok(offset)
     }
 }

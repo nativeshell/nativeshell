@@ -1,9 +1,12 @@
 use std::{cell::RefCell, collections::HashSet, rc::Weak};
 
 use crate::{
-    codec::{value::to_value, Value},
+    codec::{
+        value::{from_value, to_value},
+        MethodCallResult, Value,
+    },
     util::{Late, OkLog},
-    Context,
+    Context, Error, Result,
 };
 
 use super::{
@@ -31,31 +34,44 @@ impl ScreenManager {
         }
         .register(context, channel::SCREEN_MANAGER)
     }
+
+    fn map_result<T>(result: Result<T>) -> MethodCallResult<Value>
+    where
+        T: serde::Serialize,
+    {
+        result.map(|v| to_value(v).unwrap()).map_err(|e| e.into())
+    }
 }
 
 impl MethodCallHandler for ScreenManager {
     fn on_method_call(
         &mut self,
-        call: crate::codec::MethodCall<crate::codec::Value>,
-        reply: crate::codec::MethodCallReply<crate::codec::Value>,
+        call: crate::codec::MethodCall<Value>,
+        reply: crate::codec::MethodCallReply<Value>,
         engine: super::EngineHandle,
     ) {
         self.engines.insert(engine.clone());
         match call.method.as_str() {
             method::screen_manager::GET_SCREENS => {
                 let screens = self.platform_manager.get_screens();
-                reply.send_ok(to_value(screens).unwrap());
+                reply.send(Self::map_result(screens.map_err(Error::from)));
             }
             method::screen_manager::GET_MAIN_SCREEN => {
                 let id = self.platform_manager.get_main_screen();
-                reply.send_ok(to_value(id).unwrap());
+                reply.send(Self::map_result(id.map_err(Error::from)));
             }
             // macOS does the mapping
             method::screen_manager::LOGICAL_TO_SYSTEM => {
-                reply.send_ok(call.args);
+                let offset = self
+                    .platform_manager
+                    .logical_to_system(from_value(&call.args).unwrap());
+                reply.send(Self::map_result(offset.map_err(Error::from)));
             }
             method::screen_manager::SYSTEM_TO_LOGICAL => {
-                reply.send_ok(call.args);
+                let offset = self
+                    .platform_manager
+                    .system_to_logical(from_value(&call.args).unwrap());
+                reply.send(Self::map_result(offset.map_err(Error::from)));
             }
             _ => {}
         }

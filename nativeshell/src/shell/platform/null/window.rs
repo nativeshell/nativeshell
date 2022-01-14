@@ -83,6 +83,10 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
+    pub fn get_screen_id(&self) -> PlatformResult<i64> {
+        Err(PlatformError::NotImplemented)
+    }
+
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }
