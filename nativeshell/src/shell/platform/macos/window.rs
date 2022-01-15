@@ -11,8 +11,8 @@ use crate::{
     shell::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
-            WindowFrame, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
-            WindowStateFlags, WindowStyle, WindowCollectionBehavior,
+            WindowCollectionBehavior, WindowFrame, WindowGeometry, WindowGeometryFlags,
+            WindowGeometryRequest, WindowStateFlags, WindowStyle,
         },
         Context, PlatformWindowDelegate, Point, Size,
     },
