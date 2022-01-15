@@ -20,8 +20,9 @@ use super::{
         WindowDeactivateRequest, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
         WindowStateFlags, WindowStyle,
     },
+    platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
-    WindowMethodInvoker, platform::window::PlatformWindow,
+    WindowMethodInvoker,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
