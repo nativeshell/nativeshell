@@ -405,6 +405,10 @@ impl PlatformWindow {
         Ok(true)
     }
 
+    pub fn deactivate(&self, _deactivate_application: bool) -> PlatformResult<bool> {
+        Ok(false)
+    }
+
     pub fn ready_to_show(&self) -> PlatformResult<()> {
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
