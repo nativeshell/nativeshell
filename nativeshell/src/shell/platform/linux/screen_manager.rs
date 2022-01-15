@@ -14,6 +14,13 @@ impl PlatformScreenManager {
     pub fn new(delegate: Weak<RefCell<dyn ScreenManagerDelegate>>) -> Self {
         if let Some(display) = Display::default() {
             let d = delegate.clone();
+            display.default_screen().connect_size_changed(move |_| {
+                if let Some(d) = d.upgrade() {
+                    d.borrow().screen_configuration_changed();
+                }
+            });
+            // TODO(knopp): Are these necessary?
+            let d = delegate.clone();
             display.connect_monitor_added(move |_, _| {
                 if let Some(d) = d.upgrade() {
                     d.borrow().screen_configuration_changed();
