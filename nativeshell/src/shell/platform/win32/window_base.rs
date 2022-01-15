@@ -593,7 +593,6 @@ impl WindowBaseState {
             }
             WM_DISPLAYCHANGE => {
                 Displays::displays_changed();
-                self.delegate().displays_changed();
                 None
             }
             WM_WINDOWPOSCHANGING => {
@@ -669,5 +668,4 @@ impl WindowBaseState {
 pub trait WindowDelegate {
     fn should_close(&self);
     fn will_close(&self);
-    fn displays_changed(&self);
 }

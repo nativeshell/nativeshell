@@ -353,3 +353,12 @@ pub struct HotKeyDestroyRequest {
 pub struct HotKeyPressed {
     pub handle: HotKeyHandle,
 }
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Screen {
+    pub id: i64,
+    pub frame: Rect,
+    pub work_area: Rect,
+    pub scaling_factor: f64,
+}

@@ -40,6 +40,7 @@ use super::{
     error::{PlatformError, PlatformResult},
     flutter_sys::*,
     menu::PlatformMenu,
+    screen_manager::PlatformScreenManager,
     window_adapter::{SetWindowLongPtrW, WindowAdapter},
     window_base::{WindowBaseState, WindowDelegate},
     window_menu::{WindowMenu, WindowMenuDelegate},
@@ -184,8 +185,6 @@ impl WindowAdapter for PlatformWindow {
 }
 
 impl WindowDelegate for PlatformWindow {
-    fn displays_changed(&self) {}
-
     fn should_close(&self) {
         let u = self.delegate.upgrade();
         if let Some(u) = u {
@@ -307,6 +306,10 @@ impl PlatformWindow {
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         self.state.borrow().set_title(title)
+    }
+
+    pub fn get_screen_id(&self) -> PlatformResult<i64> {
+        PlatformScreenManager::screen_id_from_hwnd(self.hwnd())
     }
 
     pub fn save_position_to_string(&self) -> PlatformResult<String> {

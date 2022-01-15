@@ -7,6 +7,7 @@ pub enum PlatformError {
     SendMessageFailure { channel: String },
     WindowsError(windows::core::Error),
     NotAvailable,
+    OffsetOutOfScreenBounds,
     OtherError { error: String },
 }
 
@@ -27,6 +28,9 @@ impl Display for PlatformError {
             PlatformError::WindowsError(error) => error.fmt(f),
             PlatformError::NotAvailable => {
                 write!(f, "Feature is not available")
+            }
+            PlatformError::OffsetOutOfScreenBounds => {
+                write!(f, "Given offset is out of screen bounds")
             }
             PlatformError::OtherError { error } => {
                 write!(f, "{}", error)

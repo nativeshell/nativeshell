@@ -152,6 +152,10 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn get_screen_id(&self) -> Result<i64> {
+        self.platform_window().get_screen_id().map_err(|e| e.into())
+    }
+
     fn set_style(&self, style: WindowStyle) -> Result<()> {
         self.platform_window()
             .set_style(style)
@@ -316,6 +320,9 @@ impl Window {
             }
             method::window::SUPPORTED_GEOMETRY => {
                 return Self::reply(reply, &arg, |()| self.supported_geometry());
+            }
+            method::window::GET_SCREEN_ID => {
+                return Self::reply(reply, &arg, |()| self.get_screen_id());
             }
             method::window::SET_STYLE => {
                 return Self::reply(reply, &arg, |style| self.set_style(style));

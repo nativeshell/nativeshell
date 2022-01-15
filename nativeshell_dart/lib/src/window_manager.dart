@@ -1,15 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'dart:io';
 
-import 'key_interceptor.dart';
 import 'api_constants.dart';
 import 'drag_drop.dart';
 import 'event.dart';
-import 'util.dart';
-import 'window.dart';
-import 'window_method_channel.dart';
+import 'key_interceptor.dart';
 import 'keyboard_map_internal.dart';
+import 'screen_internal.dart';
+import 'util.dart';
+import 'window_method_channel.dart';
 import 'window_widget.dart';
+import 'window.dart';
 
 // Do not use directly. Access windows through Window.of(context) or through
 // WindowState.window.
@@ -44,6 +45,7 @@ class WindowManager {
     await _checkApiVersion(dispatcher);
 
     await KeyboardMapManager.instance.init();
+    await ScreenManager.instance.init();
 
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,

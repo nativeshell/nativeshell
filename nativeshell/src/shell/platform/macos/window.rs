@@ -3,6 +3,7 @@ use super::{
     engine::PlatformEngine,
     error::{PlatformError, PlatformResult},
     menu::PlatformMenu,
+    screen_manager::PlatformScreenManager,
     utils::*,
 };
 use crate::{
@@ -276,6 +277,13 @@ impl PlatformWindow {
             min_content_size: true,
             max_content_size: true,
         })
+    }
+
+    pub fn get_screen_id(&self) -> PlatformResult<i64> {
+        unsafe {
+            let screen = NSWindow::screen(*self.platform_window);
+            Ok(PlatformScreenManager::get_screen_id(screen))
+        }
     }
 
     unsafe fn set_frame_origin(&self, position: Point) {
