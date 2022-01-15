@@ -625,11 +625,28 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn activate(&self) -> PlatformResult<bool> {
+    pub fn activate(&self, activate_application: bool) -> PlatformResult<bool> {
         unsafe {
             let app = NSApplication::sharedApplication(nil);
             NSApplication::activateIgnoringOtherApps_(app, YES);
+            if activate_application {
+                let app = NSApplication::sharedApplication(nil);
+                NSApplication::activateIgnoringOtherApps_(app, YES);
+            }
             NSWindow::makeKeyAndOrderFront_(*self.platform_window, nil);
+        }
+        Ok(true)
+    }
+
+    pub fn deactivate(&self, deactivate_application: bool) -> PlatformResult<bool> {
+        unsafe {
+            let () = msg_send![*self.platform_window, resignFirstResponder];
+            NSWindow::orderBack_(*self.platform_window, nil);
+            if deactivate_application {
+                let app = NSApplication::sharedApplication(nil);
+                let () = msg_send![app, hide: nil];
+                let () = msg_send![app, unhideWithoutActivation];
+            }
         }
         Ok(true)
     }

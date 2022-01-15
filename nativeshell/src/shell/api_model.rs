@@ -75,6 +75,18 @@ impl WindowGeometryRequest {
 
 #[derive(serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct WindowActivateRequest {
+    pub activate_application: bool,
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowDeactivateRequest {
+    pub deactivate_application: bool,
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct PopupMenuRequest {
     pub handle: MenuHandle,
     pub position: Point,

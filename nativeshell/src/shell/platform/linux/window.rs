@@ -400,9 +400,13 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn activate(&self) -> PlatformResult<bool> {
+    pub fn activate(&self, _activate_application: bool) -> PlatformResult<bool> {
         self.window.present();
         Ok(true)
+    }
+
+    pub fn deactivate(&self, _deactivate_application: bool) -> PlatformResult<bool> {
+        Ok(false)
     }
 
     pub fn ready_to_show(&self) -> PlatformResult<()> {

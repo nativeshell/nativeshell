@@ -16,8 +16,8 @@ use super::{
     api_constants::*,
     api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
-        PopupMenuResponse, SetMenuRequest, WindowGeometry, WindowGeometryFlags,
-        WindowGeometryRequest, WindowStateFlags, WindowStyle,
+        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowDeactivateRequest,
+        WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags, WindowStyle,
     },
     platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
@@ -132,8 +132,16 @@ impl Window {
         self.platform_window().hide().map_err(|e| e.into())
     }
 
-    fn activate(&self) -> Result<bool> {
-        self.platform_window().activate().map_err(|e| e.into())
+    fn activate(&self, request: WindowActivateRequest) -> Result<bool> {
+        self.platform_window()
+            .activate(request.activate_application)
+            .map_err(|e| e.into())
+    }
+
+    fn deactivate(&self, request: WindowDeactivateRequest) -> Result<bool> {
+        self.platform_window()
+            .deactivate(request.deactivate_application)
+            .map_err(|e| e.into())
     }
 
     fn set_geometry(&self, geometry: WindowGeometryRequest) -> Result<WindowGeometryFlags> {
@@ -310,7 +318,10 @@ impl Window {
                 return Self::reply(reply, &arg, |()| self.hide());
             }
             method::window::ACTIVATE => {
-                return Self::reply(reply, &arg, |()| self.activate());
+                return Self::reply(reply, &arg, |request| self.activate(request));
+            }
+            method::window::DEACTIVATE => {
+                return Self::reply(reply, &arg, |request| self.deactivate(request));
             }
             method::window::SET_GEOMETRY => {
                 return Self::reply(reply, &arg, |geometry| self.set_geometry(geometry));

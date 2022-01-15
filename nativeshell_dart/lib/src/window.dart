@@ -61,8 +61,18 @@ class Window {
     await _invokeMethod(Methods.windowHide);
   }
 
-  Future<bool> activate() async {
-    return await _invokeMethod(Methods.windowActivate);
+  Future<bool> activate({bool activateApplication = true}) async {
+    return await _invokeMethod(
+        Methods.windowActivate,
+        WindowActivationRequest(activateApplication: activateApplication)
+            .serialize());
+  }
+
+  Future<bool> deactivate({bool deactivateApplication = false}) async {
+    return await _invokeMethod(
+        Methods.windowDeactivate,
+        WindowDeactivationRequest(deactivateApplication: deactivateApplication)
+            .serialize());
   }
 
   Future<GeometryFlags> setGeometry(Geometry request,
