@@ -45,6 +45,7 @@ class Methods {
 
   static final windowSetStyle = 'Window.setStyle';
   static final windowSetTitle = 'Window.setTitle';
+  static final windowSetCollectionBehavior = 'Window.setCollectionBehavior';
   static final windowGetWindowStateFlags = 'Window.getWindowStateFlags';
   static final windowPerformWindowDrag = 'Window.performWindowDrag';
 

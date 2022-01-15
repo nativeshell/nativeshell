@@ -4,8 +4,9 @@ use crate::{
     codec::Value,
     shell::{
         api_model::{
-            DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowGeometry,
-            WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags, WindowStyle,
+            DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse, WindowCollectionBehavior,
+            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags,
+            WindowStyle,
         },
         Context, PlatformWindowDelegate,
     },
@@ -92,6 +93,13 @@ impl PlatformWindow {
     }
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
+    pub fn set_collection_behavior(
+        &self,
+        behavior: WindowCollectionBehavior,
+    ) -> PlatformResult<()> {
         Err(PlatformError::NotImplemented)
     }
 

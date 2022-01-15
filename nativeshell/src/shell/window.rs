@@ -16,8 +16,9 @@ use super::{
     api_constants::*,
     api_model::{
         DragEffect, DragRequest, DragResult, DraggingInfo, HidePopupMenuRequest, PopupMenuRequest,
-        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowDeactivateRequest,
-        WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags, WindowStyle,
+        PopupMenuResponse, SetMenuRequest, WindowActivateRequest, WindowCollectionBehavior,
+        WindowDeactivateRequest, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+        WindowStateFlags, WindowStyle,
     },
     platform::window::PlatformWindow,
     Context, EngineHandle, MenuDelegate, WindowMethodCallReply, WindowMethodCallResult,
@@ -182,6 +183,12 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn set_collection_behavior(&self, behavior: WindowCollectionBehavior) -> Result<()> {
+        self.platform_window()
+            .set_collection_behavior(behavior)
+            .map_err(|e| e.into())
+    }
+
     fn save_position_to_string(&self) -> Result<String> {
         self.platform_window()
             .save_position_to_string()
@@ -343,6 +350,11 @@ impl Window {
             }
             method::window::SET_TITLE => {
                 return Self::reply(reply, &arg, |title| self.set_title(title));
+            }
+            method::window::SET_COLLECTION_BEHAVIOR => {
+                return Self::reply(reply, &arg, |behavior| {
+                    self.set_collection_behavior(behavior)
+                });
             }
             method::window::SAVE_POSITION_TO_STRING => {
                 return Self::reply(reply, &arg, |()| self.save_position_to_string());

@@ -126,6 +126,12 @@ class Window {
         await _invokeMethod(Methods.windowGetWindowStateFlags));
   }
 
+  // MacOS specific;
+  Future<void> setCollectionBehavior(WindowCollectionBehavior behavior) {
+    return _invokeMethod(
+        Methods.windowSetCollectionBehavior, behavior.serialize());
+  }
+
   static LocalWindow of(BuildContext context) => WindowState.of(context).window;
 
   static LocalWindow? maybeOf(BuildContext context) =>
