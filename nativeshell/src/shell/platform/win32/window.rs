@@ -25,8 +25,8 @@ use crate::{
     shell::{
         api_model::{
             BoolTransition, DragEffect, DragRequest, PopupMenuRequest, PopupMenuResponse,
-            WindowGeometry, WindowGeometryFlags, WindowGeometryRequest, WindowStateFlags,
-            WindowStyle,
+            WindowCollectionBehavior, WindowGeometry, WindowGeometryFlags, WindowGeometryRequest,
+            WindowStateFlags, WindowStyle,
         },
         Context, IPoint, PlatformWindowDelegate, Point,
     },
@@ -310,6 +310,13 @@ impl PlatformWindow {
 
     pub fn set_title(&self, title: String) -> PlatformResult<()> {
         self.state.borrow().set_title(title)
+    }
+
+    pub fn set_collection_behavior(
+        &self,
+        _behavior: WindowCollectionBehavior,
+    ) -> PlatformResult<()> {
+        Err(PlatformError::NotAvailable)
     }
 
     pub fn get_screen_id(&self) -> PlatformResult<i64> {
