@@ -57,7 +57,11 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
-    pub fn activate(&self) -> PlatformResult<bool> {
+    pub fn activate(&self, activate_application: bool) -> PlatformResult<bool> {
+        Err(PlatformError::NotImplemented)
+    }
+
+    pub fn deactivate(&self, deactivate_application: bool) -> PlatformResult<bool> {
         Err(PlatformError::NotImplemented)
     }
 

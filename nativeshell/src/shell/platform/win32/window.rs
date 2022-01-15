@@ -256,7 +256,7 @@ impl PlatformWindow {
         Ok(())
     }
 
-    pub fn activate(&self) -> PlatformResult<bool> {
+    pub fn activate(&self, _activate_application: bool) -> PlatformResult<bool> {
         self.state.borrow().activate()
     }
 

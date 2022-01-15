@@ -54,6 +54,9 @@ pub(crate) mod method {
         // Bring window front and request focus
         pub const ACTIVATE: &str = "Window.activate";
 
+        // Unfocus window
+        pub const DEACTIVATE: &str = "Window.deactivate";
+
         // Close the window; This will terminate the isolate
         pub const CLOSE: &str = "Window.close";
 

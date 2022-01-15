@@ -27,6 +27,30 @@ class PopupMenuRequest {
       };
 }
 
+class WindowActivationRequest {
+  WindowActivationRequest({
+    required this.activateApplication,
+  });
+
+  final bool activateApplication;
+
+  dynamic serialize() => {
+        'activateApplication': activateApplication,
+      };
+}
+
+class WindowDeactivationRequest {
+  WindowDeactivationRequest({
+    required this.deactivateApplication,
+  });
+
+  final bool deactivateApplication;
+
+  dynamic serialize() => {
+        'deactivateApplication': deactivateApplication,
+      };
+}
+
 class PopupMenuResponse {
   PopupMenuResponse({
     required this.itemSelected,
