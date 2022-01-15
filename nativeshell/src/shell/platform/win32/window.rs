@@ -260,6 +260,10 @@ impl PlatformWindow {
         self.state.borrow().activate()
     }
 
+    pub fn deactivate(&self, _deactivate_application: bool) -> PlatformResult<bool> {
+        self.state.borrow().deactivate()
+    }
+
     pub fn ready_to_show(&self) -> PlatformResult<()> {
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
