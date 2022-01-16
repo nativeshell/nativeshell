@@ -333,3 +333,25 @@ class WindowStateFlags {
     return serialize().toString();
   }
 }
+
+class StatusItemGeometry {
+  StatusItemGeometry({
+    required this.origin,
+    required this.size,
+  });
+
+  final Offset origin;
+  final Size size;
+
+  static StatusItemGeometry deserialize(dynamic value) {
+    final map = value as Map;
+    return StatusItemGeometry(
+        origin: OffsetExt.deserialize(map['origin']),
+        size: SizeExt.deserialize(map['size']));
+  }
+
+  @override
+  String toString() {
+    return 'StatusItemGeometry { $origin, $size }';
+  }
+}
