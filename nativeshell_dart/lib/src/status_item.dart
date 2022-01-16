@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nativeshell/src/status_item_internal.dart';
 
-import 'api_model.dart';
 import 'menu.dart';
 import 'screen.dart';
 

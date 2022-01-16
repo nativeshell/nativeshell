@@ -13,8 +13,9 @@ use windows::Win32::{
             NOTIFYICON_VERSION_4,
         },
         WindowsAndMessaging::{
-            CreateIconIndirect, DestroyIcon, HICON, ICONINFO, WM_LBUTTONDOWN, WM_LBUTTONUP,
-            WM_MOUSEMOVE, WM_RBUTTONDOWN, WM_RBUTTONUP,
+            CreateIconIndirect, DestroyIcon, SetForegroundWindow, TrackPopupMenuEx, HICON,
+            ICONINFO, TPM_BOTTOMALIGN, TPM_LEFTALIGN, TPM_RIGHTBUTTON, TPM_VERTICAL,
+            WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_RBUTTONDOWN, WM_RBUTTONUP,
         },
     },
 };
@@ -152,7 +153,33 @@ impl PlatformStatusItem {
         Ok(())
     }
 
-    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, on_done: F) {}
+    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, on_done: F)
+    where
+        F: FnOnce() + 'static,
+    {
+        let rect = self.get_rect().unwrap();
+        let hwnd = self.hwnd();
+        if let Some(context) = self.context.get() {
+            context
+                .run_loop
+                .borrow()
+                .schedule_now(move || {
+                    unsafe {
+                        SetForegroundWindow(hwnd);
+                        TrackPopupMenuEx(
+                            menu.menu,
+                            (TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_VERTICAL | TPM_RIGHTBUTTON).0,
+                            rect.left,
+                            rect.top,
+                            hwnd,
+                            std::ptr::null_mut(),
+                        )
+                    };
+                    on_done();
+                })
+                .detach();
+        }
+    }
 
     pub fn set_highlighted(&self, _highlighted: bool) -> PlatformResult<()> {
         Err(PlatformError::NotAvailable)
@@ -222,10 +249,8 @@ impl PlatformStatusItem {
                             .on_action(self.handle, action, Point::xy(x, y));
                     }
                 }
-                // println!("X: {}, Y: {}", x, y);
             }
         }
-        println!("w {:?} , {} {}", msg, x, y);
     }
 }
 
