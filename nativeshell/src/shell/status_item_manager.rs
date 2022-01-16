@@ -17,11 +17,11 @@ use super::{
     api_constants::{channel, method},
     api_model::{
         StatusItemAction, StatusItemActionType, StatusItemCreateRequest, StatusItemDestroyRequest,
-        StatusItemGeometry, StatusItemGetGeometryRequest, StatusItemGetScreenIdRequest,
+        StatusItemGetGeometryRequest, StatusItemGetScreenIdRequest,
         StatusItemSetHighlightedRequest, StatusItemSetImageRequest, StatusItemShowMenuRequest,
     },
     platform::status_item::{PlatformStatusItem, PlatformStatusItemManager},
-    Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider,
+    Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider, Point, Rect,
     RegisteredMethodCallHandler,
 };
 
@@ -29,7 +29,7 @@ use super::{
 pub struct StatusItemHandle(pub(crate) i64);
 
 pub trait StatusItemDelegate {
-    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType);
+    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType, position: Point);
 }
 
 pub struct StatusItemManager {
@@ -43,7 +43,7 @@ pub struct StatusItemManager {
 
 impl StatusItemManager {
     pub(super) fn new(context: Context) -> RegisteredMethodCallHandler<Self> {
-        let platform_manager = Rc::new(PlatformStatusItemManager::new());
+        let platform_manager = Rc::new(PlatformStatusItemManager::new(context.clone()));
         platform_manager.assign_weak_self(Rc::downgrade(&platform_manager));
         Self {
             context: context.clone(),
@@ -64,13 +64,10 @@ impl StatusItemManager {
         let handle = self.next_handle;
         self.next_handle.0 += 1;
 
-        let status_item = Rc::new(PlatformStatusItem::new(
-            handle,
-            self.weak_self.clone(),
-            engine,
-        ));
+        let status_item =
+            self.platform_manager
+                .crete_status_item(handle, self.weak_self.clone(), engine);
         status_item.assign_weak_self(Rc::downgrade(&status_item));
-        self.platform_manager.register_status_item(&status_item);
 
         self.status_item_map.insert(handle, status_item);
         Ok(handle)
@@ -85,14 +82,13 @@ impl StatusItemManager {
 
     fn set_image(&self, request: StatusItemSetImageRequest) -> Result<()> {
         let item = self.get_platform_status_item(request.handle)?;
-        item.set_image(request.image);
-        Ok(())
+        item.set_image(request.image).map_err(Error::from)
     }
 
     fn set_highlighted(&self, request: StatusItemSetHighlightedRequest) -> Result<()> {
         let item = self.get_platform_status_item(request.handle)?;
-        item.set_highlighted(request.highlighted);
-        Ok(())
+        item.set_highlighted(request.highlighted)
+            .map_err(Error::from)
     }
 
     fn show_menu<F>(&self, request: StatusItemShowMenuRequest, on_done: F)
@@ -123,14 +119,14 @@ impl StatusItemManager {
         }
     }
 
-    fn get_geometry(&self, request: StatusItemGetGeometryRequest) -> Result<StatusItemGeometry> {
+    fn get_geometry(&self, request: StatusItemGetGeometryRequest) -> Result<Rect> {
         let item = self.get_platform_status_item(request.handle)?;
-        Ok(item.get_geometry())
+        item.get_geometry().map_err(Error::from)
     }
 
     fn get_screen_id(&self, request: StatusItemGetScreenIdRequest) -> Result<i64> {
         let item = self.get_platform_status_item(request.handle)?;
-        Ok(item.get_screen_id())
+        item.get_screen_id().map_err(Error::from)
     }
 
     fn map_result<T>(result: Result<T>) -> MethodCallResult<Value>
@@ -196,7 +192,7 @@ impl MethodCallHandler for StatusItemManager {
 }
 
 impl StatusItemDelegate for StatusItemManager {
-    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType) {
+    fn on_action(&self, handle: StatusItemHandle, action: StatusItemActionType, position: Point) {
         let item = self.status_item_map.get(&handle);
         if let Some(item) = item {
             let invoker = self
@@ -205,7 +201,12 @@ impl StatusItemDelegate for StatusItemManager {
             invoker
                 .call_method(
                     method::status_item::ON_ACTION,
-                    to_value(&StatusItemAction { handle, action }).unwrap(),
+                    to_value(&StatusItemAction {
+                        handle,
+                        action,
+                        position,
+                    })
+                    .unwrap(),
                     |_| {},
                 )
                 .ok_log();

@@ -29,13 +29,13 @@ class StatusItemManager {
       final item = items[action.handle.value];
       if (item != null) {
         if (action.action == StatusItemActionType.leftMouseDown) {
-          item.onLeftMouseDown?.call();
+          item.onLeftMouseDown?.call(action.position);
         } else if (action.action == StatusItemActionType.leftMouseUp) {
-          item.onLeftMouseUp?.call();
+          item.onLeftMouseUp?.call(action.position);
         } else if (action.action == StatusItemActionType.rightMouseDown) {
-          item.onRightMouseDown?.call();
+          item.onRightMouseDown?.call(action.position);
         } else if (action.action == StatusItemActionType.rightMouseUp) {
-          item.onRightMouseUp?.call();
+          item.onRightMouseUp?.call(action.position);
         }
       }
     }
@@ -80,11 +80,11 @@ class StatusItemManager {
     });
   }
 
-  Future<StatusItemGeometry> getGeometry(StatusItem item) async {
+  Future<Rect> getGeometry(StatusItem item) async {
     final geometry = await _invoke(Methods.statusItemGetGeometry, {
       'handle': item.handle.value,
     });
-    return StatusItemGeometry.deserialize(geometry);
+    return RectExt.deserialize(geometry);
   }
 
   // Screen might be null temporarily - this can happen when connecting or

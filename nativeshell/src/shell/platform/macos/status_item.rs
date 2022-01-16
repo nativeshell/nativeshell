@@ -190,7 +190,7 @@ impl PlatformStatusItemManager {
 
     fn on_event(&self, event: id) -> id {
         let modifier_flags = unsafe { NSEvent::modifierFlags(event) };
-        // allow command draggging
+        // allow command dragging
         if modifier_flags.contains(NSEventModifierFlags::NSCommandKeyMask) {
             return event;
         }

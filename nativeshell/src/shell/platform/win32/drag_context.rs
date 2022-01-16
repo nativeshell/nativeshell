@@ -32,11 +32,10 @@ use super::{
         DragDataAdapter, FallThroughDragDataAdapter, FilesDragDataAdapter, UrlsDragDataAdapter,
     },
     drag_util::{
-        convert_drag_effect, convert_drag_effects, convert_drop_effect_mask,
-        create_dragimage_bitmap, CLSID_DragDropHelper,
+        convert_drag_effect, convert_drag_effects, convert_drop_effect_mask, CLSID_DragDropHelper,
     },
     error::PlatformResult,
-    util::create_instance,
+    util::{create_instance, image_data_to_hbitmap},
     window::PlatformWindow,
 };
 
@@ -137,7 +136,7 @@ impl DragContext {
         let data = Rc::new(RefCell::new(data));
         let data: IDataObject = DataObject::new(Rc::downgrade(&data)).into();
         let helper: IDragSourceHelper = create_instance(&CLSID_DragDropHelper).unwrap();
-        let hbitmap = create_dragimage_bitmap(&request.image);
+        let hbitmap = image_data_to_hbitmap(&request.image);
         let image_start = window.local_to_global(request.rect.origin());
         let mut cursor_pos = POINT::default();
         GetCursorPos(&mut cursor_pos as *mut _);

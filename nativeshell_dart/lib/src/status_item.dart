@@ -15,16 +15,16 @@ class StatusItem {
   });
 
   final StatusItemHandle handle;
-  final VoidCallback? onLeftMouseDown;
-  final VoidCallback? onLeftMouseUp;
-  final VoidCallback? onRightMouseDown;
-  final VoidCallback? onRightMouseUp;
+  final void Function(Offset)? onLeftMouseDown;
+  final void Function(Offset)? onLeftMouseUp;
+  final void Function(Offset)? onRightMouseDown;
+  final void Function(Offset)? onRightMouseUp;
 
   static Future<StatusItem> create({
-    VoidCallback? onLeftMouseDown,
-    VoidCallback? onLeftMouseUp,
-    VoidCallback? onRightMouseDown,
-    VoidCallback? onRightMouseUp,
+    void Function(Offset)? onLeftMouseDown,
+    void Function(Offset)? onLeftMouseUp,
+    void Function(Offset)? onRightMouseDown,
+    void Function(Offset)? onRightMouseUp,
   }) {
     return StatusItemManager.instance.createStatusItem((handle) => StatusItem._(
           handle: handle,
@@ -59,7 +59,7 @@ class StatusItem {
     return StatusItemManager.instance.setHighlighted(this, highlighted);
   }
 
-  Future<StatusItemGeometry> getGeometry() {
+  Future<Rect> getGeometry() {
     return StatusItemManager.instance.getGeometry(this);
   }
 

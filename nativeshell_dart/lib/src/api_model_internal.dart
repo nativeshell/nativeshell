@@ -180,16 +180,19 @@ class StatusItemAction {
   StatusItemAction({
     required this.handle,
     required this.action,
+    required this.position,
   });
 
   final StatusItemHandle handle;
   final StatusItemActionType action;
+  final Offset position;
 
   static StatusItemAction deserialize(dynamic value) {
     final map = value as Map;
     return StatusItemAction(
       handle: StatusItemHandle(map['handle']),
       action: enumFromString(StatusItemActionType.values, map['action']),
+      position: OffsetExt.deserialize(map['position']),
     );
   }
 }

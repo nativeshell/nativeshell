@@ -34,6 +34,10 @@ pub(crate) trait PlatformRunLoopHotKeyDelegate {
     fn on_hot_key(&self, hot_key: i32);
 }
 
+pub(crate) trait PlatformRunLoopStatusItemDelegate {
+    fn on_status_item_message(&self, w_param: WPARAM, l_param: LPARAM);
+}
+
 struct State {
     next_handle: Cell<HandleType>,
     hwnd: Cell<HWND>,
@@ -43,6 +47,7 @@ struct State {
     sender_callbacks: Arc<Mutex<Vec<SenderCallback>>>,
 
     hot_key_delegate: RefCell<Option<Weak<dyn PlatformRunLoopHotKeyDelegate>>>,
+    status_item_delegate: RefCell<Option<Weak<dyn PlatformRunLoopStatusItemDelegate>>>,
 }
 
 impl State {
@@ -53,6 +58,7 @@ impl State {
             timers: RefCell::new(HashMap::new()),
             sender_callbacks: Arc::new(Mutex::new(Vec::new())),
             hot_key_delegate: RefCell::new(None),
+            status_item_delegate: RefCell::new(None),
         }
     }
 
@@ -167,6 +173,8 @@ impl State {
     }
 }
 
+pub const WM_STATUS_ITEM: u32 = WM_USER + 1; // WPARAM contains menu HWND
+
 impl WindowAdapter for State {
     fn wnd_proc(&self, h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
         match msg {
@@ -184,6 +192,16 @@ impl WindowAdapter for State {
                     .and_then(|d| d.upgrade())
                 {
                     delegate.on_hot_key(w_param.0 as i32);
+                }
+            }
+            WM_STATUS_ITEM => {
+                if let Some(delegate) = self
+                    .status_item_delegate
+                    .borrow()
+                    .as_ref()
+                    .and_then(|d| d.upgrade())
+                {
+                    delegate.on_status_item_message(w_param, l_param);
                 }
             }
             _ => {}
@@ -232,6 +250,16 @@ impl PlatformRunLoop {
 
     pub(crate) fn set_hot_key_delegate(&self, delegate: Weak<dyn PlatformRunLoopHotKeyDelegate>) {
         self.state.hot_key_delegate.borrow_mut().replace(delegate);
+    }
+
+    pub(crate) fn set_status_item_delegate(
+        &self,
+        delegate: Weak<dyn PlatformRunLoopStatusItemDelegate>,
+    ) {
+        self.state
+            .status_item_delegate
+            .borrow_mut()
+            .replace(delegate);
     }
 }
 
