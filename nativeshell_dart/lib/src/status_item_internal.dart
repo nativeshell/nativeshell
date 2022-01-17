@@ -73,10 +73,22 @@ class StatusItemManager {
     return setImages(item, images);
   }
 
-  Future<void> showMenu(StatusItem item, MenuHandle? menu) async {
+  Future<void> setHint(StatusItem item, String hint) async {
+    await _invoke(Methods.statusItemSetHint, {
+      'handle': item.handle.value,
+      'hint': hint,
+    });
+  }
+
+  Future<void> showMenu(
+    StatusItem item,
+    MenuHandle? menu, {
+    required Offset offset,
+  }) async {
     await _invoke(Methods.statusItemShowMenu, {
       'handle': item.handle.value,
       'menu': menu?.value,
+      'offset': offset.serialize(),
     });
   }
 

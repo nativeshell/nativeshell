@@ -48,9 +48,13 @@ class StatusItem {
     return StatusItemManager.instance.setImages(this, images);
   }
 
-  Future<void> showMenu(Menu menu) async {
+  Future<void> setHint(String hint) {
+    return StatusItemManager.instance.setHint(this, hint);
+  }
+
+  Future<void> showMenu(Menu menu, {Offset offset = Offset.zero}) async {
     final handle = await menu.state.materialize();
-    await StatusItemManager.instance.showMenu(this, handle);
+    await StatusItemManager.instance.showMenu(this, handle, offset: offset);
     await menu.state.unmaterialize();
   }
 

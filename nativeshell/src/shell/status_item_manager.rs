@@ -18,7 +18,8 @@ use super::{
     api_model::{
         StatusItemAction, StatusItemActionType, StatusItemCreateRequest, StatusItemDestroyRequest,
         StatusItemGetGeometryRequest, StatusItemGetScreenIdRequest,
-        StatusItemSetHighlightedRequest, StatusItemSetImageRequest, StatusItemShowMenuRequest,
+        StatusItemSetHighlightedRequest, StatusItemSetHintRequest, StatusItemSetImageRequest,
+        StatusItemShowMenuRequest,
     },
     platform::status_item::{PlatformStatusItem, PlatformStatusItemManager},
     Context, EngineHandle, MenuDelegate, MethodCallHandler, MethodInvokerProvider, Point, Rect,
@@ -64,9 +65,10 @@ impl StatusItemManager {
         let handle = self.next_handle;
         self.next_handle.0 += 1;
 
-        let status_item =
-            self.platform_manager
-                .crete_status_item(handle, self.weak_self.clone(), engine);
+        let status_item = self
+            .platform_manager
+            .create_status_item(handle, self.weak_self.clone(), engine)
+            .map_err(Error::from)?;
         status_item.assign_weak_self(Rc::downgrade(&status_item));
 
         self.status_item_map.insert(handle, status_item);
@@ -83,6 +85,11 @@ impl StatusItemManager {
     fn set_image(&self, request: StatusItemSetImageRequest) -> Result<()> {
         let item = self.get_platform_status_item(request.handle)?;
         item.set_image(request.image).map_err(Error::from)
+    }
+
+    fn set_hint(&self, request: StatusItemSetHintRequest) -> Result<()> {
+        let item = self.get_platform_status_item(request.handle)?;
+        item.set_hint(request.hint).map_err(Error::from)
     }
 
     fn set_highlighted(&self, request: StatusItemSetHighlightedRequest) -> Result<()> {
@@ -106,8 +113,8 @@ impl StatusItemManager {
                 Ok(menu) => {
                     let item = self.get_platform_status_item(request.handle);
                     match item {
-                        Ok(item) => item.show_menu(menu, move || {
-                            on_done(Ok(()));
+                        Ok(item) => item.show_menu(menu, request.offset, move |res| {
+                            on_done(res.map_err(Error::from));
                         }),
                         Err(err) => on_done(Err(err)),
                     }
@@ -161,6 +168,10 @@ impl MethodCallHandler for StatusItemManager {
             method::status_item::SET_IMAGE => {
                 let request: StatusItemSetImageRequest = from_value(&call.args).unwrap();
                 reply.send(Self::map_result(self.set_image(request)));
+            }
+            method::status_item::SET_HINT => {
+                let request: StatusItemSetHintRequest = from_value(&call.args).unwrap();
+                reply.send(Self::map_result(self.set_hint(request)));
             }
             method::status_item::SHOW_MENU => {
                 let request: StatusItemShowMenuRequest = from_value(&call.args).unwrap();

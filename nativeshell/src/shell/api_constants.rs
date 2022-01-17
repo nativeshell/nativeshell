@@ -140,6 +140,7 @@ pub(crate) mod method {
         pub const CREATE: &str = "StatusItem.create";
         pub const DESTROY: &str = "StatusItem.destroy";
         pub const SET_IMAGE: &str = "StatusItem.setImage";
+        pub const SET_HINT: &str = "StatusItem.setHint";
         pub const SHOW_MENU: &str = "StatusItem.showMenu";
         pub const SET_HIGHLIGHTED: &str = "StatusItem.setHighlighted";
         pub const GET_GEOMETRY: &str = "StatusItem.getGeometry";

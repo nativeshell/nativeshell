@@ -8,9 +8,9 @@ use windows::Win32::{
     Graphics::Gdi::DeleteObject,
     UI::{
         Shell::{
-            Shell_NotifyIconGetRect, Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIM_ADD, NIM_DELETE,
-            NIM_MODIFY, NIM_SETVERSION, NOTIFYICONDATAW, NOTIFYICONDATAW_0, NOTIFYICONIDENTIFIER,
-            NOTIFYICON_VERSION_4,
+            Shell_NotifyIconGetRect, Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD,
+            NIM_DELETE, NIM_MODIFY, NIM_SETVERSION, NOTIFYICONDATAW, NOTIFYICONDATAW_0,
+            NOTIFYICONIDENTIFIER, NOTIFYICON_VERSION_4,
         },
         WindowsAndMessaging::{
             CreateIconIndirect, DestroyIcon, SetForegroundWindow, TrackPopupMenuEx, HICON,
@@ -35,7 +35,7 @@ use super::{
     error::{PlatformError, PlatformResult},
     menu::PlatformMenu,
     run_loop::{PlatformRunLoopStatusItemDelegate, WM_STATUS_ITEM},
-    util::image_data_to_hbitmap,
+    util::{image_data_to_hbitmap, to_utf16},
 };
 
 pub struct PlatformStatusItem {
@@ -44,6 +44,7 @@ pub struct PlatformStatusItem {
     pub engine: EngineHandle,
     context: Context,
     image: RefCell<Vec<ImageData>>,
+    hint: RefCell<String>,
 }
 
 impl PlatformStatusItem {
@@ -59,6 +60,7 @@ impl PlatformStatusItem {
             engine,
             context,
             image: RefCell::new(Vec::new()),
+            hint: RefCell::new(String::new()),
         }
     }
 
@@ -106,11 +108,11 @@ impl PlatformStatusItem {
             })
             .map(Self::image_to_icon)
             .unwrap_or(HICON(0));
-        let mut flags = NIF_MESSAGE;
+        let mut flags = NIF_MESSAGE | NIF_TIP;
         if icon.0 != 0 {
             flags |= NIF_ICON;
         }
-        let data = NOTIFYICONDATAW {
+        let mut data = NOTIFYICONDATAW {
             cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
             hWnd: self.hwnd(),
             uID: self.handle.0 as u32,
@@ -122,6 +124,11 @@ impl PlatformStatusItem {
             },
             ..Default::default()
         };
+        let tip = to_utf16(&self.hint.borrow());
+        for (place, data) in data.szTip.iter_mut().zip(tip.iter()) {
+            *place = *data;
+        }
+
         unsafe {
             Shell_NotifyIconW(NIM_MODIFY, &data as *const _);
 
@@ -153,31 +160,53 @@ impl PlatformStatusItem {
         Ok(())
     }
 
-    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, on_done: F)
+    pub fn set_hint(&self, hint: String) -> PlatformResult<()> {
+        self.hint.replace(hint);
+        self.update();
+        Ok(())
+    }
+
+    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, offset: Point, on_done: F)
     where
-        F: FnOnce() + 'static,
+        F: FnOnce(PlatformResult<()>) + 'static,
     {
-        let rect = self.get_rect().unwrap();
-        let hwnd = self.hwnd();
-        if let Some(context) = self.context.get() {
-            context
-                .run_loop
-                .borrow()
-                .schedule_now(move || {
-                    unsafe {
-                        SetForegroundWindow(hwnd);
-                        TrackPopupMenuEx(
-                            menu.menu,
-                            (TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_VERTICAL | TPM_RIGHTBUTTON).0,
-                            rect.left,
-                            rect.top,
-                            hwnd,
-                            std::ptr::null_mut(),
-                        )
-                    };
-                    on_done();
-                })
-                .detach();
+        match self.get_rect() {
+            Ok(mut rect) => {
+                let hwnd = self.hwnd();
+                let displays = Displays::get_displays();
+                let display = displays.display_for_physical_point(&IPoint::xy(rect.left, rect.top));
+                if let Some(display) = display {
+                    rect.left += (offset.x * display.scale).round() as i32;
+                    rect.top += (offset.y * display.scale).round() as i32;
+                }
+                if let Some(context) = self.context.get() {
+                    context
+                        .run_loop
+                        .borrow()
+                        .schedule_now(move || {
+                            unsafe {
+                                SetForegroundWindow(hwnd);
+                                TrackPopupMenuEx(
+                                    menu.menu,
+                                    (TPM_LEFTALIGN
+                                        | TPM_BOTTOMALIGN
+                                        | TPM_VERTICAL
+                                        | TPM_RIGHTBUTTON)
+                                        .0,
+                                    rect.left,
+                                    rect.top,
+                                    hwnd,
+                                    std::ptr::null_mut(),
+                                )
+                            };
+                            on_done(Ok(()));
+                        })
+                        .detach();
+                }
+            }
+            Err(err) => {
+                on_done(Err(err));
+            }
         }
     }
 
@@ -292,12 +321,12 @@ impl PlatformStatusItemManager {
         }
     }
 
-    pub fn crete_status_item(
+    pub fn create_status_item(
         &self,
         handle: StatusItemHandle,
         delegate: Weak<RefCell<dyn StatusItemDelegate>>,
         engine: EngineHandle,
-    ) -> Rc<PlatformStatusItem> {
+    ) -> PlatformResult<Rc<PlatformStatusItem>> {
         let res = Rc::new(PlatformStatusItem::new(
             handle,
             delegate,
@@ -305,7 +334,7 @@ impl PlatformStatusItemManager {
             self.context.clone(),
         ));
         self.items.borrow_mut().push(res.clone());
-        res
+        Ok(res)
     }
 
     pub fn unregister_status_item(&self, item: &Rc<PlatformStatusItem>) {

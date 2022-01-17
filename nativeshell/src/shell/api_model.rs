@@ -414,6 +414,13 @@ pub struct StatusItemSetImageRequest {
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct StatusItemSetHintRequest {
+    pub handle: StatusItemHandle,
+    pub hint: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct StatusItemSetHighlightedRequest {
     pub handle: StatusItemHandle,
     pub highlighted: bool,
@@ -424,6 +431,7 @@ pub struct StatusItemSetHighlightedRequest {
 pub struct StatusItemShowMenuRequest {
     pub handle: StatusItemHandle,
     pub menu: MenuHandle,
+    pub offset: Point,
 }
 
 #[derive(serde::Deserialize, Debug)]

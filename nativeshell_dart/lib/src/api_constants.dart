@@ -99,6 +99,7 @@ class Methods {
   static final statusItemCreate = 'StatusItem.create';
   static final statusItemDestroy = 'StatusItem.destroy';
   static final statusItemSetImage = 'StatusItem.setImage';
+  static final statusItemSetHint = 'StatusItem.setHint';
   static final statusItemShowMenu = 'StatusItem.showMenu';
   static final statusItemSetHighlighted = 'StatusItem.setHighlighted';
   static final statusItemGetGeometry = 'StatusItem.getGeometry';
