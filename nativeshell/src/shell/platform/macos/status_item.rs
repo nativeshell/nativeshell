@@ -20,18 +20,19 @@ use objc::{
 
 use crate::{
     shell::{
-        api_model::{ImageData, StatusItemActionType, StatusItemGeometry},
+        api_model::{ImageData, StatusItemActionType},
         status_item_manager::{StatusItemDelegate, StatusItemHandle},
-        EngineHandle, Point, Size,
+        EngineHandle, Point, Rect, Size,
     },
     util::LateRefCell,
     Context,
 };
 
 use super::{
+    error::PlatformResult,
     menu::PlatformMenu,
     screen_manager::PlatformScreenManager,
-    utils::{global_screen_frame, ns_image_from},
+    utils::{global_screen_frame, ns_image_from, to_nsstring},
 };
 
 pub struct PlatformStatusItem {
@@ -77,6 +78,7 @@ impl PlatformStatusItem {
         let delegate = self.delegate.upgrade();
         if let Some(delegate) = delegate {
             let event_type = unsafe { NSEvent::eventType(event) };
+            let event_location = unsafe { NSEvent::locationInWindow(event) };
             let action = match event_type {
                 NSLeftMouseDown => Some(StatusItemActionType::LeftMouseDown),
                 NSLeftMouseUp => Some(StatusItemActionType::LeftMouseUp),
@@ -85,25 +87,37 @@ impl PlatformStatusItem {
                 _ => None,
             };
             if let Some(action) = action {
-                delegate.borrow().on_action(self.handle, action);
+                delegate
+                    .borrow()
+                    .on_action(self.handle, action, event_location.into());
                 return nil;
             }
         }
         event
     }
 
-    pub fn set_image(&self, image: Vec<ImageData>) {
+    pub fn set_image(&self, image: Vec<ImageData>) -> PlatformResult<()> {
         autoreleasepool(move || unsafe {
             let image = ns_image_from(image);
             let () = msg_send![*image, setTemplate: YES];
             let button: id = msg_send![*self.status_item, button];
             let () = msg_send![button, setImage: *image];
         });
+        Ok(())
     }
 
-    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, on_done: F)
+    pub fn set_hint(&self, hint: String) -> PlatformResult<()> {
+        autoreleasepool(move || unsafe {
+            let button: id = msg_send![*self.status_item, button];
+            let tool_tip = to_nsstring(&hint);
+            let () = msg_send![button, setToolTip: *tool_tip];
+        });
+        Ok(())
+    }
+
+    pub fn show_menu<F>(&self, menu: Rc<PlatformMenu>, _offset: Point, on_done: F)
     where
-        F: FnOnce() + 'static,
+        F: FnOnce(PlatformResult<()>) + 'static,
     {
         autoreleasepool(move || unsafe {
             let status_item = self.status_item.clone();
@@ -117,21 +131,22 @@ impl PlatformStatusItem {
                     let () = msg_send![*status_item, setMenu:*menu.menu];
                     let () = msg_send![button, performClick: nil];
                     let () = msg_send![*status_item, setMenu: nil];
-                    on_done();
+                    on_done(Ok(()));
                 })
                 .detach();
         });
     }
 
-    pub fn set_highlighted(&self, highlighted: bool) {
+    pub fn set_highlighted(&self, highlighted: bool) -> PlatformResult<()> {
         autoreleasepool(move || unsafe {
             let button: id = msg_send![*self.status_item, button];
             let value = if highlighted { YES } else { NO };
             let () = msg_send![button, highlight: value];
         });
+        Ok(())
     }
 
-    pub fn get_geometry(&self) -> StatusItemGeometry {
+    pub fn get_geometry(&self) -> PlatformResult<Rect> {
         autoreleasepool(move || unsafe {
             let button: id = msg_send![*self.status_item, button];
             let window: id = msg_send![button, window];
@@ -153,25 +168,25 @@ impl PlatformStatusItem {
             //     window_frame.origin.y, window_frame.size.height
             // );
 
-            StatusItemGeometry {
-                origin: Point::xy(
+            Ok(Rect::origin_size(
+                &Point::xy(
                     window_frame.origin.x + button_frame.origin.x,
                     screen_frame.y2()
                         - (window_frame.origin.y + button_frame.origin.y)
                         - button_frame.size.height,
                 ),
-                size: Size::wh(button_frame.size.width, button_frame.size.height),
-            }
+                &Size::wh(button_frame.size.width, button_frame.size.height),
+            ))
         })
     }
 
-    pub fn get_screen_id(&self) -> i64 {
-        autoreleasepool(move || unsafe {
+    pub fn get_screen_id(&self) -> PlatformResult<i64> {
+        Ok(autoreleasepool(move || unsafe {
             let button: id = msg_send![*self.status_item, button];
             let window: id = msg_send![button, window];
             let screen = NSWindow::screen(window);
             PlatformScreenManager::get_screen_id(screen)
-        })
+        }))
     }
 }
 
@@ -181,7 +196,7 @@ pub struct PlatformStatusItemManager {
 }
 
 impl PlatformStatusItemManager {
-    pub fn new() -> Self {
+    pub fn new(_context: Context) -> Self {
         Self {
             event_monitor: LateRefCell::new(),
             items: RefCell::new(Vec::new()),
@@ -225,8 +240,15 @@ impl PlatformStatusItemManager {
         }
     }
 
-    pub fn register_status_item(&self, item: &Rc<PlatformStatusItem>) {
-        self.items.borrow_mut().push(item.clone());
+    pub fn create_status_item(
+        &self,
+        handle: StatusItemHandle,
+        delegate: Weak<RefCell<dyn StatusItemDelegate>>,
+        engine: EngineHandle,
+    ) -> PlatformResult<Rc<PlatformStatusItem>> {
+        let res = Rc::new(PlatformStatusItem::new(handle, delegate, engine));
+        self.items.borrow_mut().push(res.clone());
+        Ok(res)
     }
 
     pub fn unregister_status_item(&self, item: &Rc<PlatformStatusItem>) {
