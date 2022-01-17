@@ -763,11 +763,11 @@ impl PlatformWindow {
     }
 
     pub fn show_system_menu(&self) -> PlatformResult<()> {
-        Err(PlatformError::NotImplemented)
+        Err(PlatformError::NotAvailable)
     }
 
     pub fn set_window_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
-        Err(PlatformError::NotImplemented)
+        Err(PlatformError::NotAvailable)
     }
 }
 
