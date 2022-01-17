@@ -152,21 +152,7 @@ impl PlatformStatusItem {
             let window: id = msg_send![button, window];
             let window_frame = NSWindow::frame(window);
             let button_frame = NSView::frame(button);
-            // let screen_frame = NSScreen::frame(NSWindow::screen(window));
             let screen_frame = global_screen_frame();
-
-            // println!(
-            //     "button_frame: {:?} {:?}",
-            //     button_frame.origin.y, button_frame.size.height
-            // );
-            // println!(
-            //     "screen_frame: {:?} {:?}",
-            //     screen_frame.origin.y, screen_frame.size.height
-            // );
-            // println!(
-            //     "window_frame: {:?} {:?}",
-            //     window_frame.origin.y, window_frame.size.height
-            // );
 
             Ok(Rect::origin_size(
                 &Point::xy(
