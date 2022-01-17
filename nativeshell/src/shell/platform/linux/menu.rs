@@ -507,6 +507,6 @@ impl PlatformMenuManager {
     pub(crate) fn assign_weak_self(&self, _weak_self: Weak<PlatformMenuManager>) {}
 
     pub fn set_app_menu(&self, _menu: Option<Rc<PlatformMenu>>) -> PlatformResult<()> {
-        Err(PlatformError::NotImplemented)
+        Err(PlatformError::NotAvailable)
     }
 }
