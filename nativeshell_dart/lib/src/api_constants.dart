@@ -96,6 +96,7 @@ class Methods {
   static final screenManagerSystemToLogical = 'ScreenManager.systemToLogical';
 
   // StatusItem
+  static final statusItemInit = 'StatusItem.init';
   static final statusItemCreate = 'StatusItem.create';
   static final statusItemDestroy = 'StatusItem.destroy';
   static final statusItemSetImage = 'StatusItem.setImage';

@@ -137,6 +137,7 @@ pub(crate) mod method {
     }
 
     pub mod status_item {
+        pub const INIT: &str = "StatusItem.init";
         pub const CREATE: &str = "StatusItem.create";
         pub const DESTROY: &str = "StatusItem.destroy";
         pub const SET_IMAGE: &str = "StatusItem.setImage";

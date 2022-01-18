@@ -7,6 +7,7 @@ import 'event.dart';
 import 'key_interceptor.dart';
 import 'keyboard_map_internal.dart';
 import 'screen_internal.dart';
+import 'status_item_internal.dart';
 import 'util.dart';
 import 'window_method_channel.dart';
 import 'window_widget.dart';
@@ -46,6 +47,7 @@ class WindowManager {
 
     await KeyboardMapManager.instance.init();
     await ScreenManager.instance.init();
+    await StatusItemManager.instance.init();
 
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,

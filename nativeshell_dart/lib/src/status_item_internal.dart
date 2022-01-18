@@ -19,7 +19,11 @@ class StatusItemManager {
     _statusItemChannel.setMethodCallHandler(_onMethodCall);
   }
 
-  Future<dynamic> _invoke(String method, dynamic arg) {
+  Future<void> init() async {
+    await _invoke(Methods.statusItemInit);
+  }
+
+  Future<dynamic> _invoke(String method, [dynamic arg]) {
     return _statusItemChannel.invokeMethod(method, arg);
   }
 

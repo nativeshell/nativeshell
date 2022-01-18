@@ -57,6 +57,27 @@ impl StatusItemManager {
         .register(context, channel::STATUS_ITEM_MANAGER)
     }
 
+    fn init(&mut self, engine: EngineHandle) {
+        // Remove all status items from this engine (useful for hot restart)
+        let items: Vec<StatusItemHandle> = self
+            .status_item_map
+            .iter()
+            .filter_map(|(handle, i)| {
+                if i.engine == engine {
+                    Some(*handle)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for handle in items {
+            let item = self.status_item_map.remove(&handle);
+            if let Some(item) = item {
+                self.platform_manager.unregister_status_item(&item)
+            }
+        }
+    }
+
     fn on_create(
         &mut self,
         _request: StatusItemCreateRequest,
@@ -152,6 +173,10 @@ impl MethodCallHandler for StatusItemManager {
         engine: EngineHandle,
     ) {
         match call.method.as_str() {
+            method::status_item::INIT => {
+                self.init(engine);
+                reply.send_ok(Value::Null);
+            }
             method::status_item::CREATE => {
                 let request: StatusItemCreateRequest = from_value(&call.args).unwrap();
                 let res = self.on_create(request, engine);
