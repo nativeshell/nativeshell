@@ -220,10 +220,10 @@ impl PlatformStatusItemManager {
             | NSEventMask::NSLeftMouseUpMask
             | NSEventMask::NSRightMouseDownMask
             | NSEventMask::NSRightMouseUpMask;
-        unsafe {
+        autoreleasepool(|| unsafe {
             let monitor: id = msg_send![class!(NSEvent), addLocalMonitorForEventsMatchingMask:mask handler:&*block];
-            self.event_monitor.set(StrongPtr::new(monitor));
-        }
+            self.event_monitor.set(StrongPtr::retain(monitor));
+        })
     }
 
     pub fn create_status_item(
@@ -244,8 +244,8 @@ impl PlatformStatusItemManager {
 
 impl Drop for PlatformStatusItemManager {
     fn drop(&mut self) {
-        unsafe {
+        autoreleasepool(|| unsafe {
             let () = msg_send![class!(NSEvent), removeMonitor:*self.event_monitor.borrow().clone()];
-        }
+        })
     }
 }
