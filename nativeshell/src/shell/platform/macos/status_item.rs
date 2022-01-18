@@ -78,7 +78,10 @@ impl PlatformStatusItem {
         let delegate = self.delegate.upgrade();
         if let Some(delegate) = delegate {
             let event_type = unsafe { NSEvent::eventType(event) };
-            let event_location = unsafe { NSEvent::locationInWindow(event) };
+            let mut event_location = unsafe { NSEvent::locationInWindow(event) };
+            let window = unsafe { NSEvent::window(event) };
+            let frame = unsafe { NSWindow::frame(window) };
+            event_location.y = frame.size.height - event_location.y;
             let action = match event_type {
                 NSLeftMouseDown => Some(StatusItemActionType::LeftMouseDown),
                 NSLeftMouseUp => Some(StatusItemActionType::LeftMouseUp),
