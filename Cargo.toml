@@ -3,6 +3,7 @@
 members = [
     "nativeshell_build",
     "nativeshell",
+    "nativeshell_ng",
 ]
 
 exclude = [
