@@ -58,7 +58,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: -- -D warnings -A clippy::non-send-fields-in-send-ty
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
