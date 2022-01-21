@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::codec::Value;
 
-use super::{HotKeyHandle, MenuHandle, Point, Rect, Size};
+use super::{status_item_manager::StatusItemHandle, HotKeyHandle, MenuHandle, Point, Rect, Size};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -390,4 +390,75 @@ pub struct Screen {
     pub frame: Rect,
     pub work_area: Rect,
     pub scaling_factor: f64,
+}
+
+//
+// StatusItem
+//
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemCreateRequest {}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemDestroyRequest {
+    pub handle: StatusItemHandle,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetImageRequest {
+    pub handle: StatusItemHandle,
+    pub image: Vec<ImageData>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetHintRequest {
+    pub handle: StatusItemHandle,
+    pub hint: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemSetHighlightedRequest {
+    pub handle: StatusItemHandle,
+    pub highlighted: bool,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemShowMenuRequest {
+    pub handle: StatusItemHandle,
+    pub menu: MenuHandle,
+    pub offset: Point,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemGetGeometryRequest {
+    pub handle: StatusItemHandle,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemGetScreenIdRequest {
+    pub handle: StatusItemHandle,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StatusItemActionType {
+    LeftMouseDown,
+    LeftMouseUp,
+    RightMouseDown,
+    RightMouseUp,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusItemAction {
+    pub handle: StatusItemHandle,
+    pub action: StatusItemActionType,
+    pub position: Point,
 }

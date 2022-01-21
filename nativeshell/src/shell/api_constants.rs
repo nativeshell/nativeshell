@@ -21,6 +21,9 @@ pub(crate) mod channel {
 
     // Flutter channel for screens
     pub const SCREEN_MANAGER: &str = "nativeshell/screen-manager";
+
+    // Flutter channel for managing status items
+    pub const STATUS_ITEM_MANAGER: &str = "nativeshell/status-item-manager";
 }
 
 pub const CURRENT_API_VERSION: i32 = 1;
@@ -131,6 +134,19 @@ pub(crate) mod method {
         pub const GET_MAIN_SCREEN: &str = "ScreenManager.getMainScreen";
         pub const LOGICAL_TO_SYSTEM: &str = "ScreenManager.logicalToSystem";
         pub const SYSTEM_TO_LOGICAL: &str = "ScreenManager.systemToLogical";
+    }
+
+    pub mod status_item {
+        pub const INIT: &str = "StatusItem.init";
+        pub const CREATE: &str = "StatusItem.create";
+        pub const DESTROY: &str = "StatusItem.destroy";
+        pub const SET_IMAGE: &str = "StatusItem.setImage";
+        pub const SET_HINT: &str = "StatusItem.setHint";
+        pub const SHOW_MENU: &str = "StatusItem.showMenu";
+        pub const SET_HIGHLIGHTED: &str = "StatusItem.setHighlighted";
+        pub const GET_GEOMETRY: &str = "StatusItem.getGeometry";
+        pub const GET_SCREEN_ID: &str = "StatusItem.getScreenId";
+        pub const ON_ACTION: &str = "StatusItem.onAction";
     }
 }
 

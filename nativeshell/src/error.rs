@@ -9,6 +9,7 @@ pub enum Error {
     Platform(PlatformError),
     Value(ValueError),
     InvalidMenuHandle,
+    InvalidStatusItemHandle,
 }
 
 impl Display for Error {
@@ -24,6 +25,12 @@ impl Display for Error {
             Error::Value(error) => Display::fmt(error, f),
             Error::InvalidMenuHandle => {
                 write!(f, "Provided menu handle does not match any known menu")
+            }
+            Error::InvalidStatusItemHandle => {
+                write!(
+                    f,
+                    "Provided status item handle does not match any known status item"
+                )
             }
         }
     }

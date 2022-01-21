@@ -12,6 +12,7 @@ pub mod keyboard_map;
 pub mod menu;
 pub mod run_loop;
 pub mod screen_manager;
+pub mod status_item;
 mod utils;
 pub mod window;
 

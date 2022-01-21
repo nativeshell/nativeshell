@@ -17,6 +17,7 @@ mod method_call_handler;
 mod observatory;
 mod run_loop;
 mod screen_manager;
+mod status_item_manager;
 mod window;
 mod window_manager;
 mod window_method_channel;

@@ -14,6 +14,7 @@ pub mod menu_item;
 pub mod run_loop;
 pub mod screen_manager;
 pub mod size_widget;
+pub mod status_item;
 pub mod utils;
 pub mod window;
 pub mod window_menu;
