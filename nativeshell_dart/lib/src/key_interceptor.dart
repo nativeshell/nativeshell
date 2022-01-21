@@ -46,17 +46,24 @@ class KeyInterceptor {
   KeyMessageHandler? _previousHandler;
 
   bool _onMessage(KeyMessage message) {
-    for (final handler in List<KeyInterceptorHandler>.from(_handlersPre)) {
-      if (handler(message.rawEvent)) {
-        return true;
+    // Raw event has changed from RawKeyEVent to RawKeyEvent?. We need to
+    // support both.
+    final rawEvent = (message.rawEvent as dynamic) as RawKeyEvent?;
+    if (rawEvent != null) {
+      for (final handler in List<KeyInterceptorHandler>.from(_handlersPre)) {
+        if (handler(rawEvent)) {
+          return true;
+        }
       }
     }
     if (_previousHandler != null && _previousHandler!(message)) {
       return true;
     }
-    for (final handler in List<KeyInterceptorHandler>.from(_handlersPost)) {
-      if (handler(message.rawEvent)) {
-        return true;
+    if (rawEvent != null) {
+      for (final handler in List<KeyInterceptorHandler>.from(_handlersPost)) {
+        if (handler(rawEvent)) {
+          return true;
+        }
       }
     }
     return false;
