@@ -46,7 +46,7 @@ class KeyInterceptor {
   KeyMessageHandler? _previousHandler;
 
   bool _onMessage(KeyMessage message) {
-    // Raw event has changed from RawKeyEVent to RawKeyEvent?. We need to
+    // rawEvent has changed from RawKeyEvent to RawKeyEvent?. We need to
     // support both.
     final rawEvent = (message.rawEvent as dynamic) as RawKeyEvent?;
     if (rawEvent != null) {
