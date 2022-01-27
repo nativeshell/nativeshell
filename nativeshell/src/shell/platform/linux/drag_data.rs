@@ -1,4 +1,4 @@
-Buse std::{collections::HashMap, mem::take};
+use std::{collections::HashMap, mem::take};
 
 use gdk::Atom;
 use gtk::SelectionData;
