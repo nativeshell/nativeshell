@@ -5,6 +5,7 @@ use super::{
 use crate::{
     shell::{
         api_model::{Accelerator, CheckStatus, Menu, MenuItem, MenuItemRole, MenuRole},
+        platform::platform_impl::utils::from_nsstring,
         Context, Handle, MenuDelegate, MenuHandle, MenuManager,
     },
     util::{update_diff, DiffResult, LateRefCell},
@@ -55,6 +56,7 @@ pub struct PlatformMenuManager {
     app_menu: RefCell<Option<Rc<PlatformMenu>>>,
     window_menus: RefCell<HashMap<StrongPtrWrapper, Rc<PlatformMenu>>>,
     update_handle: RefCell<Option<Handle>>,
+    last_key_window: RefCell<StrongPtr>,
 }
 
 impl PlatformMenuManager {
@@ -65,6 +67,7 @@ impl PlatformMenuManager {
             app_menu: RefCell::new(None),
             window_menus: RefCell::new(HashMap::new()),
             update_handle: RefCell::new(None),
+            last_key_window: RefCell::new(unsafe { StrongPtr::new(nil) }),
         }
     }
 
@@ -72,13 +75,28 @@ impl PlatformMenuManager {
         self.weak_self.set(weak_self);
     }
 
+    unsafe fn key_window(&self) -> StrongPtr {
+        let app = NSApplication::sharedApplication(nil);
+        let mut key = StrongPtr::retain(msg_send![app, keyWindow]);
+        if *key != nil {
+            let key_class: id = msg_send![*key, className];
+            if from_nsstring(key_class) != "IMFlutterWindow" {
+                key = StrongPtr::new(nil);
+            }
+        }
+        if *key == nil {
+            key = self.last_key_window.borrow().clone();
+        }
+        self.last_key_window.replace(key.clone());
+        key
+    }
+
     fn update_menu(&self) {
         unsafe {
             let mut menu = self.app_menu.borrow().clone();
             let app = NSApplication::sharedApplication(nil);
-            let key: id = msg_send![app, keyWindow];
-            if key != nil {
-                let key = StrongPtr::retain(key);
+            let key = self.key_window();
+            if *key != nil {
                 menu = self
                     .window_menus
                     .borrow()
@@ -142,6 +160,9 @@ impl PlatformMenuManager {
     }
 
     pub fn window_will_close(&self, window: StrongPtr) {
+        if **self.last_key_window.borrow() == *window {
+            self.last_key_window.replace(unsafe { StrongPtr::new(nil) });
+        }
         self.window_menus
             .borrow_mut()
             .remove(&StrongPtrWrapper(window));
