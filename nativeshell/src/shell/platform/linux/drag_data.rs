@@ -117,7 +117,7 @@ impl DragDataAdapter for UriListDataAdapter {
             for file in files {
                 let uri = format!(
                     "file://{}",
-                    percent_encoding::utf8_percent_encode(&file, FRAGMENT).to_string()
+                    percent_encoding::utf8_percent_encode(&file, FRAGMENT)
                 );
                 if !uris.contains(&uri) {
                     uris.push(uri);
