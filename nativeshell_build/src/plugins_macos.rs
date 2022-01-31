@@ -31,26 +31,28 @@ impl<'a> PluginsImpl<'a> {
 
         let xcode = mkdir(&self.build.out_dir, Some("xcode"))?;
         let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
+        let framework_dir = mkdir(&xcode, Some("FlutterMacOS"))?;
         let podfile = xcode.join("PodFile");
         let build_ok = xcode.join("build_ok");
         let mut skip_build = self
-            .write_podfile(&podfile, plugins, &symlinks_dir)
+            .write_podfile(&podfile, plugins, &symlinks_dir, &framework_dir)
             .wrap_error(FileOperation::Write, || podfile.clone())?;
         skip_build &= build_ok.exists();
         if !skip_build {
             if build_ok.exists() {
                 fs::remove_file(&build_ok).wrap_error(FileOperation::Remove, || build_ok.clone())?
             }
+            self.create_flutter_framework_podspec(&framework_dir)?;
             self.write_dummy_xcode_project(&xcode)?;
-            self.write_podfile(&podfile, plugins, &symlinks_dir)
-                .wrap_error(FileOperation::Write, || podfile)?;
             self.install_cocoa_pods(&xcode)?;
-            fs::write(&build_ok, "").wrap_error(FileOperation::Write, || build_ok.clone())?;
         }
         let (frameworks_path, products_path) = self.build_pods(&xcode, skip_build)?;
         self.link_and_emit_frameworks(&frameworks_path)?;
         let classes = self.get_plugin_classes(plugins, &products_path)?;
         self.write_plugin_registrar(&classes)?;
+        if !skip_build {
+            fs::write(&build_ok, "").wrap_error(FileOperation::Write, || build_ok.clone())?;
+        }
         Ok(())
     }
 
@@ -67,12 +69,39 @@ impl<'a> PluginsImpl<'a> {
         Ok(symlinks_dir)
     }
 
+    fn create_flutter_framework_podspec(&self, folder: &Path) -> BuildResult<()> {
+        let content = "Pod::Spec.new do |s|\n\
+  s.name             = 'FlutterMacOS'\n\
+  s.version          = '1.0.0'\n\
+  s.summary          = 'High-performance, high-fidelity mobile apps.'\n\
+  s.homepage         = 'https://flutter.io'\n\
+  s.license          = { :type => 'MIT' }\n\
+  s.author           = { 'Flutter Dev Team' => 'flutter-dev@googlegroups.com' }\n\
+  s.source           = { :git => 'https://github.com/flutter/engine', :tag => s.version.to_s }\n\
+  s.osx.deployment_target = '10.11'\n\
+  s.vendored_frameworks = 'FlutterMacOS.framework'\n\
+end\n";
+        let podspec_file = folder.join("FlutterMacOS.podspec");
+        fs::write(&podspec_file, content).wrap_error(FileOperation::Write, || podspec_file)?;
+        let dst = folder.join("FlutterMacOS.framework");
+        if dst.exists() {
+            fs::remove_file(&dst).wrap_error(FileOperation::Remove, || dst.clone())?;
+        }
+        let src = folder.join("../../flutter/FlutterMacOS.framework");
+        let src = src
+            .canonicalize()
+            .wrap_error(FileOperation::Canonicalize, || src.clone())?;
+        symlink(&src, &dst)?;
+        Ok(())
+    }
+
     // return true if build can be skipped
     fn write_podfile(
         &self,
         file: &Path,
         plugins: &[Plugin],
         symlinks_dir: &Path,
+        framework_dir: &Path,
     ) -> io::Result<bool> {
         let mut contents = String::new();
         use std::fmt::Write;
@@ -82,6 +111,13 @@ impl<'a> PluginsImpl<'a> {
             platform :osx, '{}'\n\
             abstract_target 'NativeShellTarget' do\n  use_frameworks! :linkage=>:dynamic\n",
             Flutter::macosx_deployment_target()
+        )
+        .unwrap();
+
+        writeln!(
+            contents,
+            "  pod 'FlutterMacOS', :path => '{}'",
+            framework_dir.to_string_lossy()
         )
         .unwrap();
 
