@@ -1,0 +1,13 @@
+[package]
+name = "nativeshell_derive_test"
+version = "0.1.12"
+authors = ["Matej Knopp <matej.knopp@gmail.com>"]
+edition = "2018"
+description = "NativeShell Rust package"
+license = "MIT OR Apache-2.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nativeshell_derive = { path = "../derive" }
+nativeshell_core = { path = "../core" }
