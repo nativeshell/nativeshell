@@ -1,34 +1,35 @@
-use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::{Diagnostic, Level};
 use quote::{format_ident, quote};
 use syn::{Attribute, DataEnum, DataStruct, FieldsNamed, Variant};
 
-use crate::attributes::{
-    parse_enum_attributes, parse_enum_variant_attributes, parse_field_attributes,
-    parse_struct_attributes, EnumAttributes, StringWithSpan, StructAttributes,
+use crate::{
+    attributes::{
+        parse_enum_attributes, parse_enum_variant_attributes, parse_field_attributes,
+        parse_struct_attributes, EnumAttributes, StringWithSpan, StructAttributes,
+    },
+    case::RenameRule,
 };
 
-fn rename(original: String, case: &Option<Case>, rename: &Option<String>) -> String {
+fn rename_field(original: &str, rename_rule: &RenameRule, rename: &Option<String>) -> String {
     if let Some(rename) = rename {
         return rename.clone();
     }
-    if let Some(case) = case {
-        match case {
-            // Match serde behavior
-            Case::Upper => return original.to_uppercase(),
-            Case::Lower => return original.to_lowercase(),
-            case => return original.from_case(Case::Snake).to_case(*case),
-        }
+    rename_rule.apply_to_field(original)
+}
+
+fn rename_variant(original: &str, rename_rule: &RenameRule, rename: &Option<String>) -> String {
+    if let Some(rename) = rename {
+        return rename.clone();
     }
-    original
+    rename_rule.apply_to_variant(original)
 }
 
 fn insert_fields(
     target: &Ident,
     prefix: Option<Ident>,
     fields_named: &FieldsNamed,
-    case: &Option<Case>,
+    rename_rule: &RenameRule,
 ) -> TokenStream {
     struct Field {
         string: String,
@@ -44,9 +45,9 @@ fn insert_fields(
         if attributes.skip {
             continue;
         }
-        let string = rename(
-            format!("{}", ident),
-            case,
+        let string = rename_field(
+            &format!("{}", ident),
+            rename_rule,
             &attributes.rename.map(|a| a.value.clone()),
         );
         let token_stream = if let Some(prefix) = &prefix {
@@ -107,7 +108,7 @@ impl FromEnum {
     fn enum_variant(&self, v: Variant) -> TokenStream {
         let attributes = parse_enum_variant_attributes(&v.attrs);
         let ident = v.ident;
-        let ident_as_string = self.ident_to_string(&ident, &attributes.rename);
+        let ident_as_string = self.variant_ident_to_string(&ident, &attributes.rename);
         match v.fields {
             syn::Fields::Named(fields) => {
                 let mut names = Vec::<Ident>::new();
@@ -161,7 +162,7 @@ impl FromEnum {
                             tag.span,
                             Level::Error,
                             format!(
-                                "Tag for unnamed enum variants (i.e. {}) is only supported \
+                                "tag for unnamed enum variants (i.e. {}) is only supported \
                                 if 'content' attribute is set as well",
                                 ident
                             ),
@@ -235,9 +236,9 @@ impl FromEnum {
         }
     }
 
-    fn ident_to_string(&self, ident: &Ident, r: &Option<StringWithSpan>) -> String {
-        rename(
-            format!("{}", ident),
+    fn variant_ident_to_string(&self, ident: &Ident, r: &Option<StringWithSpan>) -> String {
+        rename_variant(
+            &format!("{}", ident),
             &self.attributes.rename_all,
             &r.as_ref().map(|s| s.value.clone()),
         )
@@ -295,7 +296,7 @@ impl FromStruct {
                 Diagnostic::spanned(
                     self.name.span(),
                     Level::Error,
-                    "Unit structs are not supported".into(),
+                    "unit structs are not supported".into(),
                 )
                 .abort();
             }

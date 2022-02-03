@@ -1,7 +1,8 @@
-use convert_case::Case;
 use proc_macro2::{Ident, Span};
 use proc_macro_error::{Diagnostic, Level};
 use syn::{spanned::Spanned, Attribute, Lit, Meta, NestedMeta, Path};
+
+use crate::case::RenameRule;
 
 #[derive(Copy, Clone)]
 pub struct Symbol(&'static str);
@@ -65,7 +66,7 @@ pub struct StringWithSpan {
 pub struct EnumAttributes {
     pub tag: Option<StringWithSpan>,
     pub content: Option<StringWithSpan>,
-    pub rename_all: Option<Case>,
+    pub rename_all: RenameRule,
 }
 
 #[derive(Debug, Default)]
@@ -75,7 +76,7 @@ pub struct EnumVariantAttribute {
 
 #[derive(Debug, Default)]
 pub struct StructAttributes {
-    pub rename_all: Option<Case>,
+    pub rename_all: RenameRule,
 }
 
 #[derive(Debug, Default)]
@@ -92,40 +93,27 @@ fn str_from_lit(lit: &Lit, span: Option<Span>) -> StringWithSpan {
             span: span.unwrap_or(str.span()),
         },
         lit => {
-            Diagnostic::spanned(lit.span(), Level::Error, "Expected string literal".into()).abort();
+            Diagnostic::spanned(lit.span(), Level::Error, "expected string literal".into()).abort();
         }
     }
 }
 
-fn case_from_lit(lit: &Lit) -> Case {
+fn rename_rule_from_lit(lit: &Lit) -> RenameRule {
     match &lit {
         Lit::Str(str) => {
-            let value = str.value();
-            match value.as_str() {
-                "lowercase" => Case::Lower,
-                "UPPERCASE" => Case::Upper,
-                "PascalCase" => Case::Pascal,
-                "camelCase" => Case::Camel,
-                "snake_case" => Case::Snake,
-                "SCREAMING_SNAKE_CASE" => Case::ScreamingSnake,
-                "kebab-case" => Case::Kebab,
-                "SCREAMING-KEBAB-CASE" => Case::UpperKebab,
-                _ => {
-                    Diagnostic::spanned(
-                        lit.span(),
-                        Level::Error,
-                        "Invalid case. Allowe values are: lowercase, UPPERCASE, \
-                        PascalCase, camelCase, snake_case, SCREAMING_SNAKE_CASE, \
-                        kebab-case, SCREAMING-KEBAB-CASE"
-                            .into(),
-                    )
-                    .emit();
-                    panic!();
+            let str = str.value();
+            let rule = RenameRule::from_str(&str);
+            match rule {
+                Ok(rule) => {
+                    return rule;
+                }
+                Err(e) => {
+                    Diagnostic::spanned(lit.span(), Level::Error, e.to_string()).abort();
                 }
             }
         }
         lit => {
-            Diagnostic::spanned(lit.span(), Level::Error, "Expected string literal".into()).emit();
+            Diagnostic::spanned(lit.span(), Level::Error, "expected string literal".into()).emit();
             panic!();
         }
     }
@@ -142,14 +130,14 @@ pub fn parse_enum_attributes(attrs: &Vec<Attribute>) -> EnumAttributes {
                 } else if nv.path == CONTENT {
                     res.content = Some(str_from_lit(&nv.lit, Some(nv.span())));
                 } else if nv.path == RENAME_ALL {
-                    res.rename_all = Some(case_from_lit(&nv.lit));
+                    res.rename_all = rename_rule_from_lit(&nv.lit);
                 } else {
-                    Diagnostic::spanned(nv.span(), Level::Error, "Unknown attribute".into())
+                    Diagnostic::spanned(nv.span(), Level::Error, "unknown attribute".into())
                         .abort();
                 }
             }
             _ => {
-                Diagnostic::spanned(m.span(), Level::Error, "Unknown attribute".into()).abort();
+                Diagnostic::spanned(m.span(), Level::Error, "unknown attribute".into()).abort();
             }
         }
     }
@@ -158,7 +146,7 @@ pub fn parse_enum_attributes(attrs: &Vec<Attribute>) -> EnumAttributes {
             Diagnostic::spanned(
                 content.span,
                 Level::Error,
-                "Content attribute must only be used together with 'tag' attribute.".into(),
+                "content attribute must only be used together with 'tag' attribute".into(),
             )
             .abort();
         }
@@ -175,11 +163,11 @@ pub fn parse_enum_variant_attributes(attrs: &Vec<Attribute>) -> EnumVariantAttri
                 if nv.path == RENAME {
                     res.rename = Some(str_from_lit(&nv.lit, Some(nv.span())))
                 } else {
-                    Diagnostic::spanned(nv.span(), Level::Error, "Unknown attribute".into()).emit();
+                    Diagnostic::spanned(nv.span(), Level::Error, "unknown attribute".into()).emit();
                 }
             }
             _ => {
-                Diagnostic::spanned(m.span(), Level::Error, "Unknown attribute".into()).emit();
+                Diagnostic::spanned(m.span(), Level::Error, "unknown attribute".into()).emit();
             }
         }
     }
@@ -193,9 +181,9 @@ pub fn parse_struct_attributes(attrs: &Vec<Attribute>) -> StructAttributes {
         match m {
             Meta::NameValue(nv) => {
                 if nv.path == RENAME_ALL {
-                    res.rename_all = Some(case_from_lit(&nv.lit));
+                    res.rename_all = rename_rule_from_lit(&nv.lit);
                 } else {
-                    Diagnostic::spanned(nv.span(), Level::Error, "Unknown attribute".into())
+                    Diagnostic::spanned(nv.span(), Level::Error, "unknown attribute".into())
                         .abort();
                 }
             }
@@ -216,7 +204,7 @@ pub fn parse_field_attributes(attrs: &Vec<Attribute>) -> FieldAttributes {
                 if nv.path == RENAME {
                     res.rename = Some(str_from_lit(&nv.lit, Some(nv.span())))
                 } else {
-                    Diagnostic::spanned(nv.span(), Level::Error, "Unknown attribute".into()).emit();
+                    Diagnostic::spanned(nv.span(), Level::Error, "unknown attribute".into()).emit();
                 }
             }
             Meta::Path(path) => {
@@ -225,12 +213,12 @@ pub fn parse_field_attributes(attrs: &Vec<Attribute>) -> FieldAttributes {
                 } else if path == SKIP {
                     res.skip = true;
                 } else {
-                    Diagnostic::spanned(path.span(), Level::Error, "Unknown attribute".into())
+                    Diagnostic::spanned(path.span(), Level::Error, "unknown attribute".into())
                         .emit();
                 }
             }
             _ => {
-                Diagnostic::spanned(m.span(), Level::Error, "Unknown attribute".into()).emit();
+                Diagnostic::spanned(m.span(), Level::Error, "unknown attribute".into()).emit();
             }
         }
     }

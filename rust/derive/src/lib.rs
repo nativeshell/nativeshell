@@ -7,9 +7,10 @@ use syn::{
 use quote::{format_ident, quote};
 
 mod attributes;
-use attributes::*;
-
+mod case;
 mod from;
+
+use attributes::*;
 use from::*;
 
 #[proc_macro_derive(TryFromValue, attributes(nativeshell))]
@@ -119,6 +120,7 @@ pub fn into_value(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
 
     let tokens = quote! {
+        #[automatically_derived]
         impl #impl_generics From<#name #ty_generics> for ::nativeshell_core::Value #where_clause {
             fn from(value: #name #ty_generics) -> Self {
                 #token_stream
