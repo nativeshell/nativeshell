@@ -40,11 +40,10 @@ fn insert_fields(
         } else {
             quote! { #ident }
         };
-        let token_stream = if attributes.skip_if_null {
+        let token_stream = if attributes.skip_if_empty {
             quote! {
-                let __ns_value : ::nativeshell_core::Value = #field_access.into();
-                if __ns_value != ::nativeshell_core::Value::Null {
-                    #target.push( ( #string.into(), __ns_value ) );
+                if (&&::nativeshell_core::derive_internal::Wrap(& #field_access)).is_none() == false {
+                    #target.push( ( #string.into(), #field_access.into() ) );
                 }
             }
         } else {

@@ -14,3 +14,6 @@ pub use ffi::*;
 pub use handle::*;
 pub use run_loop::*;
 pub use value::*;
+
+#[cfg(feature = "nativeshell_derive")]
+pub use nativeshell_derive::*;

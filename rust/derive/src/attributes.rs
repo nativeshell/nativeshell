@@ -11,7 +11,7 @@ pub const NATIVESHELL: Symbol = Symbol("nativeshell");
 pub const RENAME: Symbol = Symbol("rename");
 pub const RENAME_ALL: Symbol = Symbol("rename_all");
 pub const SKIP: Symbol = Symbol("skip");
-pub const SKIP_IF_NULL: Symbol = Symbol("skip_if_null");
+pub const SKIP_IF_EMPTY: Symbol = Symbol("skip_if_empty");
 pub const DEFAULT: Symbol = Symbol("default");
 pub const TAG: Symbol = Symbol("tag");
 pub const CONTENT: Symbol = Symbol("content");
@@ -91,7 +91,7 @@ pub struct StructAttributes {
 pub struct FieldAttributes {
     pub rename: Option<StringWithSpan>,
     pub skip: bool,
-    pub skip_if_null: bool,
+    pub skip_if_empty: bool,
     pub default: bool,
 }
 
@@ -231,8 +231,8 @@ pub fn parse_field_attributes(attrs: &Vec<Attribute>) -> FieldAttributes {
                     res.default = true;
                 } else if path == SKIP {
                     res.skip = true;
-                } else if path == SKIP_IF_NULL {
-                    res.skip_if_null = true;
+                } else if path == SKIP_IF_EMPTY {
+                    res.skip_if_empty = true;
                 } else {
                     Diagnostic::spanned(path.span(), Level::Error, "unknown attribute".into())
                         .emit();

@@ -213,7 +213,7 @@ fn process_struct_unnamed(
         quote! {
             return Ok(#constructor ( {
                 let mut res = std::option::Option::<#ty>::None;
-                (&mut &mut ::nativeshell_core::derive_internal::Wrap(&mut res)).assign(value)?;
+                (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut res)).assign(value, false)?;
                 res.unwrap()
             } ));
         }
@@ -224,8 +224,9 @@ fn process_struct_unnamed(
                 quote! {
                     {
                         let mut res = std::option::Option::<#ty>::None;
-                        (&mut &mut ::nativeshell_core::derive_internal::Wrap(&mut res)).assign(
-                            iter.next().ok_or_else(||Self::Error::OtherError("Missing value".into()))?
+                        (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut res)).assign(
+                            iter.next().ok_or_else(||Self::Error::OtherError("Missing value".into()))?,
+                            false,
                         )?;
                         res.unwrap()
                     }
@@ -259,6 +260,7 @@ fn process_struct_named(
     let mut strings = Vec::<String>::new();
     let mut types = Vec::<Type>::new();
     let mut err_missing_field = Vec::<String>::new();
+    let mut skip_if_empty = Vec::<bool>::new();
 
     let mut skip_fields = Vec::<Ident>::new();
 
@@ -285,6 +287,7 @@ fn process_struct_named(
             strings.push(string);
             fields.push(ident.clone());
             types.push(field.ty.clone());
+            skip_if_empty.push(attributes.skip_if_empty);
         }
     }
 
@@ -302,7 +305,7 @@ fn process_struct_named(
                     };
                     #(
                         if __ns_name == #strings {
-                            (&mut &mut ::nativeshell_core::derive_internal::Wrap(&mut #fields)).assign(__ns_e.1)?;
+                            (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut #fields)).assign(__ns_e.1, #skip_if_empty)?;
                             continue;
                         }
                     )*;
@@ -314,7 +317,7 @@ fn process_struct_named(
         }
 
         #(
-            (&mut &mut ::nativeshell_core::derive_internal::Wrap(&mut #fields)).set_optional_to_none();
+            (&mut &mut &mut::nativeshell_core::derive_internal::WrapMut(&mut #fields)).set_optional_to_none();
         )*;
 
         let res = #constructor {
