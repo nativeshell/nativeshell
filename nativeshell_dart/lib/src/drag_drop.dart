@@ -421,6 +421,7 @@ class DragDriver {
     _RenderDropRegion? dropRegion;
     final monitors = <_RenderDropMonitor>[];
 
+    // ignore: unnecessary_non_null_assertion
     GestureBinding.instance!.hitTest(hitTest, info.position);
 
     for (final item in hitTest.path) {

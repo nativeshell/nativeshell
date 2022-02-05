@@ -12,7 +12,9 @@ class KeyInterceptor {
   KeyInterceptor._() {
     WidgetsFlutterBinding.ensureInitialized();
     _previousHandler =
+        // ignore: unnecessary_non_null_assertion
         ServicesBinding.instance!.keyEventManager.keyMessageHandler;
+    // ignore: unnecessary_non_null_assertion
     ServicesBinding.instance!.keyEventManager.keyMessageHandler = _onMessage;
   }
 
