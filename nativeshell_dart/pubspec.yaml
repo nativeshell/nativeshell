@@ -1,6 +1,6 @@
 name: nativeshell
 description: NativeShell Dart API. Used to interact with NativeShell platform code.
-version: 0.1.10
+version: 0.1.13
 homepage: https://nativeshell.dev
 repository: https://github.com/nativeshell/nativeshell
 
