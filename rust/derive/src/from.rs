@@ -9,21 +9,8 @@ use crate::{
         parse_struct_attributes, EnumAttributes, StringWithSpan, StructAttributes,
     },
     case::RenameRule,
+    rename_field, rename_variant,
 };
-
-fn rename_field(original: &str, rename_rule: &RenameRule, rename: &Option<String>) -> String {
-    if let Some(rename) = rename {
-        return rename.clone();
-    }
-    rename_rule.apply_to_field(original)
-}
-
-fn rename_variant(original: &str, rename_rule: &RenameRule, rename: &Option<String>) -> String {
-    if let Some(rename) = rename {
-        return rename.clone();
-    }
-    rename_rule.apply_to_variant(original)
-}
 
 fn insert_fields(
     target: &Ident,
@@ -35,8 +22,6 @@ fn insert_fields(
         string: String,
         field: TokenStream,
     }
-    // let mut strings = Vec::<String>::new();
-    // let mut fields = Vec::<TokenStream>::new();
     let mut fields = Vec::<Field>::new();
 
     for field in &fields_named.named {
@@ -50,10 +35,22 @@ fn insert_fields(
             rename_rule,
             &attributes.rename.map(|a| a.value.clone()),
         );
-        let token_stream = if let Some(prefix) = &prefix {
-            quote! {#prefix.#ident }
+        let field_access = if let Some(prefix) = &prefix {
+            quote! { #prefix.#ident }
         } else {
             quote! { #ident }
+        };
+        let token_stream = if attributes.skip_if_null {
+            quote! {
+                let __ns_value : ::nativeshell_core::Value = #field_access.into();
+                if __ns_value != ::nativeshell_core::Value::Null {
+                    #target.push( ( #string.into(), __ns_value ) );
+                }
+            }
+        } else {
+            quote! {
+                #target.push( ( #string.into(), #field_access.into() ) );
+            }
         };
         fields.push(Field {
             string,
@@ -64,14 +61,11 @@ fn insert_fields(
     // Sort fields now (compile time) so that we don't need to do it in ValueTupleList
     fields.sort_by(|a, b| a.string.cmp(&b.string));
 
-    let strings: Vec<String> = fields.iter().map(|f| f.string.clone()).collect();
     let fields: Vec<TokenStream> = fields.iter().map(|f| f.field.clone()).collect();
 
     quote! {
         #(
-            #target.push((
-                #strings.into(), #fields.into()
-            ));
+            #fields
         )*
     }
 }
@@ -93,7 +87,7 @@ impl FromEnum {
         let variants: Vec<TokenStream> = data
             .variants
             .into_iter()
-            .map(|v| self.enum_variant(v))
+            .filter_map(|v| self.enum_variant(v))
             .collect();
         let name = self.name;
         quote! {
@@ -101,12 +95,19 @@ impl FromEnum {
                 #(
                     #name::#variants,
                 )*
+                _ => {
+                    // For skipped variants. Not ideal but we can't report errors here
+                    Value::Null
+                }
             }
         }
     }
 
-    fn enum_variant(&self, v: Variant) -> TokenStream {
+    fn enum_variant(&self, v: Variant) -> Option<TokenStream> {
         let attributes = parse_enum_variant_attributes(&v.attrs);
+        if attributes.skip {
+            return None;
+        }
         let ident = v.ident;
         let ident_as_string = self.variant_ident_to_string(&ident, &attributes.rename);
         match v.fields {
@@ -119,7 +120,7 @@ impl FromEnum {
                 let create_vec = quote! {
                     let mut #target = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
                 };
-                let insert = insert_fields(&target, None, &fields, &self.attributes.rename_all);
+                let insert = insert_fields(&target, None, &fields, &attributes.rename_all);
                 let epilogue = match (&self.attributes.tag, &self.attributes.content) {
                     (None, None) => quote! {
                         let value = ::nativeshell_core::Value::Map(#target.into());
@@ -147,13 +148,13 @@ impl FromEnum {
                         }
                     }
                 };
-                quote! {
+                Some(quote! {
                     #ident { #( #names, )* } => {
                         #create_vec;
                         #insert;
                         #epilogue
                     }
-                }
+                })
             }
             syn::Fields::Unnamed(fields) => {
                 if let Some(tag) = &self.attributes.tag {
@@ -203,18 +204,18 @@ impl FromEnum {
                         v.push((#ident_as_string.into(), value));
                     }
                 };
-                quote! {
+                Some(quote! {
                     #ident ( #( #idents, )* ) => {
-                        // nativeshell_core::Value::Null
                         let value = #value;
                         let mut v = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
-                        #insert;
+                        #insert
                         ::nativeshell_core::Value::Map(v.into())
                     }
-                }
+                })
             }
             syn::Fields::Unit => {
                 let result = if let Some(tag) = &self.attributes.tag {
+                    // { 'tag': 'enumName' }
                     let tag = &tag.value;
                     quote! {
                         let mut v = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
@@ -222,16 +223,17 @@ impl FromEnum {
                         ::nativeshell_core::Value::Map(v.into())
                     }
                 } else {
+                    // just 'enumName'
                     quote! {
                         value
                     }
                 };
-                quote! {
+                Some(quote! {
                     #ident => {
                         let value = ::nativeshell_core::Value::String(#ident_as_string.into());
                         #result
                     }
-                }
+                })
             }
         }
     }
@@ -275,7 +277,9 @@ impl FromStruct {
                 }
             }
             syn::Fields::Unnamed(fields) => {
-                let idents: Vec<usize> = (0..fields.unnamed.len()).collect();
+                let idents: Vec<syn::Index> = (0..fields.unnamed.len())
+                    .map(|i| syn::Index::from(i))
+                    .collect();
 
                 if idents.len() == 1 {
                     let name = idents.first().unwrap();

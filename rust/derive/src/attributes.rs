@@ -11,6 +11,7 @@ pub const NATIVESHELL: Symbol = Symbol("nativeshell");
 pub const RENAME: Symbol = Symbol("rename");
 pub const RENAME_ALL: Symbol = Symbol("rename_all");
 pub const SKIP: Symbol = Symbol("skip");
+pub const SKIP_IF_NULL: Symbol = Symbol("skip_if_null");
 pub const DEFAULT: Symbol = Symbol("default");
 pub const TAG: Symbol = Symbol("tag");
 pub const CONTENT: Symbol = Symbol("content");
@@ -42,15 +43,20 @@ impl<'a> PartialEq<Symbol> for &'a Path {
 fn extract_nativeshell_meta(atts: &Vec<Attribute>) -> Vec<Meta> {
     let mut res = Vec::new();
     for attr in atts {
-        let meta = attr.parse_meta().unwrap();
-        if let Meta::List(list) = meta {
-            if list.path == NATIVESHELL {
-                for n in list.nested {
-                    if let NestedMeta::Meta(meta) = n {
-                        res.push(meta.clone())
+        let meta = attr.parse_meta();
+        match meta {
+            Ok(meta) => {
+                if let Meta::List(list) = meta {
+                    if list.path == NATIVESHELL {
+                        for n in list.nested {
+                            if let NestedMeta::Meta(meta) = n {
+                                res.push(meta.clone())
+                            }
+                        }
                     }
                 }
             }
+            Err(err) => Diagnostic::spanned(attr.span(), Level::Error, err.to_string()).abort(),
         }
     }
     res
@@ -71,7 +77,9 @@ pub struct EnumAttributes {
 
 #[derive(Debug, Default)]
 pub struct EnumVariantAttribute {
-    pub rename: Option<StringWithSpan>,
+    pub rename: Option<StringWithSpan>, // rename of this variant
+    pub rename_all: RenameRule,         // rename all for fields
+    pub skip: bool,
 }
 
 #[derive(Debug, Default)]
@@ -83,6 +91,7 @@ pub struct StructAttributes {
 pub struct FieldAttributes {
     pub rename: Option<StringWithSpan>,
     pub skip: bool,
+    pub skip_if_null: bool,
     pub default: bool,
 }
 
@@ -162,8 +171,18 @@ pub fn parse_enum_variant_attributes(attrs: &Vec<Attribute>) -> EnumVariantAttri
             Meta::NameValue(nv) => {
                 if nv.path == RENAME {
                     res.rename = Some(str_from_lit(&nv.lit, Some(nv.span())))
+                } else if nv.path == RENAME_ALL {
+                    res.rename_all = rename_rule_from_lit(&nv.lit);
                 } else {
                     Diagnostic::spanned(nv.span(), Level::Error, "unknown attribute".into()).emit();
+                }
+            }
+            Meta::Path(path) => {
+                if path == SKIP {
+                    res.skip = true;
+                } else {
+                    Diagnostic::spanned(path.span(), Level::Error, "unknown attribute".into())
+                        .emit();
                 }
             }
             _ => {
@@ -212,6 +231,8 @@ pub fn parse_field_attributes(attrs: &Vec<Attribute>) -> FieldAttributes {
                     res.default = true;
                 } else if path == SKIP {
                     res.skip = true;
+                } else if path == SKIP_IF_NULL {
+                    res.skip_if_null = true;
                 } else {
                     Diagnostic::spanned(path.span(), Level::Error, "unknown attribute".into())
                         .emit();

@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     convert::{Infallible, TryFrom},
     fmt::Display,
@@ -23,7 +24,7 @@ pub enum Value {
     Map(ValueTupleList),
 }
 
-/// Wrapper for ValueTuple that sorts the underlying list
+/// Wrapper for Value tuple that ensures that the underyling list is sorted
 #[derive(Clone, Debug, PartialEq, PartialOrd, Hash)]
 pub struct ValueTupleList(Vec<(Value, Value)>);
 
@@ -79,11 +80,11 @@ impl From<()> for Value {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TryFromError {
     BadType,
     IntConversionError,
-    OtherError(&'static str),
+    OtherError(String),
 }
 
 impl Display for TryFromError {
@@ -91,7 +92,7 @@ impl Display for TryFromError {
         match self {
             TryFromError::BadType => write!(f, "Could not convert value from unrelated type."),
             TryFromError::IntConversionError => {
-                write!(f, "Could not convert integer value to smaller type.")
+                write!(f, "Could not convert integer value to a smaller type.")
             }
             TryFromError::OtherError(str) => {
                 write!(f, "{}", str)
@@ -213,7 +214,12 @@ impl std::hash::Hash for Value {
 impl ValueTupleList {
     pub fn new(mut value: Vec<(Value, Value)>) -> Self {
         // Sort the list so tht hash and compares are deterministic
-        value.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        if value
+            .windows(2)
+            .any(|w| w[0].0.partial_cmp(&w[1].0) != Some(Ordering::Less))
+        {
+            value.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+        }
         Self(value)
     }
 }
@@ -258,5 +264,17 @@ impl From<ValueTupleList> for Vec<(Value, Value)> {
 impl From<ValueTupleList> for HashMap<Value, Value> {
     fn from(value: ValueTupleList) -> Self {
         value.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Value;
+
+    #[test]
+    fn test_equality() {
+        let v1 = Value::Map(vec![("key1".into(), 10.into()), ("key2".into(), 20.into())].into());
+        let v2 = Value::Map(vec![("key2".into(), 20.into()), ("key1".into(), 10.into())].into());
+        assert_eq!(v1, v2);
     }
 }

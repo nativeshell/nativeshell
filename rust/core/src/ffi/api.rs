@@ -8,7 +8,7 @@ pub mod api {
 
     use once_cell::sync::OnceCell;
 
-    use crate::ffi::{raw::DartCObject, raw::DartPort};
+    use crate::ffi::raw::{DartCObject, DartPort};
 
     pub type DartPortHandler = unsafe extern "C" fn(port: DartPort, message: *const DartCObject);
 
@@ -67,7 +67,7 @@ pub mod api {
             for i in 0..usize::MAX {
                 let entry = unsafe { self.functions.add(i) };
                 let entry = unsafe { &*entry };
-                if entry.name == std::ptr::null_mut() {
+                if entry.name.is_null() {
                     break;
                 }
                 let fn_name = unsafe { CStr::from_ptr(entry.name) };
