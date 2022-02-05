@@ -99,7 +99,7 @@ fn str_from_lit(lit: &Lit, span: Option<Span>) -> StringWithSpan {
     match lit {
         Lit::Str(str) => StringWithSpan {
             value: str.value(),
-            span: span.unwrap_or(str.span()),
+            span: span.unwrap_or_else(|| str.span()),
         },
         lit => {
             Diagnostic::spanned(lit.span(), Level::Error, "expected string literal".into()).abort();
@@ -113,9 +113,7 @@ fn rename_rule_from_lit(lit: &Lit) -> RenameRule {
             let str = str.value();
             let rule = RenameRule::from_str(&str);
             match rule {
-                Ok(rule) => {
-                    return rule;
-                }
+                Ok(rule) => rule,
                 Err(e) => {
                     Diagnostic::spanned(lit.span(), Level::Error, e.to_string()).abort();
                 }

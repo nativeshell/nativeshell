@@ -1,10 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{
-    ffi::nativeshell_init_ffi,
-    // channel::{nativeshell_vec_methods, MessageChannel},
-    util::black_box,
-};
+use crate::{util::black_box, api::nativeshell_init_ffi};
 
 use super::RunLoop;
 

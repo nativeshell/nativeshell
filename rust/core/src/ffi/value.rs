@@ -33,8 +33,10 @@ pub enum DartValue {
 
 impl DartValue {
     /// Creates a DartValue instance from raw DartCObject. Any data in the
-    /// object is copied. Unsafe because the object must point to a valid
-    /// DartCObject instance.
+    /// object is copied.
+    ///
+    /// # Safety
+    /// Unsafe because the object must point to a valid DartCObject instance.
     pub unsafe fn from_dart(object: *const raw::DartCObject) -> Self {
         use raw::DartCObjectType;
         let object = &*object;
@@ -66,10 +68,8 @@ impl DartValue {
                 let typed_data = &object.value.as_external_typed_data;
                 Self::from_typed_data(typed_data.ty, typed_data.data, typed_data.length)
             }
-            DartCObjectType::SendPort => DartValue::SendPort(object.value.as_send_port.clone()),
-            DartCObjectType::Capability => {
-                DartValue::Capability(object.value.as_capability.clone())
-            }
+            DartCObjectType::SendPort => DartValue::SendPort(object.value.as_send_port),
+            DartCObjectType::Capability => DartValue::Capability(object.value.as_capability),
             DartCObjectType::NativePointer => {
                 todo!("Implement NativePointer value");
             }

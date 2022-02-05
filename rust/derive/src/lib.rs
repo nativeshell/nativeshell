@@ -35,7 +35,7 @@ pub fn into_value(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let tokens = quote! {
         #[automatically_derived]
         impl #impl_generics From<#name #ty_generics> for ::nativeshell_core::Value #where_clause {
-            fn from(value: #name #ty_generics) -> Self {
+            fn from(__ns_value: #name #ty_generics) -> Self {
                 use ::nativeshell_core::derive_internal::IsNone;
                 #token_stream
             }
@@ -68,7 +68,7 @@ pub fn try_from_value(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         #[automatically_derived]
         impl #impl_generics core::convert::TryFrom<::nativeshell_core::Value> for #name #ty_generics #where_clause {
             type Error = ::nativeshell_core::TryFromError;
-            fn try_from(value: Value) -> Result<Self, Self::Error> {
+            fn try_from(__ns_value: Value) -> Result<Self, Self::Error> {
                 use ::nativeshell_core::derive_internal::Assign;
                 #token_stream
             }

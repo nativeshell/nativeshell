@@ -33,7 +33,7 @@ fn insert_fields(
         let string = rename_field(
             &format!("{}", ident),
             rename_rule,
-            &attributes.rename.map(|a| a.value.clone()),
+            &attributes.rename.map(|a| a.value),
         );
         let field_access = if let Some(prefix) = &prefix {
             quote! { #prefix.#ident }
@@ -90,13 +90,13 @@ impl FromEnum {
             .collect();
         let name = self.name;
         quote! {
-            match value {
+            match __ns_value {
                 #(
                     #name::#variants,
                 )*
                 _ => {
                     // For skipped variants. Not ideal but we can't report errors here
-                    Value::Null
+                    ::nativeshell_core::Value::Null
                 }
             }
         }
@@ -117,14 +117,14 @@ impl FromEnum {
                 }
                 let target = format_ident!("__ns_vec");
                 let create_vec = quote! {
-                    let mut #target = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
+                    let mut #target = ::std::vec::Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
                 };
                 let insert = insert_fields(&target, None, &fields, &attributes.rename_all);
                 let epilogue = match (&self.attributes.tag, &self.attributes.content) {
                     (None, None) => quote! {
-                        let value = ::nativeshell_core::Value::Map(#target.into());
+                        let __ns_value = ::nativeshell_core::Value::Map(#target.into());
                         #create_vec;
-                        #target.push((#ident_as_string.into(), value));
+                        #target.push((#ident_as_string.into(), __ns_value));
                         ::nativeshell_core::Value::Map(#target.into())
                     },
                     (None, Some(_)) => panic!("Can't have content without tag"),
@@ -139,10 +139,10 @@ impl FromEnum {
                         let tag = &tag.value;
                         let content = &content.value;
                         quote! {
-                            let value = ::nativeshell_core::Value::Map(#target.into());
+                            let __ns_value = ::nativeshell_core::Value::Map(#target.into());
                             #create_vec;
                             #target.push((#tag.into(), #ident_as_string.into()));
-                            #target.push((#content.into(), value));
+                            #target.push((#content.into(), __ns_value));
                             ::nativeshell_core::Value::Map(#target.into())
                         }
                     }
@@ -181,11 +181,11 @@ impl FromEnum {
                 } else {
                     quote! {
                         {
-                            let mut vec = Vec::<::nativeshell_core::Value>::new();
+                            let mut __ns_vec = ::std::vec::Vec::<::nativeshell_core::Value>::new();
                             #(
-                                vec.push(#idents.into());
+                                __ns_vec.push(#idents.into());
                             )*
-                            ::nativeshell_core::Value::List(vec)
+                            ::nativeshell_core::Value::List(__ns_vec)
                         }
                     }
                 };
@@ -195,20 +195,20 @@ impl FromEnum {
                     let tag = &tag.value;
                     let content = &content.value;
                     quote! {
-                        v.push((#tag.into(), #ident_as_string.into()));
-                        v.push((#content.into(), value));
+                        __ns_vec.push((#tag.into(), #ident_as_string.into()));
+                        __ns_vec.push((#content.into(), __ns_value));
                     }
                 } else {
                     quote! {
-                        v.push((#ident_as_string.into(), value));
+                        __ns_vec.push((#ident_as_string.into(), __ns_value));
                     }
                 };
                 Some(quote! {
                     #ident ( #( #idents, )* ) => {
-                        let value = #value;
-                        let mut v = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
+                        let __ns_value = #value;
+                        let mut __ns_vec = ::std::vec::Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
                         #insert
-                        ::nativeshell_core::Value::Map(v.into())
+                        ::nativeshell_core::Value::Map(__ns_vec.into())
                     }
                 })
             }
@@ -217,19 +217,19 @@ impl FromEnum {
                     // { 'tag': 'enumName' }
                     let tag = &tag.value;
                     quote! {
-                        let mut v = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
-                        v.push((#tag.into(), value));
-                        ::nativeshell_core::Value::Map(v.into())
+                        let mut __ns_vec = ::std::vec::Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
+                        __ns_vec.push((#tag.into(), __ns_value));
+                        ::nativeshell_core::Value::Map(__ns_vec.into())
                     }
                 } else {
                     // just 'enumName'
                     quote! {
-                        value
+                        __ns_value
                     }
                 };
                 Some(quote! {
                     #ident => {
-                        let value = ::nativeshell_core::Value::String(#ident_as_string.into());
+                        let __ns_value = ::nativeshell_core::Value::String(#ident_as_string.into());
                         #result
                     }
                 })
@@ -265,33 +265,32 @@ impl FromStruct {
                 let target = format_ident!("__ns_vec");
                 let insert = insert_fields(
                     &target,
-                    Some(format_ident!("value")),
+                    Some(format_ident!("__ns_value")),
                     &fields,
                     &self.attributes.rename_all,
                 );
                 quote! {
-                    let mut #target = Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
+                    let mut #target = ::std::vec::Vec::<(::nativeshell_core::Value, ::nativeshell_core::Value)>::new();
                     #insert;
                     ::nativeshell_core::Value::Map(#target.into())
                 }
             }
             syn::Fields::Unnamed(fields) => {
-                let idents: Vec<syn::Index> = (0..fields.unnamed.len())
-                    .map(|i| syn::Index::from(i))
-                    .collect();
+                let idents: Vec<syn::Index> =
+                    (0..fields.unnamed.len()).map(syn::Index::from).collect();
 
                 if idents.len() == 1 {
                     let name = idents.first().unwrap();
                     quote! {
-                        value.#name.into()
+                        __ns_value.#name.into()
                     }
                 } else {
                     quote! {
-                        let mut vec = Vec::<::nativeshell_core::Value>::new();
+                        let mut __ns_vec = ::std::vec::Vec::<::nativeshell_core::Value>::new();
                         #(
-                            vec.push(value.#idents.into());
+                            __ns_vec.push(__ns_value.#idents.into());
                         )*
-                        ::nativeshell_core::Value::List(vec)
+                        ::nativeshell_core::Value::List(__ns_vec)
                     }
                 }
             }

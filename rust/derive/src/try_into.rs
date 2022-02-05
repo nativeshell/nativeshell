@@ -43,11 +43,11 @@ impl TryIntoEnum {
             Some(content) => {
                 let content = &content.value;
                 quote! {
-                    let mut value = Value::Null;
-                    for row in map {
-                        if let ::nativeshell_core::Value::String(content_value) = row.0 {
-                            if content_value == #content {
-                                value = row.1;
+                    let mut __ns_value = ::nativeshell_core::Value::Null;
+                    for __ns_row in __ns_map {
+                        if let ::nativeshell_core::Value::String(__ns_content_value) = __ns_row.0 {
+                            if __ns_content_value == #content {
+                                __ns_value = __ns_row.1;
                                 break;
                             }
                         }
@@ -55,32 +55,32 @@ impl TryIntoEnum {
                 }
             }
             None => quote! {
-                let value = ::nativeshell_core::Value::Map(map);
+                let __ns_value = ::nativeshell_core::Value::Map(__ns_map);
             },
         };
         quote! {
-            match value {
-                ::nativeshell_core::Value::Map(map) => {
-                    let mut tag_value = Option::<String>::None;
-                    for row in map.iter() {
-                        if let (::nativeshell_core::Value::String(tag),
-                                ::nativeshell_core::Value::String(value)) = (&row.0, &row.1) {
-                            if tag == #tag {
-                                tag_value = Some(value.clone());
+            match __ns_value {
+                ::nativeshell_core::Value::Map(__ns_map) => {
+                    let mut __ns_tag_value = Option::<String>::None;
+                    for __ns_row in __ns_map.iter() {
+                        if let (::nativeshell_core::Value::String(__ns_tag),
+                                ::nativeshell_core::Value::String(__ns_value)) = (&__ns_row.0, &__ns_row.1) {
+                            if __ns_tag == #tag {
+                                __ns_tag_value = Some(__ns_value.clone());
                             }
                         }
                     }
                     #extract_value;
-                    let tag_value = tag_value.ok_or_else(|| Self::Error::OtherError("Couldn't get tag value".into()))?;
-                    match tag_value.as_str() {
+                    let __ns_tag_value = __ns_tag_value.ok_or_else(|| Self::Error::OtherError("missing enum tag".into()))?;
+                    match __ns_tag_value.as_str() {
                         #(
                             #strings => { #variants; },
                         )*
-                        (other) => return ::core::result::Result::Err(Self::Error::OtherError(format!("Unexpected enum value {}", other))),
+                        (__ns_other) => return ::core::result::Result::Err(Self::Error::OtherError(format!("unknown enum value {}", __ns_other))),
                     }
                 }
-                other => {
-                    return ::core::result::Result::Err(Self::Error::OtherError(format!("Can not deserialize {:?} as enum", other)));
+                __ns_other => {
+                    return ::core::result::Result::Err(Self::Error::OtherError(format!("can not deserialize {:?} as enum", __ns_other)));
                 }
             }
         }
@@ -91,20 +91,20 @@ impl TryIntoEnum {
         let (strings, variants) = self.process_variants(data, false);
         quote! {
             #unit_enums
-            match value {
-                ::nativeshell_core::Value::Map(map) => {
-                    let row = map.into_iter().next().ok_or(Self::Error::OtherError("Unexpected empty map".into()))?;
-                    let key : String = row.0.try_into().map_err(|e|Self::Error::OtherError("Enum type must be a String".into()))?;
-                    let value = row.1;
-                    match key.as_str() {
+            match __ns_value {
+                ::nativeshell_core::Value::Map(__ns_map) => {
+                    let __ns_row = __ns_map.into_iter().next().ok_or(Self::Error::OtherError("unexpected empty map".into()))?;
+                    let __ns_key : String = __ns_row.0.try_into().map_err(|e|Self::Error::OtherError("enum type must be a String".into()))?;
+                    let __ns_value = __ns_row.1;
+                    match __ns_key.as_str() {
                         #(
                             #strings => { #variants; },
                         )*
-                        (other) => return ::core::result::Result::Err(Self::Error::OtherError(format!("Unexpected enum value {}", other))),
+                        (other) => return ::core::result::Result::Err(Self::Error::OtherError(format!("unknown enum value {}", other))),
                     }
                 }
                 other => {
-                    return ::core::result::Result::Err(Self::Error::OtherError(format!("Can not deserialize {:?} as enum", other)));
+                    return ::core::result::Result::Err(Self::Error::OtherError(format!("can not deserialize {:?} as enum", other)));
                 }
             }
         }
@@ -133,7 +133,7 @@ impl TryIntoEnum {
                 }
             } else {
                 variants.push(process_struct(
-                    &variant.span(),
+                    variant.span(),
                     &variant.fields,
                     Some(ident),
                     attributes.rename_all,
@@ -159,13 +159,13 @@ impl TryIntoEnum {
         }
         let enum_name = &self.name;
         quote! {
-            if let ::nativeshell_core::Value::String(string) = value {
+            if let ::nativeshell_core::Value::String(string) = __ns_value {
                 #(
                     if string == #strings {
                         return ::core::result::Result::Ok(#enum_name::#variants);
                     }
                 )*
-                return ::core::result::Result::Err(Self::Error::OtherError(format!("Unknown enum value {:?}", string)));
+                return ::core::result::Result::Err(Self::Error::OtherError(format!("unknown enum value {:?}", string)));
             }
         }
     }
@@ -180,7 +180,7 @@ impl TryIntoEnum {
 }
 
 fn process_struct(
-    span: &Span,
+    span: Span,
     fields: &Fields,
     constructor_suffix: Option<&Ident>,
     rename_rule: RenameRule,
@@ -188,12 +188,9 @@ fn process_struct(
     match fields {
         Fields::Named(named) => process_struct_named(named, constructor_suffix, rename_rule),
         Fields::Unnamed(unnamed) => process_struct_unnamed(unnamed, constructor_suffix),
-        Fields::Unit => Diagnostic::spanned(
-            span.clone(),
-            Level::Error,
-            "unit structs are not supported".into(),
-        )
-        .abort(),
+        Fields::Unit => {
+            Diagnostic::spanned(span, Level::Error, "unit structs are not supported".into()).abort()
+        }
     }
 }
 
@@ -213,7 +210,7 @@ fn process_struct_unnamed(
         quote! {
             return Ok(#constructor ( {
                 let mut res = std::option::Option::<#ty>::None;
-                (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut res)).assign(value, false)?;
+                (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut res)).assign(__ns_value, false)?;
                 res.unwrap()
             } ));
         }
@@ -225,7 +222,7 @@ fn process_struct_unnamed(
                     {
                         let mut res = std::option::Option::<#ty>::None;
                         (&mut &mut &mut ::nativeshell_core::derive_internal::WrapMut(&mut res)).assign(
-                            iter.next().ok_or_else(||Self::Error::OtherError("Missing value".into()))?,
+                            iter.next().ok_or_else(||Self::Error::OtherError("missing value".into()))?,
                             false,
                         )?;
                         res.unwrap()
@@ -234,7 +231,7 @@ fn process_struct_unnamed(
             })
             .collect();
         quote! {
-            match value {
+            match __ns_value {
                 ::nativeshell_core::Value::List(entries) => {
                     let mut iter = entries.into_iter();
                     return Ok(#constructor(
@@ -244,7 +241,7 @@ fn process_struct_unnamed(
                     ));
                 }
                 _=> {
-                    return Err(Self::Error::OtherError("Converting into unnamed requires Value::List.".into()))
+                    return Err(Self::Error::OtherError("converting into unnamed requires Value::List.".into()))
                 }
             }
         }
@@ -283,7 +280,7 @@ fn process_struct_named(
                 &rename_rule,
                 &attributes.rename.map(|a| a.value),
             );
-            err_missing_field.push(format!("Required field \"{}\" missing in value.", string));
+            err_missing_field.push(format!("required field \"{}\" missing in value.", string));
             strings.push(string);
             fields.push(ident.clone());
             types.push(field.ty.clone());
@@ -296,12 +293,12 @@ fn process_struct_named(
             let mut #fields = ::std::option::Option::<#types>::None;
         )*;
 
-        match value {
+        match __ns_value {
             ::nativeshell_core::Value::Map(entries) => {
                 for __ns_e in entries {
                     let __ns_name = match __ns_e.0 {
-                        nativeshell_core::Value::String(name) => name,
-                        _ => return Err(Self::Error::OtherError("Key value must be a string.".into()))
+                        ::nativeshell_core::Value::String(name) => name,
+                        _ => return Err(Self::Error::OtherError("key value must be a string.".into()))
                     };
                     #(
                         if __ns_name == #strings {
@@ -312,7 +309,7 @@ fn process_struct_named(
                 }
             }
             _=> {
-                return Err(Self::Error::OtherError("Converting into struct requires Value::Map.".into()))
+                return Err(Self::Error::OtherError("converting into struct requires Value::Map.".into()))
             }
         }
 
@@ -347,7 +344,7 @@ impl TryIntoStruct {
 
     pub fn process(self, data: DataStruct) -> TokenStream {
         process_struct(
-            &self.name.span(),
+            self.name.span(),
             &data.fields,
             None,
             self.attributes.rename_all,

@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::{api::api, raw, DartValue, IntoDart};
+use super::{api, raw, DartValue, IntoDart};
 use once_cell::sync::OnceCell;
 
 /// Wraps dart port and provides a method to send messages.
