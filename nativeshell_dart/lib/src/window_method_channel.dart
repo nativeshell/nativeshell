@@ -42,6 +42,7 @@ class WindowMethodDispatcher {
 
   final MessageCodec _codec;
   BinaryMessenger get _binaryMessenger =>
+      // ignore: unnecessary_non_null_assertion
       ServicesBinding.instance!.defaultBinaryMessenger;
 
   Future<T> invokeMethod<T>({
