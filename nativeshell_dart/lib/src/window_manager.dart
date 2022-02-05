@@ -178,6 +178,7 @@ int _pauseCount = 0;
 void _pushPause() {
   ++_pauseCount;
   if (_pauseCount > 0) {
+    // ignore: unnecessary_non_null_assertion
     WidgetsBinding.instance!
         .handleAppLifecycleStateChanged(AppLifecycleState.paused);
   }
@@ -187,6 +188,7 @@ void _popPause() {
   assert(_pauseCount > 0);
   --_pauseCount;
   if (_pauseCount == 0) {
+    // ignore: unnecessary_non_null_assertion
     WidgetsBinding.instance!
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   }
