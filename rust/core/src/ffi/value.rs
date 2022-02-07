@@ -31,6 +31,52 @@ pub enum DartValue {
     Unsupported,
 }
 
+macro_rules! impl_from {
+    ($variant:path, $for_type:ty) => {
+        impl From<$for_type> for DartValue {
+            fn from(v: $for_type) -> DartValue {
+                $variant(v.into())
+            }
+        }
+    };
+}
+
+impl_from!(DartValue::Bool, bool);
+impl_from!(DartValue::I32, i32);
+impl_from!(DartValue::I64, i64);
+impl_from!(DartValue::Double, f64);
+impl_from!(DartValue::String, CString);
+impl_from!(DartValue::Array, Vec<DartValue>);
+impl_from!(DartValue::U8List, Vec<u8>);
+impl_from!(DartValue::I8List, Vec<i8>);
+impl_from!(DartValue::U16List, Vec<u16>);
+impl_from!(DartValue::I16List, Vec<i16>);
+impl_from!(DartValue::U32List, Vec<u32>);
+impl_from!(DartValue::I32List, Vec<i32>);
+impl_from!(DartValue::I64List, Vec<i64>);
+impl_from!(DartValue::F32List, Vec<f32>);
+impl_from!(DartValue::F64List, Vec<f64>);
+impl_from!(DartValue::SendPort, raw::DartCObjectSendPort);
+impl_from!(DartValue::Capability, raw::DartCObjectCapability);
+
+impl From<()> for DartValue {
+    fn from(_: ()) -> Self {
+        DartValue::Null
+    }
+}
+
+impl From<&str> for DartValue {
+    fn from(str: &str) -> Self {
+        CString::new(str).unwrap().into()
+    }
+}
+
+impl From<String> for DartValue {
+    fn from(string: String) -> Self {
+        DartValue::from(string.as_str())
+    }
+}
+
 impl DartValue {
     /// Creates a DartValue instance from raw DartCObject. Any data in the
     /// object is copied.
@@ -77,140 +123,6 @@ impl DartValue {
             DartCObjectType::NumberOfTypes => {
                 panic!("CObjectType::NumberOfTypes is not a valid type");
             }
-        }
-    }
-
-    pub fn try_into_null(self) -> Option<()> {
-        match self {
-            DartValue::Null => Some(()),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_bool(self) -> Option<bool> {
-        match self {
-            DartValue::Bool(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i32(self) -> Option<i32> {
-        match self {
-            DartValue::I32(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i64(self) -> Option<i64> {
-        match self {
-            DartValue::I32(value) => Some(value as i64),
-            DartValue::I64(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_double(self) -> Option<f64> {
-        match self {
-            DartValue::Double(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_string(self) -> Option<CString> {
-        match self {
-            DartValue::String(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_array(self) -> Option<Vec<DartValue>> {
-        match self {
-            DartValue::Array(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i8_list(self) -> Option<Vec<i8>> {
-        match self {
-            DartValue::I8List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_u8_list(self) -> Option<Vec<u8>> {
-        match self {
-            DartValue::U8List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i16_list(self) -> Option<Vec<i16>> {
-        match self {
-            DartValue::I16List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_u16_list(self) -> Option<Vec<u16>> {
-        match self {
-            DartValue::U16List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i32_list(self) -> Option<Vec<i32>> {
-        match self {
-            DartValue::I32List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_u32_list(self) -> Option<Vec<u32>> {
-        match self {
-            DartValue::U32List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_i64_list(self) -> Option<Vec<i64>> {
-        match self {
-            DartValue::I64List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_u64_list(self) -> Option<Vec<u64>> {
-        match self {
-            DartValue::U64List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_f32_list(self) -> Option<Vec<f32>> {
-        match self {
-            DartValue::F32List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_f64_list(self) -> Option<Vec<f64>> {
-        match self {
-            DartValue::F64List(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_send_port(self) -> Option<raw::DartCObjectSendPort> {
-        match self {
-            DartValue::SendPort(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    pub fn try_into_capability(self) -> Option<raw::DartCObjectCapability> {
-        match self {
-            DartValue::Capability(value) => Some(value),
-            _ => None,
         }
     }
 

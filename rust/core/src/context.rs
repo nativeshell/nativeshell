@@ -1,6 +1,11 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    any::{Any, TypeId},
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
-use crate::{util::black_box, api::nativeshell_init_ffi};
+use crate::{message_channel::nativeshell_get_ffi_context, util::black_box};
 
 use super::RunLoop;
 
@@ -11,6 +16,7 @@ pub struct Context {
 
 pub struct ContextInternal {
     run_loop: RunLoop,
+    attachments: RefCell<HashMap<TypeId, Box<dyn Any>>>,
     // message_channel: MessageChannel,
 }
 
@@ -23,6 +29,7 @@ impl Context {
         let res = Self {
             internal: Rc::new(ContextInternal {
                 run_loop: RunLoop::new(),
+                attachments: RefCell::new(HashMap::new()),
                 // message_channel: MessageChannel::new(),
             }),
             outermost: true,
@@ -30,14 +37,29 @@ impl Context {
         ffi_methods();
         let prev_context = CURRENT_CONTEXT.with(|c| c.replace(Some(res.clone())));
         if prev_context.is_some() {
-            panic!("Another context was already associated with current thread.");
+            panic!("another context is already associated with current thread.");
         }
-        // res.message_channel.init();
         res
     }
 
     pub fn run_loop(&self) -> &RunLoop {
         &self.internal.run_loop
+    }
+
+    pub fn get_attachment<T: Any, F: FnOnce() -> T>(&self, on_init: F) -> Ref<T> {
+        let id = TypeId::of::<T>();
+        if !self.internal.attachments.borrow().contains_key(&id) {
+            let attachment = Box::new(on_init());
+            self.internal
+                .attachments
+                .borrow_mut()
+                .insert(id, attachment);
+        }
+        let map = self.internal.attachments.borrow();
+        Ref::map(map, |r| {
+            let any = r.get(&id).unwrap();
+            any.downcast_ref::<T>().unwrap()
+        })
     }
 
     // pub fn message_channel(&self) -> &MessageChannel {
@@ -48,7 +70,7 @@ impl Context {
     /// on main thread and only while the original (outer-most) context is
     /// still in scope. Otherwise the function will panic.
     pub fn get() -> Self {
-        Self::current().expect("No Context is associated with current thread.")
+        Self::current().expect("no context is associated with current thread.")
     }
 
     /// Returns context associated with current thread.
@@ -82,7 +104,6 @@ impl Context {
 fn ffi_methods() {
     // this ensures that all FFI methods are referenced and not removed by linker
     if black_box(false) {
-        nativeshell_init_ffi(std::ptr::null_mut());
-        // nativeshell_vec_methods();
+        nativeshell_get_ffi_context(std::ptr::null_mut());
     }
 }

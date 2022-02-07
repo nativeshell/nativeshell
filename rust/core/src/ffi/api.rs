@@ -83,7 +83,7 @@ pub(super) fn init(ptr: *mut c_void) {
         let api = ptr as *const Api;
         let api = &*api;
         if api.major != 2 {
-            panic!("Unsupported Dart API version {}.{}", api.major, api.minor);
+            panic!("unsupported Dart API version {}.{}", api.major, api.minor);
         }
         DartFunctions {
             post_cobject: mem::transmute(api.lookup_fn("Dart_PostCObject")),
@@ -94,8 +94,9 @@ pub(super) fn init(ptr: *mut c_void) {
     };
     if let Some(prev_functions) = FUNCTIONS.get() {
         if prev_functions != &functions {
-            panic!("NativeShell FFI already initialized but with different function pointers");
+            panic!("nativeShell FFI is already initialized but with different function pointers");
         }
+        return;
     }
     FUNCTIONS.set(functions).unwrap();
 }

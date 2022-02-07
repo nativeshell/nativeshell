@@ -3,15 +3,16 @@
 mod context;
 mod ffi;
 mod handle;
+mod message_channel;
 mod platform;
 mod run_loop;
 mod util;
 mod value;
 
-pub use ::serde::*;
 pub use context::*;
 pub use ffi::*;
 pub use handle::*;
+pub use message_channel::*;
 pub use run_loop::*;
 pub use value::*;
 

@@ -1,6 +1,9 @@
 #[cfg(feature = "nativeshell_derive")]
 mod tests {
-    use std::convert::{TryFrom, TryInto};
+    use std::{
+        collections::HashMap,
+        convert::{TryFrom, TryInto},
+    };
 
     use nativeshell_core::{IntoValue, TryFromError, TryFromValue, Value};
 
@@ -536,6 +539,12 @@ mod tests {
         v2: Option<Value>,
     }
 
+    #[derive(Clone, PartialEq, Debug, IntoValue, TryFromValue)]
+    struct StructWithMap {
+        map: HashMap<Value, Value>,
+        map2: HashMap<i64, String>,
+    }
+
     #[test]
     fn test_struct() -> Result<(), TryFromError> {
         {
@@ -598,6 +607,49 @@ mod tests {
             let sv1: Value = v1.clone().into();
             assert_eq!(sv1, Value::Map(vec![("v2".into(), Value::Null),].into()),);
             let v1d: StructOptionalValue = sv1.try_into()?;
+            assert_eq!(v1d, v1);
+        }
+        {
+            let mut map = HashMap::<Value, Value>::new();
+            map.insert("key".into(), 100i64.into());
+            map.insert(10f64.into(), "Value".into());
+
+            let mut map2 = HashMap::<i64, String>::new();
+            map2.insert(10, "Hello".into());
+            map2.insert(20, "World".into());
+
+            let v1 = StructWithMap { map, map2 };
+            let sv1: Value = v1.clone().into();
+
+            assert_eq!(
+                sv1,
+                Value::Map(
+                    vec![
+                        (
+                            "map".into(),
+                            Value::Map(
+                                vec![
+                                    ("key".into(), 100i64.into()), //
+                                    (10f64.into(), "Value".into()),
+                                ]
+                                .into()
+                            )
+                        ),
+                        (
+                            "map2".into(),
+                            Value::Map(
+                                vec![
+                                    (10i64.into(), "Hello".into()), //
+                                    (20i64.into(), "World".into()),
+                                ]
+                                .into()
+                            )
+                        )
+                    ]
+                    .into()
+                )
+            );
+            let v1d: StructWithMap = sv1.try_into()?;
             assert_eq!(v1d, v1);
         }
         Ok(())

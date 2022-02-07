@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::HashMap,
-    convert::{Infallible, TryFrom},
+    convert::{Infallible, TryFrom, TryInto},
     fmt::Display,
     hash::Hash,
     num::TryFromIntError,
@@ -16,11 +16,18 @@ pub enum Value {
     F64(f64),
     String(String),
     U8List(Vec<u8>),
+    I16List(Vec<i16>),
+    U16List(Vec<u16>),
     I32List(Vec<i32>),
+    U32List(Vec<u32>),
     I64List(Vec<i64>),
     F32List(Vec<f32>),
     F64List(Vec<f64>),
     List(Vec<Value>),
+    // Map is stored as a list of tuples. It can be converted from and into HashMap
+    // if required. For usual flow (convert struct into value -> send to dart,
+    // receive from dart, convert into struct) we don't really need HashMap
+    // functionality and we'll save time building HashMap that is not used.
     Map(ValueTupleList),
 }
 
@@ -57,13 +64,15 @@ impl_from!(Value::F64, f64);
 impl_from!(Value::String, String);
 impl_from!(Value::String, &str);
 impl_from!(Value::U8List, Vec<u8>);
+impl_from!(Value::U16List, Vec<u16>);
+impl_from!(Value::I16List, Vec<i16>);
+impl_from!(Value::U32List, Vec<u32>);
 impl_from!(Value::I32List, Vec<i32>);
 impl_from!(Value::I64List, Vec<i64>);
 impl_from!(Value::F32List, Vec<f32>);
 impl_from!(Value::F64List, Vec<f64>);
 impl_from!(Value::List, Vec<Value>);
 impl_from!(Value::Map, Vec<(Value, Value)>);
-impl_from!(Value::Map, HashMap<Value, Value>);
 
 impl<T: Into<Value>> From<Option<T>> for Value {
     fn from(v: Option<T>) -> Self {
@@ -77,6 +86,16 @@ impl<T: Into<Value>> From<Option<T>> for Value {
 impl From<()> for Value {
     fn from(_: ()) -> Self {
         Value::Null
+    }
+}
+
+// Allow converting any HashMap to Value as long as both key and value are
+// convertible to Value.
+impl<K: Into<Value>, V: Into<Value>> From<HashMap<K, V>> for Value {
+    fn from(map: HashMap<K, V>) -> Self {
+        let values: Vec<(Value, Value)> =
+            map.into_iter().map(|(k, v)| (k.into(), v.into())).collect();
+        Value::Map(values.into())
     }
 }
 
@@ -166,14 +185,43 @@ impl_try_from!(Value::I64, i64);
 impl_try_from!(Value::F64, f64);
 impl_try_from!(Value::String, String);
 impl_try_from!(Value::U8List, Vec<u8>);
+impl_try_from!(Value::I16List, Vec<i16>);
+impl_try_from!(Value::U16List, Vec<u16>);
 impl_try_from!(Value::I32List, Vec<i32>);
+impl_try_from!(Value::U32List, Vec<u32>);
 impl_try_from!(Value::I64List, Vec<i64>);
 impl_try_from!(Value::F32List, Vec<f32>);
 impl_try_from!(Value::F64List, Vec<f64>);
 impl_try_from!(Value::List, Vec<Value>);
 impl_try_from!(Value::Map, ValueTupleList);
 impl_try_from!(Value::Map, Vec<(Value, Value)>);
-impl_try_from!(Value::Map, HashMap<Value, Value>);
+
+// Allow converting to any Kind of HashMap as long as key and value
+// are types that can be converted from Value.
+impl<
+        K: TryFrom<Value, Error = E1> + Eq + Hash,
+        V: TryFrom<Value, Error = E2>,
+        E1: Into<TryFromError>,
+        E2: Into<TryFromError>,
+    > TryFrom<Value> for HashMap<K, V>
+{
+    type Error = TryFromError;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Map(map) => map
+                .into_iter()
+                .map(|(k, v)| {
+                    Ok((
+                        k.try_into().map_err(|e: E1| e.into())?,
+                        v.try_into().map_err(|e: E2| e.into())?,
+                    ))
+                })
+                .collect(),
+            _ => Err(TryFromError::BadType),
+        }
+    }
+}
 
 impl Eq for Value {}
 
@@ -201,7 +249,10 @@ impl std::hash::Hash for Value {
             Value::F64(v) => hash_f64(*v, state),
             Value::String(v) => v.hash(state),
             Value::U8List(v) => v.hash(state),
+            Value::I16List(v) => v.hash(state),
+            Value::U16List(v) => v.hash(state),
             Value::I32List(v) => v.hash(state),
+            Value::U32List(v) => v.hash(state),
             Value::I64List(v) => v.hash(state),
             Value::F32List(v) => v.iter().for_each(|x| hash_f32(*x, state)),
             Value::F64List(v) => v.iter().for_each(|x| hash_f64(*x, state)),

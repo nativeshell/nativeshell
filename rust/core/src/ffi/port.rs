@@ -10,7 +10,7 @@ use once_cell::sync::OnceCell;
 /// Wraps dart port and provides a method to send messages.
 #[derive(Clone, Debug)]
 pub struct DartPort {
-    port: raw::DartPort,
+    pub port: raw::DartPort,
 }
 
 impl DartPort {

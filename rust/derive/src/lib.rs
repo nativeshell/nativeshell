@@ -68,7 +68,7 @@ pub fn try_from_value(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         #[automatically_derived]
         impl #impl_generics core::convert::TryFrom<::nativeshell_core::Value> for #name #ty_generics #where_clause {
             type Error = ::nativeshell_core::TryFromError;
-            fn try_from(__ns_value: Value) -> Result<Self, Self::Error> {
+            fn try_from(__ns_value: ::nativeshell_core::Value) -> Result<Self, Self::Error> {
                 use ::nativeshell_core::derive_internal::Assign;
                 #token_stream
             }
