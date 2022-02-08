@@ -7,11 +7,13 @@ use self::{
     native_vector::*,
 };
 
+mod async_method_handler;
 mod codec;
 mod message_channel;
 mod method_handler;
 mod native_vector;
 
+pub use async_method_handler::*;
 pub use message_channel::*;
 pub use method_handler::*;
 

@@ -3,10 +3,10 @@ use std::{
     cell::{Cell, Ref, RefCell},
     collections::HashMap,
     convert::TryInto,
+    fmt::Display,
     rc::Rc,
     sync::atomic::AtomicI64,
 };
-use thiserror::Error;
 
 use crate::{
     message_channel::codec::Serializer, raw, Context, DartPort, DartValue, IsolateId, NativePort,
@@ -15,19 +15,38 @@ use crate::{
 
 use super::codec::Deserializer;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum SendMessageError {
-    #[error("target isolate not found")]
     InvalidIsolate,
-    #[error("target isolate refused the message")]
     MessageRefused,
-    #[error("target isolate was shut down while waiting for response")]
     IsolateShutDown,
-    #[error("message channel \"{channel:?}\" not found")]
     ChannelNotFound { channel: String },
-    #[error("message handler for channel \"{channel:?}\" not registered")]
     HandlerNotRegistered { channel: String },
 }
+
+impl Display for SendMessageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SendMessageError::InvalidIsolate => write!(f, "target isolate not found"),
+            SendMessageError::MessageRefused => write!(f, "target isolate refused the message"),
+            SendMessageError::IsolateShutDown => {
+                write!(f, "target isolate was shut down while waiting for response")
+            }
+            SendMessageError::ChannelNotFound { channel } => {
+                write!(f, "message channel \"{}\" not found", channel)
+            }
+            SendMessageError::HandlerNotRegistered { channel } => {
+                write!(
+                    f,
+                    "message handler for channel \"{}\" not registered",
+                    channel
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for SendMessageError {}
 
 pub trait MessageChannelDelegate {
     fn on_isolate_joined(&self, isolate: IsolateId);
@@ -147,7 +166,7 @@ impl MessageChannel {
     }
 
     fn on_value_received(&self, isolate_id: IsolateId, value: Value) {
-        if let None = self.handle_message(isolate_id, value) {
+        if self.handle_message(isolate_id, value).is_none() {
             panic!("MessageChannel: Malformed message");
         }
     }
@@ -202,7 +221,7 @@ impl MessageChannel {
             .borrow()
             .get(&isolate_id)
             .cloned()
-            .expect("eceived message from unknown isolate.");
+            .expect("received message from unknown isolate");
         match delegate {
             Some(delegate) => {
                 let reply = Box::new(move |value: Value| {
@@ -281,7 +300,7 @@ pub trait ContextMessageChannel {
 
 impl ContextMessageChannel for Context {
     fn message_channel(&self) -> Ref<MessageChannel> {
-        return self.get_attachment(|| MessageChannel::new());
+        self.get_attachment(MessageChannel::new)
     }
 }
 

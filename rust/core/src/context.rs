@@ -48,6 +48,8 @@ impl Context {
 
     pub fn get_attachment<T: Any, F: FnOnce() -> T>(&self, on_init: F) -> Ref<T> {
         let id = TypeId::of::<T>();
+        // Do a separate check here, make sure attachments is not borrowed while
+        // creating the attachment
         if !self.internal.attachments.borrow().contains_key(&id) {
             let attachment = Box::new(on_init());
             self.internal
@@ -61,10 +63,6 @@ impl Context {
             any.downcast_ref::<T>().unwrap()
         })
     }
-
-    // pub fn message_channel(&self) -> &MessageChannel {
-    //     &self.message_channel
-    // }
 
     /// Returns context associated with current thread. Can only be called
     /// on main thread and only while the original (outer-most) context is

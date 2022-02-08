@@ -1,41 +1,62 @@
 use core::panic;
 use std::{
     cell::RefCell,
-    convert::TryInto,
+    convert::{TryFrom, TryInto},
+    fmt::Display,
     rc::{Rc, Weak},
 };
 
-use thiserror::Error;
-
-use crate::{value::Value, Context, ContextMessageChannel};
+use crate::{value::Value, Context, ContextMessageChannel, TryFromError};
 
 use super::{IsolateId, MessageChannelDelegate, SendMessageError};
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum MethodCallError {
-    #[error("error sending message")]
-    SendError(#[from] SendMessageError),
-
-    #[error("platform error")]
-    PlatformError(#[from] PlatformError),
+    SendError(SendMessageError),
+    PlatformError(PlatformError),
+    ConversionError(TryFromError),
 }
 
-#[derive(Error, Debug)]
-#[error("platform error (code: {code:?}, message: {message:?}, detail: {detail:?})")]
+impl Display for MethodCallError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MethodCallError::SendError(e) => write!(f, "error sending message: {}", e),
+            MethodCallError::PlatformError(e) => write!(f, "platform error: {}", e),
+            MethodCallError::ConversionError(e) => write!(f, "conversion error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for MethodCallError {}
+
+#[derive(Debug)]
 pub struct PlatformError {
     pub code: String,
     pub message: Option<String>,
     pub detail: Value,
 }
 
+impl Display for PlatformError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "platform error (code: {}, message: {:?}, detail: {:?}",
+            self.code, self.message, self.detail
+        )
+    }
+}
+
+impl std::error::Error for PlatformError {}
+
 #[derive(Debug)]
 pub struct MethodCall {
     pub method: String,
     pub args: Value,
+    pub isolate: IsolateId,
 }
 
 pub trait MethodHandler: Sized + 'static {
-    fn on_method_call(&mut self, call: MethodCall, reply: MethodCallReply, isolate: IsolateId);
+    fn on_method_call(&mut self, call: MethodCall, reply: MethodCallReply);
 
     // Implementation can store weak reference if it needs to pass it around.
     // Guaranteed to call before any other methods.
@@ -58,10 +79,42 @@ pub struct MethodInvoker {
 }
 
 impl MethodInvoker {
-    pub fn call_method<F>(&self, target_isolate: IsolateId, method: &str, args: Value, reply: F)
-    where
+    /// Convenience call method that will attempt to convert the result to specified type.
+    pub fn call_method_cv<
+        V: Into<Value>,
+        F, //
+        T: TryFrom<Value, Error = E>,
+        E: Into<TryFromError>,
+    >(
+        &self,
+        target_isolate: IsolateId,
+        method: &str,
+        args: V,
+        reply: F,
+    ) where
+        F: FnOnce(Result<T, MethodCallError>) + 'static,
+    {
+        self.call_method(target_isolate, method, args, |r| {
+            let res = match r {
+                Ok(value) => value
+                    .try_into()
+                    .map_err(|e: E| MethodCallError::ConversionError(e.into())),
+                Err(err) => Err(err),
+            };
+            reply(res);
+        });
+    }
+
+    pub fn call_method<V: Into<Value>, F>(
+        &self,
+        target_isolate: IsolateId,
+        method: &str,
+        args: V,
+        reply: F,
+    ) where
         F: FnOnce(Result<Value, MethodCallError>) + 'static,
     {
+        let args: Value = args.into();
         let call: Value = vec![Value::String(method.into()), args].into();
         Context::get().message_channel().send_message(
             target_isolate,
@@ -69,43 +122,17 @@ impl MethodInvoker {
             call,
             move |res| match res {
                 Ok(value) => {
-                    if let Some(result) = Self::unpack_result(value) {
-                        reply(result)
-                    } else {
-                        panic!("Malformed message");
-                    }
+                    let result = unpack_result(value).expect("Malformed message");
+                    reply(result);
                 }
                 Err(err) => reply(Err(MethodCallError::SendError(err))),
             },
         );
     }
-
-    fn unpack_result(value: Value) -> Option<Result<Value, MethodCallError>> {
-        let vec: Vec<Value> = value.try_into().ok()?;
-        let mut iter = vec.into_iter();
-        let ty: String = iter.next()?.try_into().ok()?;
-        match ty.as_str() {
-            "ok" => Some(Ok(iter.next()?)),
-            "err" => {
-                let code = iter.next()?.try_into().ok()?;
-                let message = match iter.next()? {
-                    Value::String(s) => Some(s),
-                    _ => None,
-                };
-                let detail = iter.next()?;
-                Some(Err(MethodCallError::PlatformError(PlatformError {
-                    code,
-                    message,
-                    detail,
-                })))
-            }
-            _ => None,
-        }
-    }
 }
 
 pub struct MethodCallReply {
-    reply: Box<dyn FnOnce(Value) -> bool>,
+    pub(crate) reply: Box<dyn FnOnce(Value) -> bool>,
 }
 
 impl MethodCallReply {
@@ -117,17 +144,18 @@ impl MethodCallReply {
         (self.reply)(Value::List(vec![
             "err".into(),
             code.into(),
-            message
-                .map(|s| Value::String(s.into()))
-                .unwrap_or(Value::Null),
+            message.map(|s| s.into()).unwrap_or(Value::Null),
             detail,
         ]));
     }
 
-    pub fn send(self, result: Result<Value, PlatformError>) {
+    pub fn send<V: Into<Value>, E: Into<PlatformError>>(self, result: Result<V, E>) {
         match result {
-            Ok(value) => self.send_ok(value),
-            Err(err) => self.send_error(err.code, err.message, err.detail),
+            Ok(value) => self.send_ok(value.into()),
+            Err(err) => {
+                let err: PlatformError = err.into();
+                self.send_error(err.code, err.message, err.detail)
+            }
         }
     }
 }
@@ -152,6 +180,7 @@ impl<T: MethodHandler> RegisteredMethodHandler<T> {
         Context::get()
             .message_channel()
             .register_delegate(&res.inner.channel, res.inner.clone());
+        res.inner.init();
         res
     }
 }
@@ -170,13 +199,12 @@ struct RegisteredMethodHandlerInner<T: MethodHandler> {
 }
 
 impl<T: MethodHandler> RegisteredMethodHandlerInner<T> {
-    fn unpack_method_call(value: Value) -> Option<MethodCall> {
-        let vec: Vec<Value> = value.try_into().ok()?;
-        let mut iter = vec.into_iter();
-        Some(MethodCall {
-            method: iter.next()?.try_into().ok()?,
-            args: iter.next()?,
-        })
+    fn init(&self) {
+        let weak = Rc::downgrade(&self.handler);
+        self.handler.borrow_mut().assign_weak_self(weak);
+        self.handler.borrow_mut().assign_invoker(MethodInvoker {
+            channel_name: self.channel.clone(),
+        });
     }
 }
 
@@ -189,17 +217,48 @@ impl<T: MethodHandler> MessageChannelDelegate for RegisteredMethodHandlerInner<T
         message: Value,
         reply: Box<dyn FnOnce(Value) -> bool>,
     ) {
-        if let Some(call) = Self::unpack_method_call(message) {
+        if let Some(call) = unpack_method_call(message, isolate) {
             let reply = MethodCallReply { reply };
-            self.handler
-                .borrow_mut()
-                .on_method_call(call, reply, isolate);
+            self.handler.borrow_mut().on_method_call(call, reply);
         } else {
-            panic!("Malformed method call message");
+            panic!("malformed method call message");
         }
     }
 
     fn on_isolate_exited(&self, isolate: IsolateId) {
         self.handler.borrow_mut().on_isolate_destroyed(isolate);
     }
+}
+
+pub(crate) fn unpack_result(value: Value) -> Option<Result<Value, MethodCallError>> {
+    let vec: Vec<Value> = value.try_into().ok()?;
+    let mut iter = vec.into_iter();
+    let ty: String = iter.next()?.try_into().ok()?;
+    match ty.as_str() {
+        "ok" => Some(Ok(iter.next()?)),
+        "err" => {
+            let code = iter.next()?.try_into().ok()?;
+            let message = match iter.next()? {
+                Value::String(s) => Some(s),
+                _ => None,
+            };
+            let detail = iter.next()?;
+            Some(Err(MethodCallError::PlatformError(PlatformError {
+                code,
+                message,
+                detail,
+            })))
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn unpack_method_call(value: Value, isolate: IsolateId) -> Option<MethodCall> {
+    let vec: Vec<Value> = value.try_into().ok()?;
+    let mut iter = vec.into_iter();
+    Some(MethodCall {
+        method: iter.next()?.try_into().ok()?,
+        args: iter.next()?,
+        isolate,
+    })
 }

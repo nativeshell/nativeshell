@@ -199,7 +199,13 @@ impl Serializer {
                 writer.write_f64(n);
             }
             Value::String(v) => {
-                Self::write_attachment(writer, v, attachments);
+                if v.len() < 50 {
+                    writer.write_u8(VALUE_SMALL_STRING);
+                    writer.write_size(v.len());
+                    writer.write_string(&v);
+                } else {
+                    Self::write_attachment(writer, v, attachments);
+                }
             }
             Value::U8List(v) => {
                 Self::write_attachment(writer, v, attachments);
