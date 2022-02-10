@@ -42,10 +42,10 @@ extension NativeListFloat64 on NativeList<Double> {
   Float64List asTypedList() => data.asTypedList(length);
 }
 
-/// List backed by Rust `Vec<T>`. Supported types are `Uint8`, `Int32`,
-/// `Int64`, `Double`.
+/// List backed by Rust `Vec<T>`. Supported types are 'Int8, `Uint8`, 'Int16',
+/// 'Uint16', `Int32`, 'Uint32', `Int64`, 'Float' and `Double`.
 ///
-/// Must be freed with `free()` or the `data`, `length` and `capacity` fields
+/// Must be freed with `free()` or the `data` and `length` fields
 /// can be passed to Rust, where a `Vec<T>` can be recreated using
 /// `Vec::from_raw_parts`.
 class NativeList<T extends NativeType> {

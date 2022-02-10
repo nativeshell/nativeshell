@@ -132,9 +132,7 @@ class MessageChannelContext {
         final d = message.last as Uint8List;
         final data = ByteData.view(d.buffer, d.offsetInBytes, d.length);
         final v = Deserializer().deserialize(data, message);
-        if (v is List) {
-          _handleMessage(v);
-        }
+        _handleMessage(v as List);
       }
     }
   }
