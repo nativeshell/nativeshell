@@ -12,7 +12,7 @@ license = "MIT OR Apache-2.0"
 futures = "0.3.17"
 async-trait = "0.1.51"
 once_cell = "1.8.0"
-nativeshell_derive = { path = "../derive", optional = true}
+nativeshell_derive = { path = "../rust_derive", optional = true}
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9"
