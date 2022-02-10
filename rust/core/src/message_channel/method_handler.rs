@@ -1,12 +1,11 @@
 use core::panic;
 use std::{
     cell::RefCell,
-    convert::{TryFrom, TryInto},
     fmt::Display,
     rc::{Rc, Weak},
 };
 
-use crate::{value::Value, Context, ContextMessageChannel, TryFromError};
+use crate::{value::Value, Context, GetMessageChannel, TryFromError};
 
 use super::{IsolateId, MessageChannelDelegate, SendMessageError};
 

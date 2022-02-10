@@ -2,7 +2,6 @@ use once_cell::sync::OnceCell;
 use std::{
     cell::{Cell, Ref, RefCell},
     collections::HashMap,
-    convert::TryInto,
     fmt::Display,
     rc::Rc,
     sync::atomic::AtomicI64,
@@ -294,11 +293,11 @@ impl MessageChannel {
     }
 }
 
-pub trait ContextMessageChannel {
+pub trait GetMessageChannel {
     fn message_channel(&self) -> Ref<MessageChannel>;
 }
 
-impl ContextMessageChannel for Context {
+impl GetMessageChannel for Context {
     fn message_channel(&self) -> Ref<MessageChannel> {
         self.get_attachment(MessageChannel::new)
     }

@@ -5,7 +5,7 @@ version = "0.1.1"
 [lib]
 proc-macro = true
 
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 syn = "1.0"

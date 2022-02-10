@@ -17,7 +17,6 @@ pub struct Context {
 pub struct ContextInternal {
     run_loop: RunLoop,
     attachments: RefCell<HashMap<TypeId, Box<dyn Any>>>,
-    // message_channel: MessageChannel,
 }
 
 impl Context {
@@ -30,7 +29,6 @@ impl Context {
             internal: Rc::new(ContextInternal {
                 run_loop: RunLoop::new(),
                 attachments: RefCell::new(HashMap::new()),
-                // message_channel: MessageChannel::new(),
             }),
             outermost: true,
         };

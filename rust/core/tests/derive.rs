@@ -1,9 +1,6 @@
 #[cfg(feature = "nativeshell_derive")]
 mod tests {
-    use std::{
-        collections::HashMap,
-        convert::{TryFrom, TryInto},
-    };
+    use std::collections::HashMap;
 
     use nativeshell_core::{IntoValue, TryFromError, TryFromValue, Value};
 

@@ -1,8 +1,3 @@
-use cocoa::{
-    appkit::{NSApplication, NSEventType::NSApplicationDefined},
-    base::{id, nil, YES},
-    foundation::NSPoint,
-};
 use core_foundation::{
     base::TCFType,
     date::CFAbsoluteTimeGetCurrent,
@@ -11,7 +6,6 @@ use core_foundation::{
         CFRunLoopTimer, CFRunLoopTimerContext, CFRunLoopTimerRef,
     },
 };
-use dispatch::ffi::{dispatch_async_f, dispatch_get_main_queue};
 use objc::{class, msg_send, sel, sel_impl};
 use std::{
     cell::Cell,
@@ -21,6 +15,11 @@ use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+
+use super::sys::dispatch::*;
+
+#[cfg(target_os = "macos")]
+use super::sys::cocoa::*;
 
 pub type HandleType = usize;
 pub const INVALID_HANDLE: HandleType = 0;
@@ -212,6 +211,7 @@ impl PlatformRunLoop {
         handle
     }
 
+    #[cfg(target_os = "macos")]
     pub fn run(&self) {
         unsafe {
             let app = NSApplication::sharedApplication(nil);
@@ -220,6 +220,7 @@ impl PlatformRunLoop {
         }
     }
 
+    #[cfg(target_os = "macos")]
     pub fn stop(&self) {
         self.state.lock().unwrap().unschedule();
 
@@ -228,7 +229,7 @@ impl PlatformRunLoop {
             app.stop_(nil);
 
             let dummy_event: id = msg_send![class!(NSEvent),
-                otherEventWithType: NSApplicationDefined
+                otherEventWithType: NSEventType::NSApplicationDefined
                 location: NSPoint::new(0.0, 0.0)
                 modifierFlags: 0
                 timestamp: 0

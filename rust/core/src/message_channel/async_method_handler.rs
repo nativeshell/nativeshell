@@ -1,13 +1,12 @@
 use std::{
     cell::RefCell,
-    convert::{TryFrom, TryInto},
     rc::{Rc, Weak},
 };
 
 use async_trait::async_trait;
 
 use crate::{
-    unpack_method_call, unpack_result, util::FutureCompleter, Context, ContextMessageChannel,
+    unpack_method_call, unpack_result, util::FutureCompleter, Context, GetMessageChannel,
     IsolateId, MessageChannelDelegate, MethodCall, MethodCallError, MethodCallReply, PlatformError,
     TryFromError, Value,
 };

@@ -51,10 +51,12 @@ impl RunLoop {
         self.schedule(Duration::from_secs(0), callback)
     }
 
+    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     pub fn run(&self) {
         self.platform_run_loop.run()
     }
 
+    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     pub fn stop(&self) {
         self.platform_run_loop.stop()
     }
