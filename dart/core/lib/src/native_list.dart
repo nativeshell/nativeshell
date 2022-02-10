@@ -3,8 +3,15 @@ import 'dart:typed_data';
 
 import 'native_functions.dart';
 
+extension NativeListInt8 on NativeList<Int8> {
+  Int8List asTypedList() => data.asTypedList(length);
+}
+
 extension NativeListUint8 on NativeList<Uint8> {
   Uint8List asTypedList() => data.asTypedList(length);
+  void resize(int newSize) {
+    _resize(newSize);
+  }
 }
 
 extension NativeListInt16 on NativeList<Int16> {
@@ -54,7 +61,7 @@ class NativeList<T extends NativeType> {
 
   /// Resizes the underlying vector to new size preserving the data.
   /// Currently only supported on Vec<Uint8>
-  void resize(int newSize) {
+  void _resize(int newSize) {
     final resize = functions.vecResize<T>();
     _data = resize(
       _data,

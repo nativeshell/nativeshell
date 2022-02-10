@@ -10,6 +10,7 @@ class NativeFunctions {
     required this.token,
     required this.registerIsolate,
     required this.postMessage,
+    required this.vecAllocateInt8,
     required this.vecAllocateUint8,
     required this.vecAllocateInt16,
     required this.vecAllocateUint16,
@@ -18,6 +19,7 @@ class NativeFunctions {
     required this.vecAllocateInt64,
     required this.vecAllocateFloat,
     required this.vecAllocateDouble,
+    required this.vecFreeInt8,
     required this.vecFreeUint8,
     required this.vecFreeInt16,
     required this.vecFreeUint16,
@@ -35,6 +37,7 @@ class NativeFunctions {
   final RegisterIsolate registerIsolate;
   final PostMessage postMessage;
 
+  final VecAllocate<Int8> vecAllocateInt8;
   final VecAllocate<Uint8> vecAllocateUint8;
   final VecAllocate<Int16> vecAllocateInt16;
   final VecAllocate<Uint16> vecAllocateUint16;
@@ -44,6 +47,7 @@ class NativeFunctions {
   final VecAllocate<Float> vecAllocateFloat;
   final VecAllocate<Double> vecAllocateDouble;
 
+  final VecFree<Int8> vecFreeInt8;
   final VecFree<Uint8> vecFreeUint8;
   final VecFree<Int16> vecFreeInt16;
   final VecFree<Uint16> vecFreeUint16;
@@ -91,6 +95,8 @@ class NativeFunctions {
         registerIsolate:
             context.ref.registerIsolate.asFunction<RegisterIsolate>(),
         postMessage: context.ref.postMessage.asFunction<PostMessage>(),
+        vecAllocateInt8:
+            context.ref.vecAllocateInt8.asFunction<VecAllocate<Int8>>(),
         vecAllocateUint8:
             context.ref.vecAllocateUint8.asFunction<VecAllocate<Uint8>>(),
         vecAllocateInt16:
@@ -107,6 +113,7 @@ class NativeFunctions {
             context.ref.vecAllocateFloat.asFunction<VecAllocate<Float>>(),
         vecAllocateDouble:
             context.ref.vecAllocateDouble.asFunction<VecAllocate<Double>>(),
+        vecFreeInt8: context.ref.vecFreeInt8.asFunction<VecFree<Int8>>(),
         vecFreeUint8: context.ref.vecFreeUint8.asFunction<VecFree<Uint8>>(),
         vecFreeInt16: context.ref.vecFreeInt16.asFunction<VecFree<Int16>>(),
         vecFreeUint16: context.ref.vecFreeUint16.asFunction<VecFree<Uint16>>(),
@@ -126,7 +133,9 @@ class NativeFunctions {
   // Access to NativeVector functions
   VecAllocate<T> vecAllocate<T extends NativeType>() {
     final t = <T>[];
-    if (t is List<Uint8>) {
+    if (t is List<Int8>) {
+      return vecAllocateInt8 as VecAllocate<T>;
+    } else if (t is List<Uint8>) {
       return vecAllocateUint8 as VecAllocate<T>;
     } else if (t is List<Int16>) {
       return vecAllocateInt16 as VecAllocate<T>;
@@ -158,7 +167,9 @@ class NativeFunctions {
 
   VecFree<T> vecFree<T extends NativeType>() {
     final t = <T>[];
-    if (t is List<Uint8>) {
+    if (t is List<Int8>) {
+      return vecFreeInt8 as VecFree<T>;
+    } else if (t is List<Uint8>) {
       return vecFreeUint8 as VecFree<T>;
     } else if (t is List<Int16>) {
       return vecFreeInt16 as VecFree<T>;
@@ -221,6 +232,7 @@ class _GetFunctions extends Struct {
   // out
   external Pointer<NativeFunction<_RegisterIsolate>> registerIsolate;
   external Pointer<NativeFunction<_PostMessage>> postMessage;
+  external Pointer<NativeFunction<_VecAllocate<Int8>>> vecAllocateInt8;
   external Pointer<NativeFunction<_VecAllocate<Uint8>>> vecAllocateUint8;
   external Pointer<NativeFunction<_VecAllocate<Int16>>> vecAllocateInt16;
   external Pointer<NativeFunction<_VecAllocate<Uint16>>> vecAllocateUint16;
@@ -229,6 +241,7 @@ class _GetFunctions extends Struct {
   external Pointer<NativeFunction<_VecAllocate<Int64>>> vecAllocateInt64;
   external Pointer<NativeFunction<_VecAllocate<Float>>> vecAllocateFloat;
   external Pointer<NativeFunction<_VecAllocate<Double>>> vecAllocateDouble;
+  external Pointer<NativeFunction<_VecFree<Int8>>> vecFreeInt8;
   external Pointer<NativeFunction<_VecFree<Uint8>>> vecFreeUint8;
   external Pointer<NativeFunction<_VecFree<Int16>>> vecFreeInt16;
   external Pointer<NativeFunction<_VecFree<Uint16>>> vecFreeUint16;

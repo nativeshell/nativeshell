@@ -10,6 +10,7 @@ pub enum Value {
     I64(i64),
     F64(f64),
     String(String),
+    I8List(Vec<i8>),
     U8List(Vec<u8>),
     I16List(Vec<i16>),
     U16List(Vec<u16>),
@@ -58,6 +59,7 @@ impl_from!(Value::F64, f32);
 impl_from!(Value::F64, f64);
 impl_from!(Value::String, String);
 impl_from!(Value::String, &str);
+impl_from!(Value::I8List, Vec<i8>);
 impl_from!(Value::U8List, Vec<u8>);
 impl_from!(Value::U16List, Vec<u16>);
 impl_from!(Value::I16List, Vec<i16>);
@@ -179,6 +181,7 @@ impl_try_from2!(Value::I64, u32);
 impl_try_from!(Value::I64, i64);
 impl_try_from!(Value::F64, f64);
 impl_try_from!(Value::String, String);
+impl_try_from!(Value::I8List, Vec<i8>);
 impl_try_from!(Value::U8List, Vec<u8>);
 impl_try_from!(Value::I16List, Vec<i16>);
 impl_try_from!(Value::U16List, Vec<u16>);
@@ -243,6 +246,7 @@ impl std::hash::Hash for Value {
             Value::I64(v) => v.hash(state),
             Value::F64(v) => hash_f64(*v, state),
             Value::String(v) => v.hash(state),
+            Value::I8List(v) => v.hash(state),
             Value::U8List(v) => v.hash(state),
             Value::I16List(v) => v.hash(state),
             Value::U16List(v) => v.hash(state),

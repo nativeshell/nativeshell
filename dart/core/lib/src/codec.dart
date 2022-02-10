@@ -16,20 +16,21 @@ const int _valueSmallString = 255 - 5; // stored inline
 
 // Serialization
 const int _valueString = 255 - 6;
-const int _valueUint8List = 255 - 7;
-const int _valueInt16List = 255 - 8;
-const int _valueUint16List = 255 - 9;
-const int _valueInt32List = 255 - 10;
-const int _valueUint32List = 255 - 11;
-const int _valueInt64List = 255 - 12;
-const int _valueFloat32List = 255 - 13;
-const int _valueFloat64List = 255 - 14;
+const int _valueInt8List = 255 - 7;
+const int _valueUint8List = 255 - 8;
+const int _valueInt16List = 255 - 9;
+const int _valueUint16List = 255 - 10;
+const int _valueInt32List = 255 - 11;
+const int _valueUint32List = 255 - 12;
+const int _valueInt64List = 255 - 13;
+const int _valueFloat32List = 255 - 14;
+const int _valueFloat64List = 255 - 15;
 
 // Deserialization
 const int _valueAttachment = _valueString;
 
-const int _valueList = 255 - 15;
-const int _valueMap = 255 - 16;
+const int _valueList = 255 - 16;
+const int _valueMap = 255 - 17;
 const int _valueLast = _valueMap;
 
 /// Similar to StandardMessageCodec, but uses NativeList for typed lists
@@ -83,6 +84,12 @@ class Serializer {
         bytes.asTypedList().setAll(0, encoded);
         _writeNativeList(buffer, bytes);
       }
+    } else if (value is Int8List) {
+      buffer.putUint8(_valueInt8List);
+      final v = NativeList.create<Int8>(_functions, value.length);
+      v.asTypedList().setAll(0, value);
+      _writeNativeList(buffer, v);
+      nativeLists.add(v);
     } else if (value is Uint8List) {
       buffer.putUint8(_valueUint8List);
       final v = NativeList.create<Uint8>(_functions, value.length);

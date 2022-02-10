@@ -9,20 +9,21 @@ const VALUE_SMALL_STRING: u8 = 255 - 5;
 
 // Deserialization
 const VALUE_STRING: u8 = 255 - 6;
-const VALUE_UINT8LIST: u8 = 255 - 7;
-const VALUE_INT16LIST: u8 = 255 - 8;
-const VALUE_UINT16LIST: u8 = 255 - 9;
-const VALUE_INT32LIST: u8 = 255 - 10;
-const VALUE_UINT32LIST: u8 = 255 - 11;
-const VALUE_INT64LIST: u8 = 255 - 12;
-const VALUE_FLOAT32LIST: u8 = 255 - 13;
-const VALUE_FLOAT64LIST: u8 = 255 - 14;
+const VALUE_INT8LIST: u8 = 255 - 7;
+const VALUE_UINT8LIST: u8 = 255 - 8;
+const VALUE_INT16LIST: u8 = 255 - 9;
+const VALUE_UINT16LIST: u8 = 255 - 10;
+const VALUE_INT32LIST: u8 = 255 - 11;
+const VALUE_UINT32LIST: u8 = 255 - 12;
+const VALUE_INT64LIST: u8 = 255 - 13;
+const VALUE_FLOAT32LIST: u8 = 255 - 14;
+const VALUE_FLOAT64LIST: u8 = 255 - 15;
 
 // Serialization
 const VALUE_ATTACHMENT: u8 = VALUE_STRING; // this will be passed directly as Dart_CObject
 
-const VALUE_LIST: u8 = 255 - 15;
-const VALUE_MAP: u8 = 255 - 16;
+const VALUE_LIST: u8 = 255 - 16;
+const VALUE_MAP: u8 = 255 - 17;
 const VALUE_LAST: u8 = VALUE_MAP;
 
 pub(super) struct Deserializer {}
@@ -58,6 +59,7 @@ impl Deserializer {
                 let vec = Self::read_vec::<u8>(reader);
                 Value::String(String::from_utf8_unchecked(vec))
             }
+            VALUE_INT8LIST => Value::I8List(Self::read_vec::<i8>(reader)),
             VALUE_UINT8LIST => Value::U8List(Self::read_vec::<u8>(reader)),
             VALUE_INT16LIST => Value::I16List(Self::read_vec::<i16>(reader)),
             VALUE_UINT16LIST => Value::U16List(Self::read_vec::<u16>(reader)),
@@ -206,6 +208,9 @@ impl Serializer {
                 } else {
                     Self::write_attachment(writer, v, attachments);
                 }
+            }
+            Value::I8List(v) => {
+                Self::write_attachment(writer, v, attachments);
             }
             Value::U8List(v) => {
                 Self::write_attachment(writer, v, attachments);

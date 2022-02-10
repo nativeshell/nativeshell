@@ -9,6 +9,10 @@ unsafe fn allocate_vec<T: Copy + Default>(size: u64) -> *mut T {
     res
 }
 
+pub(super) unsafe extern "C" fn allocate_vec_i8(size: u64) -> *mut i8 {
+    allocate_vec::<i8>(size)
+}
+
 pub(super) unsafe extern "C" fn allocate_vec_u8(size: u64) -> *mut u8 {
     allocate_vec::<u8>(size)
 }
@@ -39,6 +43,10 @@ pub(super) unsafe extern "C" fn allocate_vec_f32(size: u64) -> *mut f32 {
 
 pub(super) unsafe extern "C" fn allocate_vec_f64(size: u64) -> *mut f64 {
     allocate_vec::<f64>(size)
+}
+
+pub(super) unsafe extern "C" fn free_vec_i8(data: *mut i8, len: u64) {
+    let _ = Vec::from_raw_parts(data, len as usize, len as usize);
 }
 
 pub(super) unsafe extern "C" fn free_vec_u8(data: *mut u8, len: u64) {

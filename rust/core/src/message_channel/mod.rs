@@ -27,6 +27,7 @@ struct NativeContext {
     register_isolate: *mut c_void,
     send_message: *mut c_void,
 
+    allocate_vec_i8: *mut c_void,
     allocate_vec_u8: *mut c_void,
     allocate_vec_i16: *mut c_void,
     allocate_vec_u16: *mut c_void,
@@ -35,6 +36,7 @@ struct NativeContext {
     allocate_vec_i64: *mut c_void,
     allocate_vec_f32: *mut c_void,
     allocate_vec_f64: *mut c_void,
+    free_vec_i8: *mut c_void,
     free_vec_u8: *mut c_void,
     free_vec_i16: *mut c_void,
     free_vec_u16: *mut c_void,
@@ -64,6 +66,7 @@ pub extern "C" fn nativeshell_get_ffi_context(data: *mut c_void) -> FunctionResu
     nativeshell_init_ffi(context.ffi_data);
     context.register_isolate = register_isolate as *mut _;
     context.send_message = post_message as *mut _;
+    context.allocate_vec_i8 = allocate_vec_i8 as *mut _;
     context.allocate_vec_u8 = allocate_vec_u8 as *mut _;
     context.allocate_vec_i16 = allocate_vec_i16 as *mut _;
     context.allocate_vec_i16 = allocate_vec_u16 as *mut _;
@@ -72,6 +75,7 @@ pub extern "C" fn nativeshell_get_ffi_context(data: *mut c_void) -> FunctionResu
     context.allocate_vec_i64 = allocate_vec_i64 as *mut _;
     context.allocate_vec_f32 = allocate_vec_f32 as *mut _;
     context.allocate_vec_f64 = allocate_vec_f64 as *mut _;
+    context.free_vec_i8 = free_vec_i8 as *mut _;
     context.free_vec_u8 = free_vec_u8 as *mut _;
     context.free_vec_i16 = free_vec_i16 as *mut _;
     context.free_vec_u16 = free_vec_u16 as *mut _;
