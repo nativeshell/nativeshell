@@ -546,7 +546,7 @@ impl PlatformWindow {
 
     pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
         let is_zoomed: BOOL = unsafe { msg_send![*self.platform_window, isZoomed] };
-        let is_zoomed: bool = is_zoomed.into();
+        let is_zoomed = is_zoomed == YES;
         if maximized && !is_zoomed {
             unsafe { NSWindow::zoom_(*self.platform_window, nil) };
         } else if !maximized && is_zoomed {
