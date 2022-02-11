@@ -46,6 +46,9 @@ class Methods {
 
   static final windowSetStyle = 'Window.setStyle';
   static final windowSetTitle = 'Window.setTitle';
+  static final windowSetMinimized = 'Window.setMinimized';
+  static final windowSetMaximized = 'Window.setMaximized';
+  static final windowSetFullScreen = 'Window.setFullScreen';
   static final windowSetCollectionBehavior = 'Window.setCollectionBehavior';
   static final windowGetWindowStateFlags = 'Window.getWindowStateFlags';
   static final windowPerformWindowDrag = 'Window.performWindowDrag';

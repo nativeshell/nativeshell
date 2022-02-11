@@ -103,6 +103,18 @@ impl PlatformWindow {
         Err(PlatformError::NotImplemented)
     }
 
+    pub fn set_minimized(&self, minimized: bool) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
+    pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
+    pub fn set_full_screen(&self, full_screen: bool) -> PlatformResult<()> {
+        Err(PlatformError::NotImplemented)
+    }
+
     pub fn get_window_state_flags(&self) -> PlatformResult<WindowStateFlags> {
         Err(PlatformError::NotImplemented)
     }
