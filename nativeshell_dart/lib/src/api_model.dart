@@ -200,6 +200,7 @@ class WindowStyle {
     this.canMinimize = true,
     this.canMaximize = true,
     this.canFullScreen = true,
+    this.alwaysOnTop = false,
     this.trafficLightOffset,
   });
 
@@ -210,6 +211,7 @@ class WindowStyle {
   final bool canMinimize;
   final bool canMaximize; // ignored on mac
   final bool canFullScreen;
+  final bool alwaysOnTop;
 
   // macOS only and only applicable for WindowFrame.noTitle;
   // Controls the offset of window traffic light.
@@ -222,6 +224,7 @@ class WindowStyle {
         'canMinimize': canMinimize,
         'canMaximize': canMaximize,
         'canFullScreen': canFullScreen,
+        'alwaysOnTop': alwaysOnTop,
         'trafficLightOffset': trafficLightOffset?.serialize(),
       };
 
@@ -234,7 +237,10 @@ class WindowStyle {
         canClose: map['canClose'],
         canMinimize: map['canMinimize'],
         canMaximize: map['canMaximize'],
-        canFullScreen: map['canFullScreen']);
+        canFullScreen: map['canFullScreen'],
+        alwaysOnTop: map['alwaysOnTop'],
+        trafficLightOffset:
+            OffsetExt.maybeDeserialize(map['trafficLightOffset']));
   }
 
   @override
