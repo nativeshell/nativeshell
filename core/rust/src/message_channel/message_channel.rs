@@ -323,10 +323,10 @@ pub(super) extern "C" fn register_isolate(port: i64) -> i64 {
 }
 
 pub(super) extern "C" fn post_message(isolate_id: IsolateId, message: *mut u8, len: u64) {
-    let vec = unsafe { Vec::from_raw_parts(message, len as usize, len as usize) };
-    let value = unsafe { Deserializer::deserialize(&vec) };
     let sender = RUN_LOOP_SENDER.get().unwrap();
+    let vec = unsafe { Vec::from_raw_parts(message, len as usize, len as usize) };
     sender.send(move || {
+        let value = unsafe { Deserializer::deserialize(&vec) };
         Context::get()
             .message_channel()
             .on_value_received(isolate_id, value);

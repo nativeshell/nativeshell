@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'native_functions.dart';
 import 'native_list.dart';
+import 'native_pointer.dart';
 import 'write_buffer.dart';
 import 'read_buffer.dart';
 
@@ -28,6 +29,7 @@ const int _valueFloat64List = 255 - 15;
 
 // Deserialization
 const int _valueAttachment = _valueString;
+const int _valueNativePointer = _valueAttachment - 1;
 
 const int _valueList = 255 - 16;
 const int _valueMap = 255 - 17;
@@ -209,6 +211,10 @@ class Deserializer {
       case _valueAttachment:
         final index = _readSize(buffer);
         return attachments[index];
+      case _valueNativePointer:
+        final value = buffer.getInt64();
+        final index = _readSize(buffer);
+        return NativePointer(value, attachments[index]);
       case _valueList:
         final int length = _readSize(buffer);
         final List<Object?> result = List<Object?>.filled(length, null);
@@ -219,11 +225,16 @@ class Deserializer {
       case _valueMap:
         final int length = _readSize(buffer);
         final Map<Object?, Object?> result = <Object?, Object?>{};
+        // Allow deserializing with JSON if keys are all Strings
+        bool allStrings = true;
         for (int i = 0; i < length; i++) {
-          result[_readValue(buffer, attachments)] =
-              _readValue(buffer, attachments);
+          final key = _readValue(buffer, attachments);
+          result[key] = _readValue(buffer, attachments);
+          if (key is! String) {
+            allStrings = false;
+          }
         }
-        return result;
+        return allStrings ? result.cast<String, Object?>() : result;
       default:
         throw const FormatException('Message corrupted');
     }

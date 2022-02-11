@@ -3,6 +3,8 @@ use std::{
     num::TryFromIntError, ops::Deref,
 };
 
+use crate::{raw, NativePointer};
+
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
     Null,
@@ -25,6 +27,16 @@ pub enum Value {
     // receive from dart, convert into struct) we don't really need HashMap
     // functionality and we'll save time building HashMap that is not used.
     Map(ValueTupleList),
+
+    // Special dart values. These can only be sent from Rust to Dart
+    Dart(DartObject),
+}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash)]
+pub enum DartObject {
+    SendPort(raw::DartCObjectSendPort),
+    Capability(raw::DartCObjectCapability),
+    NativePointer(NativePointer),
 }
 
 /// Wrapper for Value tuple that ensures that the underyling list is sorted
@@ -70,6 +82,7 @@ impl_from!(Value::F32List, Vec<f32>);
 impl_from!(Value::F64List, Vec<f64>);
 impl_from!(Value::List, Vec<Value>);
 impl_from!(Value::Map, Vec<(Value, Value)>);
+impl_from!(Value::Dart, DartObject);
 
 impl<T: Into<Value>> From<Option<T>> for Value {
     fn from(v: Option<T>) -> Self {
@@ -193,6 +206,7 @@ impl_try_from!(Value::F64List, Vec<f64>);
 impl_try_from!(Value::List, Vec<Value>);
 impl_try_from!(Value::Map, ValueTupleList);
 impl_try_from!(Value::Map, Vec<(Value, Value)>);
+impl_try_from!(Value::Dart, DartObject);
 
 // Allow converting to any Kind of HashMap as long as key and value
 // are types that can be converted from Value.
@@ -257,6 +271,7 @@ impl std::hash::Hash for Value {
             Value::F64List(v) => v.iter().for_each(|x| hash_f64(*x, state)),
             Value::List(v) => v.hash(state),
             Value::Map(v) => v.hash(state),
+            Value::Dart(v) => v.hash(state),
         }
     }
 }

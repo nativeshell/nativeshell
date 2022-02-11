@@ -28,6 +28,8 @@ pub enum DartValue {
     F64List(Vec<f64>),
     SendPort(raw::DartCObjectSendPort),
     Capability(raw::DartCObjectCapability),
+    NativePointer(raw::DartCObjectNativePointer),
+    ExternalTypedData(raw::DartCObjectExternalTypedData),
     Unsupported,
 }
 
@@ -58,6 +60,11 @@ impl_from!(DartValue::F32List, Vec<f32>);
 impl_from!(DartValue::F64List, Vec<f64>);
 impl_from!(DartValue::SendPort, raw::DartCObjectSendPort);
 impl_from!(DartValue::Capability, raw::DartCObjectCapability);
+impl_from!(DartValue::NativePointer, raw::DartCObjectNativePointer);
+impl_from!(
+    DartValue::ExternalTypedData,
+    raw::DartCObjectExternalTypedData
+);
 
 impl From<()> for DartValue {
     fn from(_: ()) -> Self {
@@ -221,14 +228,14 @@ pub mod raw {
     }
 
     #[repr(C)]
-    #[derive(Debug, Copy, Clone, PartialEq)]
+    #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Hash)]
     pub struct DartCObjectSendPort {
         pub id: DartPort,
         pub origin_id: DartPort,
     }
 
     #[repr(C)]
-    #[derive(Debug, Copy, Clone, PartialEq)]
+    #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Hash)]
     pub struct DartCObjectCapability {
         pub id: i64,
     }
@@ -251,7 +258,7 @@ pub mod raw {
     }
 
     #[repr(C)]
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, PartialEq)]
     pub struct DartCObjectExternalTypedData {
         pub ty: DartTypedDataType,
         pub length: isize, // in elements, not bytes
@@ -260,8 +267,10 @@ pub mod raw {
         pub callback: DartHandleFinalizer,
     }
 
+    unsafe impl Send for DartCObjectExternalTypedData {}
+
     #[repr(C)]
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, PartialEq)]
     pub struct DartCObjectNativePointer {
         pub ptr: isize,
         pub size: isize,
@@ -536,6 +545,28 @@ impl IntoDart for raw::DartCObjectCapability {
     }
 }
 
+impl IntoDart for raw::DartCObjectNativePointer {
+    fn into_dart(self) -> raw::DartCObject {
+        raw::DartCObject {
+            ty: raw::DartCObjectType::NativePointer,
+            value: raw::DartCObjectValue {
+                as_native_pointer: self,
+            },
+        }
+    }
+}
+
+impl IntoDart for raw::DartCObjectExternalTypedData {
+    fn into_dart(self) -> raw::DartCObject {
+        raw::DartCObject {
+            ty: raw::DartCObjectType::ExternalTypedData,
+            value: raw::DartCObjectValue {
+                as_external_typed_data: self,
+            },
+        }
+    }
+}
+
 impl IntoDart for DartValue {
     fn into_dart(self) -> raw::DartCObject {
         match self {
@@ -558,6 +589,8 @@ impl IntoDart for DartValue {
             Self::F64List(value) => TypedList(value).into_dart(),
             Self::SendPort(value) => value.into_dart(),
             Self::Capability(value) => value.into_dart(),
+            Self::NativePointer(value) => value.into_dart(),
+            Self::ExternalTypedData(value) => value.into_dart(),
             Self::Unsupported => raw::DartCObject {
                 ty: raw::DartCObjectType::Unsupported,
                 value: raw::DartCObjectValue { as_bool: false },

@@ -6,6 +6,7 @@ mod context;
 mod ffi;
 mod handle;
 mod message_channel;
+mod native_pointer;
 mod platform;
 mod run_loop;
 mod util;
@@ -15,6 +16,7 @@ pub use context::*;
 pub use ffi::*;
 pub use handle::*;
 pub use message_channel::*;
+pub use native_pointer::*;
 pub use run_loop::*;
 pub use value::*;
 
