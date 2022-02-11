@@ -421,6 +421,8 @@ class DragDriver {
     _RenderDropRegion? dropRegion;
     final monitors = <_RenderDropMonitor>[];
 
+    _allDropMonitors.removeWhere((element) => !element.attached);
+
     // ignore: unnecessary_non_null_assertion
     GestureBinding.instance!.hitTest(hitTest, info.position);
 
@@ -454,6 +456,8 @@ class DragDriver {
   }
 
   void draggingExited() {
+    _allDropMonitors.removeWhere((element) => !element.attached);
+
     if (_lastDropRegion != null) {
       _lastDropRegion!.handleOnDropExit();
       _lastDropRegion = null;
@@ -463,6 +467,8 @@ class DragDriver {
   }
 
   void performDrop(DragInfo info) async {
+    _allDropMonitors.removeWhere((element) => !element.attached);
+
     final res = await draggingUpdated(info);
     if (res != DragEffect.None) {
       assert(_lastDropRegion != null);
