@@ -456,6 +456,14 @@ impl PlatformWindow {
             NSWindow::setCollectionBehavior_(*self.platform_window, collection_behavior);
 
             NSWindow::setStyleMask_(*self.platform_window, mask);
+
+            NSWindow::setLevel_(
+                *self.platform_window,
+                match style.always_on_top {
+                    true => style.always_on_top_level.unwrap_or(3), /* kCGFloatingWindowLevel */
+                    false => 0,                                     /* kCGNormalWindowLevel */
+                },
+            );
         }
         Ok(())
     }

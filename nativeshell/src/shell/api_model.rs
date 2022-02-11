@@ -197,6 +197,8 @@ pub struct WindowStyle {
     pub can_minimize: bool,
     pub can_maximize: bool,
     pub can_full_screen: bool,
+    pub always_on_top: bool,
+    pub always_on_top_level: Option<i64>,
     pub traffic_light_offset: Option<Point>,
 }
 
