@@ -223,6 +223,18 @@ pub struct WindowStateFlags {
     pub active: bool,
 }
 
+impl WindowStateFlags {
+    pub fn is_minimized(&self) -> bool {
+        self.minimized == BoolTransition::Yes || self.minimized == BoolTransition::NoToYes
+    }
+    pub fn is_maximized(&self) -> bool {
+        self.maximized == BoolTransition::Yes || self.maximized == BoolTransition::NoToYes
+    }
+    pub fn is_full_screen(&self) -> bool {
+        self.full_screen == BoolTransition::Yes || self.full_screen == BoolTransition::NoToYes
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowCollectionBehavior {
