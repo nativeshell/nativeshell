@@ -547,9 +547,7 @@ impl PlatformWindow {
     pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
         let is_zoomed: BOOL = unsafe { msg_send![*self.platform_window, isZoomed] };
         let is_zoomed = is_zoomed == YES;
-        if maximized && !is_zoomed {
-            unsafe { NSWindow::zoom_(*self.platform_window, nil) };
-        } else if !maximized && is_zoomed {
+        if (maximized && !is_zoomed) || (!maximized && is_zoomed) {
             unsafe { NSWindow::zoom_(*self.platform_window, nil) };
         }
         Ok(())
@@ -558,9 +556,7 @@ impl PlatformWindow {
     pub fn set_full_screen(&self, full_screen: bool) -> PlatformResult<()> {
         let masks = unsafe { NSWindow::styleMask(*self.platform_window) };
         let is_full_screen = masks.contains(NSWindowStyleMask::NSFullScreenWindowMask);
-        if full_screen && !is_full_screen {
-            unsafe { NSWindow::toggleFullScreen_(*self.platform_window, nil) };
-        } else if !full_screen && is_full_screen {
+        if (full_screen && !is_full_screen) || (!full_screen && is_full_screen) {
             unsafe { NSWindow::toggleFullScreen_(*self.platform_window, nil) };
         }
         Ok(())
