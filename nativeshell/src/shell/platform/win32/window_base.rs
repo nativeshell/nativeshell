@@ -20,12 +20,12 @@ use windows::Win32::{
             HTBOTTOM, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTCAPTION, HTCLIENT, HTLEFT, HTRIGHT, HTTOP,
             HTTOPLEFT, HTTOPRIGHT, HTTRANSPARENT, HWND_BOTTOM, MF_BYCOMMAND, MF_DISABLED,
             MF_ENABLED, MF_GRAYED, SC_CLOSE, SHOW_WINDOW_CMD, SWP_FRAMECHANGED, SWP_NOACTIVATE,
-            SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_HIDE, SW_SHOW, WINDOWPLACEMENT, WINDOWPOS,
-            WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE, WM_DESTROY, WM_DISPLAYCHANGE,
-            WM_DWMCOMPOSITIONCHANGED, WM_NCCALCSIZE, WM_NCHITTEST, WM_NCLBUTTONDOWN,
-            WM_WINDOWPOSCHANGING, WS_BORDER, WS_CAPTION, WS_DLGFRAME, WS_EX_LAYOUTRTL,
-            WS_EX_NOREDIRECTIONBITMAP, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPEDWINDOW,
-            WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
+            SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_HIDE, SW_MAXIMIZE, SW_MINIMIZE, SW_NORMAL,
+            SW_SHOW, WINDOWPLACEMENT, WINDOWPOS, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE,
+            WM_DESTROY, WM_DISPLAYCHANGE, WM_DWMCOMPOSITIONCHANGED, WM_NCCALCSIZE, WM_NCHITTEST,
+            WM_NCLBUTTONDOWN, WM_WINDOWPOSCHANGING, WS_BORDER, WS_CAPTION, WS_DLGFRAME,
+            WS_EX_LAYOUTRTL, WS_EX_NOREDIRECTIONBITMAP, WS_MAXIMIZEBOX, WS_MINIMIZEBOX,
+            WS_OVERLAPPEDWINDOW, WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
         },
     },
 };
@@ -494,6 +494,24 @@ impl WindowBaseState {
             self.update_dwm_frame()?;
         }
         Ok(())
+    }
+
+    pub fn minimize(&self) {
+        unsafe {
+            ShowWindow(self.hwnd, SW_MINIMIZE);
+        }
+    }
+
+    pub fn maximize(&self) {
+        unsafe {
+            ShowWindow(self.hwnd, SW_MAXIMIZE);
+        }
+    }
+
+    pub fn restore(&self) {
+        unsafe {
+            ShowWindow(self.hwnd, SW_NORMAL);
+        }
     }
 
     pub fn save_position_to_string(&self) -> PlatformResult<String> {

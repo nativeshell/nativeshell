@@ -319,6 +319,28 @@ impl PlatformWindow {
         Err(PlatformError::NotAvailable)
     }
 
+    pub fn set_minimized(&self, minimized: bool) -> PlatformResult<()> {
+        if minimized && !self.window_state_flags.borrow().is_minimized() {
+            self.state.borrow().minimize();
+        } else if !minimized && self.window_state_flags.borrow().is_minimized() {
+            self.state.borrow().restore();
+        }
+        Ok(())
+    }
+
+    pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
+        if maximized && !self.window_state_flags.borrow().is_maximized() {
+            self.state.borrow().maximize();
+        } else if !maximized && self.window_state_flags.borrow().is_maximized() {
+            self.state.borrow().restore();
+        }
+        Ok(())
+    }
+
+    pub fn set_full_screen(&self, _full_screen: bool) -> PlatformResult<()> {
+        Err(PlatformError::NotAvailable)
+    }
+
     pub fn get_screen_id(&self) -> PlatformResult<i64> {
         PlatformScreenManager::screen_id_from_hwnd(self.hwnd())
     }

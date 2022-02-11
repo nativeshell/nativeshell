@@ -297,34 +297,47 @@ enum BoolTransition {
 }
 
 class WindowStateFlags {
-  final BoolTransition maximized;
-  final BoolTransition minimized;
-  final BoolTransition fullScreen;
+  bool get maximized =>
+      maximizedTransition == BoolTransition.yes ||
+      maximizedTransition == BoolTransition.noToYes;
+
+  bool get minimized =>
+      minimizedTransition == BoolTransition.yes ||
+      minimizedTransition == BoolTransition.noToYes;
+
+  bool get fullScreen =>
+      fullScreenTransition == BoolTransition.yes ||
+      fullScreenTransition == BoolTransition.noToYes;
+
   final bool active;
 
+  final BoolTransition maximizedTransition;
+  final BoolTransition minimizedTransition;
+  final BoolTransition fullScreenTransition;
+
   WindowStateFlags({
-    required this.maximized,
-    required this.minimized,
-    required this.fullScreen,
+    required this.maximizedTransition,
+    required this.minimizedTransition,
+    required this.fullScreenTransition,
     required this.active,
   });
 
   static WindowStateFlags deserialize(dynamic value) {
     final map = value as Map;
     return WindowStateFlags(
-        maximized: enumFromString(
+        maximizedTransition: enumFromString(
             BoolTransition.values, map['maximized'], BoolTransition.no),
-        minimized: enumFromString(
+        minimizedTransition: enumFromString(
             BoolTransition.values, map['minimized'], BoolTransition.no),
-        fullScreen: enumFromString(
+        fullScreenTransition: enumFromString(
             BoolTransition.values, map['fullScreen'], BoolTransition.no),
         active: map['active']);
   }
 
   dynamic serialize() => {
-        'maximized': enumToString(maximized),
-        'minimized': enumToString(minimized),
-        'fullScreen': enumToString(fullScreen),
+        'maximized': enumToString(maximizedTransition),
+        'minimized': enumToString(minimizedTransition),
+        'fullScreen': enumToString(fullScreenTransition),
         'active': active,
       };
 

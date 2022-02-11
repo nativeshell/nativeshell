@@ -535,6 +535,33 @@ impl PlatformWindow {
         Ok(())
     }
 
+    pub fn set_minimized(&self, minimized: bool) -> PlatformResult<()> {
+        if minimized {
+            unsafe { NSWindow::miniaturize_(*self.platform_window, nil) };
+        } else {
+            unsafe { NSWindow::deminiaturize_(*self.platform_window, nil) };
+        }
+        Ok(())
+    }
+
+    pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
+        let is_zoomed: BOOL = unsafe { msg_send![*self.platform_window, isZoomed] };
+        let is_zoomed = is_zoomed == YES;
+        if (maximized && !is_zoomed) || (!maximized && is_zoomed) {
+            unsafe { NSWindow::zoom_(*self.platform_window, nil) };
+        }
+        Ok(())
+    }
+
+    pub fn set_full_screen(&self, full_screen: bool) -> PlatformResult<()> {
+        let masks = unsafe { NSWindow::styleMask(*self.platform_window) };
+        let is_full_screen = masks.contains(NSWindowStyleMask::NSFullScreenWindowMask);
+        if (full_screen && !is_full_screen) || (!full_screen && is_full_screen) {
+            unsafe { NSWindow::toggleFullScreen_(*self.platform_window, nil) };
+        }
+        Ok(())
+    }
+
     unsafe fn actually_show(&self) {
         if self.is_modal() {
             let parent = self.parent_platform_window.as_ref().unwrap().clone().load();
