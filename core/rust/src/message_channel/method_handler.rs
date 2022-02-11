@@ -57,17 +57,17 @@ pub struct MethodCall {
 pub trait MethodHandler: Sized + 'static {
     fn on_method_call(&mut self, call: MethodCall, reply: MethodCallReply);
 
-    // Implementation can store weak reference if it needs to pass it around.
-    // Guaranteed to call before any other methods.
+    /// Implementation can store weak reference if it needs to pass it around.
+    /// Guaranteed to be called before any other methods.
     fn assign_weak_self(&mut self, _weak_self: Weak<RefCell<Self>>) {}
 
-    // Keep the method invoker if you want to call methods on engines.
+    /// Keep the method invoker if you want to call methods on engines.
     fn assign_invoker(&mut self, _invoker: MethodInvoker) {}
 
-    // Called when engine is about to be destroyed.
+    /// Called when isolate is about to be destroyed.
     fn on_isolate_destroyed(&mut self, _isolate: IsolateId) {}
 
-    // Registers itself for handling platform channel methods.
+    /// Register self for handling platform channel methods.
     fn register(self, channel: &str) -> RegisteredMethodHandler<Self> {
         RegisteredMethodHandler::new(channel, self)
     }

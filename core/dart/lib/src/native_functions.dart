@@ -64,15 +64,20 @@ class NativeFunctions {
   /// which forwards to the NativeShell call. Otherwise the functions may be
   /// from wrong module and not have access to module state.
   static NativeFunctions getDefault() {
-    return NativeFunctions.get(
-        DynamicLibrary.process(), "nativeshell_get_ffi_context");
+    final dylib = DynamicLibrary.process();
+    final function =
+        dylib.lookup<NativeFunction<Int64 Function(Pointer<Void>)>>(
+            "nativeshell_init_message_channel_context");
+    return get(function);
   }
 
-  /// Returns NativeShell functions for given module and symbol name.
+  /// Returns NativeShell functions for given init function.
   /// Throws [NativeFunctionsException] in case something goes wrong.
-  static NativeFunctions get(DynamicLibrary dylib, String symbolName) {
-    final init = dylib
-        .lookup<NativeFunction<_InitFunctionF>>(symbolName)
+  static NativeFunctions get(
+      Pointer<NativeFunction<Int64 Function(Pointer<Void>)>>
+          initMessageContextFunction) {
+    final init = initMessageContextFunction
+        .cast<NativeFunction<_InitFunctionF>>()
         .asFunction<_InitFunction>();
 
     late Pointer<_GetFunctions> context;

@@ -21,7 +21,7 @@ pub use method_handler::*;
 pub type IsolateId = i64;
 
 #[repr(C)]
-struct NativeContext {
+struct MessageChannelContext {
     size: isize,
     ffi_data: *mut c_void,
     register_isolate: *mut c_void,
@@ -56,10 +56,10 @@ pub enum FunctionResult {
 
 #[no_mangle]
 #[inline(never)]
-pub extern "C" fn nativeshell_get_ffi_context(data: *mut c_void) -> FunctionResult {
-    let context = data as *mut NativeContext;
+pub extern "C" fn nativeshell_init_message_channel_context(data: *mut c_void) -> FunctionResult {
+    let context = data as *mut MessageChannelContext;
     let context = unsafe { &mut *context };
-    if context.size != std::mem::size_of::<NativeContext>() as isize {
+    if context.size != std::mem::size_of::<MessageChannelContext>() as isize {
         println!("Bad struct size");
         return FunctionResult::InvalidStructSize;
     }

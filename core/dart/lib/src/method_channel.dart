@@ -16,7 +16,12 @@ class NativeMethodChannel {
         } on PlatformException catch (e) {
           return ['err', e.code, e.message, e.details];
         } catch (error) {
-          return ['err', 'Unexpected error', error.toString(), null];
+          return [
+            'err',
+            'unexpected-error',
+            error.toString(),
+            {'type': error.runtimeType.toString()}
+          ];
         }
       });
     } else {

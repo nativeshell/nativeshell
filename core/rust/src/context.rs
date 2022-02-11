@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{message_channel::nativeshell_get_ffi_context, util::black_box};
+use crate::{message_channel::nativeshell_init_message_channel_context, util::black_box};
 
 use super::RunLoop;
 
@@ -100,6 +100,6 @@ impl Context {
 fn ffi_methods() {
     // this ensures that all FFI methods are referenced and not removed by linker
     if black_box(false) {
-        nativeshell_get_ffi_context(std::ptr::null_mut());
+        nativeshell_init_message_channel_context(std::ptr::null_mut());
     }
 }

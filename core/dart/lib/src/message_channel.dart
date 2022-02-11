@@ -52,10 +52,21 @@ class MessageChannelContext {
 
   static MessageChannelContext getDefault() {
     final functions = NativeFunctions.getDefault();
-    return forFunctions(functions);
+    return _forFunctions(functions);
   }
 
-  static MessageChannelContext forFunctions(NativeFunctions functions) {
+  /// Returns MessageChannelContext for given FFI function. The function must
+  /// call 'nativeshell_init_message_channel_context' with given argument
+  /// and return the result.
+  /// This is necessary to do in Flutter plugins where each plugin may have its
+  /// own context and thus should have uniquely named init function.
+  static MessageChannelContext forInitFunction(
+      Pointer<NativeFunction<Int64 Function(Pointer<Void>)>>
+          messageChannelInitFunction) {
+    return _forFunctions(NativeFunctions.get(messageChannelInitFunction));
+  }
+
+  static MessageChannelContext _forFunctions(NativeFunctions functions) {
     for (final c in _contexts) {
       if (c.functions.token == functions.token) {
         return c;
