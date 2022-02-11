@@ -126,6 +126,34 @@ class Window {
         await _invokeMethod(Methods.windowGetWindowStateFlags));
   }
 
+  /// If [minimized] is `true` and window is currently not minimized, minimizes
+  /// the window.
+  ///
+  /// If [minimized] is `false` and window is currently minimized, unminimizes
+  /// the window.
+  Future<void> setMinimized(bool minimized) async {
+    await _invokeMethod(Methods.windowSetMinimized, minimized);
+  }
+
+  /// If [maximized] is `true` and window is currently not maximized, maximizes
+  /// the window.
+  ///
+  /// If [maximized] is `false` and window is currently maximized, restores the
+  /// original size.
+  Future<void> setMaximized(bool maximized) async {
+    await _invokeMethod(Methods.windowSetMaximized, maximized);
+  }
+
+  /// If [fullScreen] is `true` and window is currently not full screen, toggles
+  /// fullscreen mode. Only applicable on platforms that support full screen
+  /// modes.
+  ///
+  /// If [fullScreen] is `false` and window is currently full screen, restores
+  /// original window size.
+  Future<void> setFullScreen(bool fullScreen) async {
+    await _invokeMethod(Methods.windowSetFullScreen, fullScreen);
+  }
+
   // MacOS specific;
   Future<void> setCollectionBehavior(WindowCollectionBehavior behavior) {
     return _invokeMethod(

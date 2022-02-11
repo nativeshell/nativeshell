@@ -183,6 +183,24 @@ impl Window {
             .map_err(|e| e.into())
     }
 
+    fn set_minimized(&self, minimized: bool) -> Result<()> {
+        self.platform_window()
+            .set_minimized(minimized)
+            .map_err(|e| e.into())
+    }
+
+    fn set_maximized(&self, maximized: bool) -> Result<()> {
+        self.platform_window()
+            .set_maximized(maximized)
+            .map_err(|e| e.into())
+    }
+
+    fn set_full_screen(&self, full_screen: bool) -> Result<()> {
+        self.platform_window()
+            .set_full_screen(full_screen)
+            .map_err(|e| e.into())
+    }
+
     fn set_collection_behavior(&self, behavior: WindowCollectionBehavior) -> Result<()> {
         self.platform_window()
             .set_collection_behavior(behavior)
@@ -350,6 +368,15 @@ impl Window {
             }
             method::window::SET_TITLE => {
                 return Self::reply(reply, &arg, |title| self.set_title(title));
+            }
+            method::window::SET_MAXIMIZED => {
+                return Self::reply(reply, &arg, |v| self.set_maximized(v));
+            }
+            method::window::SET_MINIMIZED => {
+                return Self::reply(reply, &arg, |v| self.set_minimized(v));
+            }
+            method::window::SET_FULL_SCREEN => {
+                return Self::reply(reply, &arg, |v| self.set_full_screen(v));
             }
             method::window::SET_COLLECTION_BEHAVIOR => {
                 return Self::reply(reply, &arg, |behavior| {
