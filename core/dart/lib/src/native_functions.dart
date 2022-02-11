@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 
 typedef IsolateId = int;
 
@@ -64,7 +65,9 @@ class NativeFunctions {
   /// which forwards to the NativeShell call. Otherwise the functions may be
   /// from wrong module and not have access to module state.
   static NativeFunctions getDefault() {
-    final dylib = DynamicLibrary.process();
+    final dylib = defaultTargetPlatform == TargetPlatform.windows
+        ? DynamicLibrary.executable()
+        : DynamicLibrary.process();
     final function =
         dylib.lookup<NativeFunction<Int64 Function(Pointer<Void>)>>(
             "nativeshell_init_message_channel_context");

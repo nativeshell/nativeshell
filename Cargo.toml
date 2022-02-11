@@ -3,7 +3,9 @@
 members = [
     "nativeshell_build",
     "nativeshell",
-    "nativeshell_ng",
+    "nativeshell_ng_test",
+    "core/rust",
+    "core/rust_derive",
 ]
 
 exclude = [
