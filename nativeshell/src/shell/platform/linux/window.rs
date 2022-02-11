@@ -45,7 +45,7 @@ struct WindowState {
     height: i32,
     is_minimized: bool,
     is_maximized: bool,
-    is_fullscreen: bool,
+    is_full_screen: bool,
     is_active: bool,
 }
 
@@ -178,7 +178,7 @@ impl PlatformWindow {
 
     fn on_size_allocate(&self) {
         let mut state = self.window_state.borrow_mut();
-        if !state.is_maximized && !state.is_fullscreen {
+        if !state.is_maximized && !state.is_full_screen {
             let size = self.window.size();
             state.width = size.0;
             state.height = size.1;
@@ -211,7 +211,7 @@ impl PlatformWindow {
             window_state.is_maximized = state
                 .new_window_state()
                 .contains(gdk::WindowState::MAXIMIZED);
-            window_state.is_fullscreen = state
+            window_state.is_full_screen = state
                 .new_window_state()
                 .contains(gdk::WindowState::FULLSCREEN);
             window_state.is_minimized = state
@@ -611,6 +611,36 @@ impl PlatformWindow {
         Err(PlatformError::NotAvailable)
     }
 
+    pub fn set_minimized(&self, minimized: bool) -> PlatformResult<()> {
+        let is_minimized = self.window_state.borrow().is_minimized;
+        if minimized && !is_minimized {
+            self.window.iconify();
+        } else if !minimized && is_minimized {
+            self.window.deiconify();
+        }
+        Ok(())
+    }
+
+    pub fn set_maximized(&self, maximized: bool) -> PlatformResult<()> {
+        let is_maximized = self.window_state.borrow().is_maximized;
+        if maximized && !is_maximized {
+            self.window.maximize();
+        } else if !maximized && is_maximized {
+            self.window.unmaximize();
+        }
+        Ok(())
+    }
+
+    pub fn set_full_screen(&self, full_screen: bool) -> PlatformResult<()> {
+        let is_full_screen = self.window_state.borrow().is_full_screen;
+        if full_screen && !is_full_screen {
+            self.window.fullscreen();
+        } else if !full_screen && is_full_screen {
+            self.window.unfullscreen();
+        }
+        Ok(())
+    }
+
     pub fn get_screen_id(&self) -> PlatformResult<i64> {
         if let Some(display) = Display::default() {
             let monitor = display.monitor_at_window(&self.window.window().unwrap());
@@ -636,7 +666,7 @@ impl PlatformWindow {
             } else {
                 BoolTransition::No
             },
-            full_screen: if state.is_fullscreen {
+            full_screen: if state.is_full_screen {
                 BoolTransition::Yes
             } else {
                 BoolTransition::No
@@ -660,7 +690,7 @@ impl PlatformWindow {
         if state.is_maximized {
             self.window.maximize();
         }
-        if state.is_fullscreen {
+        if state.is_full_screen {
             self.window.fullscreen();
         }
 
