@@ -12,5 +12,5 @@ nativeshell_build = { path = "../nativeshell_build" }
 
 [dependencies]
 nativeshell = { path = "../nativeshell" }
-nativeshell_core = { path = "../rust/core", features = ["derive"] }
+nativeshell_core = { path = "../core/rust", features = ["derive"] }
 env_logger = "0.9.0"

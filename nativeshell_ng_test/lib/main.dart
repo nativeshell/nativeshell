@@ -97,8 +97,8 @@ void main() async {
   //   "abadfasdf".padLeft(10, 'abcdef')
   // ];
 
-  // final cnt = 20000;
-  final cnt = 10;
+  final cnt = 20000;
+  // final cnt = 10;
 
   final obj = List.filled(50, obj1);
   final sw1 = Stopwatch();

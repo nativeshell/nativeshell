@@ -4,7 +4,8 @@ use nativeshell::shell::{
     exec_bundle, register_observatory_listener, Context, ContextOptions, MethodCallHandler,
 };
 use nativeshell_core::{
-    ContextMessageChannel, IsolateId, MessageChannelDelegate, MethodHandler, Value,
+    AsyncMethodHandler, GetMessageChannel, IntoPlatformResult, IsolateId,
+    MessageChannelDelegate, MethodCallError, MethodHandler, MethodInvoker, PlatformError, Value,
 };
 
 nativeshell::include_flutter_plugins!();
@@ -31,33 +32,88 @@ impl MessageChannelDelegate for D {
     }
 }
 
+struct MyError {}
+
+impl From<MyError> for PlatformError {
+    fn from(_: MyError) -> Self {
+        PlatformError {
+            code: "n/a".into(),
+            message: Some("WooHoo".into()),
+            detail: Value::Null,
+        }
+    }
+}
+
 struct T1 {}
 
+impl T1 {
+    fn yy(&self) -> Result<Value, PlatformError> {
+        let r = self.x();
+        // r.map(|e| e.into()).map_err(|e| e.into())
+        // Ok(r.into())
+        r.into_platform_result()
+    }
+
+    fn x(&self) -> Result<String, MyError> {
+        Ok("Hi".into())
+    }
+}
+
 impl MethodHandler for T1 {
+    fn assign_invoker(&mut self, invoker: MethodInvoker) {
+        invoker.call_method_cv(0, "abc", Value::Null, |e: Result<i64, _>| {
+
+        });
+    }
+
     fn on_method_call(
         &mut self,
-        _call: nativeshell_core::MethodCall,
+        call: nativeshell_core::MethodCall,
         reply: nativeshell_core::MethodCallReply,
-        _isolate: IsolateId,
     ) {
         // println!("NS: {:?}", call);
-        // reply.send_ok(call.args);
+        reply.send_ok(call.args);
         // let mut v = Vec::<u8>::new();
         // v.resize(1024 * 1024, 4);
-        reply.send_ok(Value::Null);
+        // reply.send_ok(Value::Null);
+        // reply.send(self.x())
+    }
+}
+
+impl AsyncMethodHandler for T1 {
+    fn assign_invoker(&mut self, invoker: nativeshell_core::AsyncMethodInvoker) {
+        nativeshell_core::Context::get()
+            .run_loop()
+            .spawn(async move {
+                let res: Result<i64, MethodCallError> =
+                    invoker.call_method_cv(0, "hi", Value::Null).await;
+            });
+    }
+
+    fn on_method_call<'life0, 'async_trait>(
+        &'life0 self,
+        call: nativeshell_core::MethodCall,
+    ) -> core::pin::Pin<
+        Box<dyn core::future::Future<Output = nativeshell_core::PlatformResult> + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        Self: 'async_trait,
+    {
+        todo!()
     }
 }
 
 impl MethodCallHandler for T1 {
     fn on_method_call(
         &mut self,
-        _call: nativeshell::codec::MethodCall<nativeshell::codec::Value>,
+        call: nativeshell::codec::MethodCall<nativeshell::codec::Value>,
         reply: nativeshell::codec::MethodCallReply<nativeshell::codec::Value>,
         _engine: nativeshell::shell::EngineHandle,
     ) {
         // println!("FT: {:?}", call);
-        // reply.send_ok(call.args);
-        reply.send_ok(nativeshell::codec::Value::Null);
+        reply.send_ok(call.args);
+        // reply.send_ok(nativeshell::codec::Value::Null);
         // let mut v = Vec::<u8>::new();
         // v.resize(1024 * 1024, 4);
         // reply.send_ok(nativeshell::codec::Value::U8List(v));

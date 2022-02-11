@@ -33,7 +33,7 @@ dependencies:
   nativeshell:
     path: ../nativeshell_dart
   nativeshell_core:
-    path: ../dart/core
+    path: ../core/dart
   # Include flutter plugins for build test
 
 dev_dependencies:
