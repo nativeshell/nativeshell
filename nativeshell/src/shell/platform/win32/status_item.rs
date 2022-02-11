@@ -14,7 +14,7 @@ use windows::Win32::{
         },
         WindowsAndMessaging::{
             CreateIconIndirect, DestroyIcon, SetForegroundWindow, TrackPopupMenuEx, HICON,
-            ICONINFO, TPM_BOTTOMALIGN, TPM_LEFTALIGN, TPM_RIGHTBUTTON, TPM_VERTICAL,
+            ICONINFO, TPM_BOTTOMALIGN, TPM_LEFTALIGN, TPM_RETURNCMD, TPM_RIGHTBUTTON, TPM_VERTICAL,
             WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_RBUTTONDOWN, WM_RBUTTONUP,
         },
     },
@@ -184,21 +184,28 @@ impl PlatformStatusItem {
                         .run_loop
                         .borrow()
                         .schedule_now(move || {
-                            unsafe {
+                            let res = unsafe {
                                 SetForegroundWindow(hwnd);
-                                TrackPopupMenuEx(
+                                let res = TrackPopupMenuEx(
                                     menu.menu,
                                     (TPM_LEFTALIGN
                                         | TPM_BOTTOMALIGN
                                         | TPM_VERTICAL
-                                        | TPM_RIGHTBUTTON)
+                                        | TPM_RIGHTBUTTON
+                                        | TPM_RETURNCMD)
                                         .0,
                                     rect.left,
                                     rect.top,
                                     hwnd,
                                     std::ptr::null_mut(),
-                                )
+                                );
+                                res.0
                             };
+                            if res > 0 {
+                                if let Some(delegate) = menu.delegate.upgrade() {
+                                    delegate.borrow().on_menu_action(menu.handle, res as i64);
+                                }
+                            }
                             on_done(Ok(()));
                         })
                         .detach();
