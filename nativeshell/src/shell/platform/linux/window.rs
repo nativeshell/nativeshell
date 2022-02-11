@@ -740,6 +740,8 @@ impl PlatformWindow {
 
         window.set_functions(func);
 
+        window.set_keep_above(style.always_on_top);
+
         Ok(())
     }
 

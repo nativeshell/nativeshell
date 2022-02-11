@@ -18,14 +18,15 @@ use windows::Win32::{
             GetWindowRect, IsWindowVisible, SendMessageW, SetForegroundWindow, SetWindowLongW,
             SetWindowPlacement, SetWindowPos, SetWindowTextW, ShowWindow, GWL_EXSTYLE, GWL_STYLE,
             HTBOTTOM, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTCAPTION, HTCLIENT, HTLEFT, HTRIGHT, HTTOP,
-            HTTOPLEFT, HTTOPRIGHT, HTTRANSPARENT, HWND_BOTTOM, MF_BYCOMMAND, MF_DISABLED,
-            MF_ENABLED, MF_GRAYED, SC_CLOSE, SHOW_WINDOW_CMD, SWP_FRAMECHANGED, SWP_NOACTIVATE,
-            SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_HIDE, SW_MAXIMIZE, SW_MINIMIZE, SW_NORMAL,
-            SW_SHOW, WINDOWPLACEMENT, WINDOWPOS, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE,
-            WM_DESTROY, WM_DISPLAYCHANGE, WM_DWMCOMPOSITIONCHANGED, WM_NCCALCSIZE, WM_NCHITTEST,
-            WM_NCLBUTTONDOWN, WM_WINDOWPOSCHANGING, WS_BORDER, WS_CAPTION, WS_DLGFRAME,
-            WS_EX_LAYOUTRTL, WS_EX_NOREDIRECTIONBITMAP, WS_MAXIMIZEBOX, WS_MINIMIZEBOX,
-            WS_OVERLAPPEDWINDOW, WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
+            HTTOPLEFT, HTTOPRIGHT, HTTRANSPARENT, HWND_BOTTOM, HWND_NOTOPMOST, HWND_TOP,
+            HWND_TOPMOST, MF_BYCOMMAND, MF_DISABLED, MF_ENABLED, MF_GRAYED, SC_CLOSE,
+            SHOW_WINDOW_CMD, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+            SWP_NOZORDER, SW_HIDE, SW_MAXIMIZE, SW_MINIMIZE, SW_NORMAL, SW_SHOW, WINDOWPLACEMENT,
+            WINDOWPOS, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE, WM_DESTROY, WM_DISPLAYCHANGE,
+            WM_DWMCOMPOSITIONCHANGED, WM_NCCALCSIZE, WM_NCHITTEST, WM_NCLBUTTONDOWN,
+            WM_WINDOWPOSCHANGING, WS_BORDER, WS_CAPTION, WS_DLGFRAME, WS_EX_LAYOUTRTL,
+            WS_EX_NOREDIRECTIONBITMAP, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPEDWINDOW,
+            WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
         },
     },
 };
@@ -82,6 +83,20 @@ impl WindowBaseState {
     }
 
     pub fn activate(&self) -> PlatformResult<bool> {
+        unsafe {
+            SetWindowPos(
+                self.hwnd,
+                match self.style.borrow().always_on_top {
+                    true => HWND_TOPMOST,
+                    false => HWND_TOP,
+                },
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE,
+            )
+        };
         unsafe { Ok(SetForegroundWindow(self.hwnd).into()) }
     }
 
@@ -493,6 +508,20 @@ impl WindowBaseState {
 
             self.update_dwm_frame()?;
         }
+        unsafe {
+            SetWindowPos(
+                self.hwnd,
+                match style.always_on_top {
+                    true => HWND_TOPMOST,
+                    false => HWND_NOTOPMOST,
+                },
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE,
+            )
+        };
         Ok(())
     }
 
