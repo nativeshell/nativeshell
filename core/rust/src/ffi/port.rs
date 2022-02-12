@@ -80,10 +80,7 @@ impl NativePort {
 
     fn global_data() -> &'static Mutex<CallbackMapType> {
         static INSTANCE: OnceCell<Mutex<CallbackMapType>> = OnceCell::new();
-        INSTANCE.get_or_init(|| {
-            let m = HashMap::new();
-            Mutex::new(m)
-        })
+        INSTANCE.get_or_init(|| Mutex::new(HashMap::new()))
     }
 }
 

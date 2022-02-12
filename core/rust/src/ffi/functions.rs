@@ -113,11 +113,11 @@ pub(super) fn init(ptr: *mut c_void) {
             delete_weak_persistent_handle: mem::transmute(
                 api.lookup_fn("Dart_DeleteWeakPersistentHandle"),
             ),
-            update_external_size: mem::transmute(
-                api.lookup_fn("Dart_UpdateFinalizableExternalSize"),
-            ),
             handle_from_weak_persistent: mem::transmute(
                 api.lookup_fn("Dart_HandleFromWeakPersistent"),
+            ),
+            update_external_size: mem::transmute(
+                api.lookup_fn("Dart_UpdateFinalizableExternalSize"),
             ),
         }
     };

@@ -1,4 +1,4 @@
-// Opaque handle for keeping a resource alive while handle exists
+/// Opaque handle for keeping a resource alive while handle exists
 pub struct Handle {
     on_cancel: Option<Box<dyn FnOnce()>>,
 }

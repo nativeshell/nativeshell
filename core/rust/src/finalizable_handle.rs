@@ -105,8 +105,6 @@ struct State {
 
 unsafe impl Send for State {}
 
-static FUNCTIONS: OnceCell<Mutex<State>> = OnceCell::new();
-
 impl State {
     fn new() -> Self {
         Self {
@@ -115,6 +113,7 @@ impl State {
     }
 
     fn get() -> MutexGuard<'static, Self> {
+        static FUNCTIONS: OnceCell<Mutex<State>> = OnceCell::new();
         let state = FUNCTIONS.get_or_init(|| Mutex::new(State::new()));
         state.lock().unwrap()
     }
