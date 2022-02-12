@@ -3,7 +3,7 @@ use std::{
     num::TryFromIntError, ops::Deref, rc::Rc,
 };
 
-use crate::{raw, FinalizableHandle};
+use crate::{ffi::raw, FinalizableHandle};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
@@ -344,7 +344,7 @@ impl From<ValueTupleList> for HashMap<Value, Value> {
     }
 }
 
-impl From<DartObject> for crate::DartValue {
+impl From<DartObject> for crate::ffi::DartValue {
     fn from(object: DartObject) -> Self {
         match object {
             DartObject::SendPort(port) => port.into(),

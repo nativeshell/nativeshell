@@ -8,7 +8,7 @@ use std::{
 use once_cell::sync::OnceCell;
 
 use crate::{
-    functions::{DartFunctions, DartHandle, DartWeakPersistentHandle},
+    ffi::{DartFunctions, DartHandle, DartWeakPersistentHandle},
     RUN_LOOP_SENDER,
 };
 
@@ -190,7 +190,7 @@ pub(crate) unsafe extern "C" fn attach_weak_persistent_handle(
         object.handle = Some(weak_handle);
         return handle;
     }
-    return null_handle;
+    null_handle
 }
 
 thread_local! {

@@ -8,8 +8,9 @@ use std::{
 };
 
 use crate::{
-    message_channel::codec::Serializer, raw, Context, DartPort, DartValue, IsolateId, NativePort,
-    RunLoopSender, Value,
+    ffi::{raw, DartPort, DartValue, NativePort},
+    message_channel::codec::Serializer,
+    Context, IsolateId, RunLoopSender, Value,
 };
 
 use super::codec::Deserializer;

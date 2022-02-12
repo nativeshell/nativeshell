@@ -1,4 +1,4 @@
-use crate::{value::Value, DartValue};
+use crate::{ffi::DartValue, value::Value};
 
 const VALUE_NULL: u8 = 255 - 0;
 const VALUE_TRUE: u8 = 255 - 1;
@@ -253,8 +253,8 @@ impl Serializer {
                 });
             }
             Value::Dart(v) => {
-                 Self::write_attachment(writer, v, attachments);
-            },
+                Self::write_attachment(writer, v, attachments);
+            }
             Value::FinalizableHandle(handle) => {
                 writer.write_u8(VALUE_FINALIZABLE_HANDLE);
                 writer.write_size(handle.id as usize);

@@ -3,7 +3,7 @@
 #![allow(clippy::module_inception)]
 
 mod context;
-mod ffi;
+pub mod ffi;
 mod finalizable_handle;
 mod handle;
 mod message_channel;
@@ -14,7 +14,6 @@ mod util;
 mod value;
 
 pub use context::*;
-pub use ffi::*;
 pub use finalizable_handle::*;
 pub use handle::*;
 pub use message_channel::*;
