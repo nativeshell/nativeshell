@@ -11,12 +11,27 @@ use crate::ffi::raw::{DartCObject, DartPort};
 
 pub type DartPortHandler = unsafe extern "C" fn(port: DartPort, message: *const DartCObject);
 
+pub type DartHandleFinalizer =
+    unsafe extern "C" fn(isolate_callback_data: *mut c_void, peer: *mut c_void);
+
+pub type DartWeakPersistentHandle = *mut c_void;
+pub type DartHandle = *mut c_void;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct DartFunctions {
     pub post_cobject: unsafe extern "C" fn(DartPort, *mut DartCObject) -> bool,
     pub post_integer: unsafe extern "C" fn(DartPort, i64) -> bool,
     pub new_native_port: unsafe extern "C" fn(*const c_char, DartPortHandler, bool) -> DartPort,
     pub close_native_port: unsafe extern "C" fn(DartPort) -> bool,
+
+    pub new_weak_persistent_handle: unsafe extern "C" fn(
+        object: DartHandle,
+        peer: *mut c_void,
+        external_allocation_size: isize,
+        finalizer: DartHandleFinalizer,
+    ) -> DartWeakPersistentHandle,
+    pub delete_weak_persistent_handle: unsafe extern "C" fn(handle: DartWeakPersistentHandle),
+    pub update_External_size: unsafe extern "C" fn(handle: DartWeakPersistentHandle, size: isize),
 }
 
 unsafe impl Send for DartFunctions {}
@@ -90,6 +105,15 @@ pub(super) fn init(ptr: *mut c_void) {
             post_integer: mem::transmute(api.lookup_fn("Dart_PostInteger")),
             new_native_port: mem::transmute(api.lookup_fn("Dart_NewNativePort")),
             close_native_port: mem::transmute(api.lookup_fn("Dart_CloseNativePort")),
+            new_weak_persistent_handle: mem::transmute(
+                api.lookup_fn("Dart_NewWeakPersistentHandle"),
+            ),
+            delete_weak_persistent_handle: mem::transmute(
+                api.lookup_fn("Dart_DeleteWeakPersistentHandle"),
+            ),
+            update_External_size: mem::transmute(
+                api.lookup_fn("Dart_UpdateFinalizableExternalSize"),
+            ),
         }
     };
     if let Some(prev_functions) = FUNCTIONS.get() {

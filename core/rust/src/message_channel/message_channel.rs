@@ -303,7 +303,7 @@ impl GetMessageChannel for Context {
     }
 }
 
-static RUN_LOOP_SENDER: OnceCell<RunLoopSender> = OnceCell::new();
+pub(crate) static RUN_LOOP_SENDER: OnceCell<RunLoopSender> = OnceCell::new();
 
 static NEXT_THREAD_ID: AtomicI64 = AtomicI64::new(1);
 

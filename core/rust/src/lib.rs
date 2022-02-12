@@ -4,9 +4,10 @@
 
 mod context;
 mod ffi;
+mod finalizable_handle;
 mod handle;
 mod message_channel;
-mod native_pointer;
+
 mod platform;
 mod run_loop;
 mod util;
@@ -14,9 +15,9 @@ mod value;
 
 pub use context::*;
 pub use ffi::*;
+pub use finalizable_handle::*;
 pub use handle::*;
 pub use message_channel::*;
-pub use native_pointer::*;
 pub use run_loop::*;
 pub use value::*;
 

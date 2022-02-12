@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'codec.dart';
+import 'finalizable_handle.dart';
 import 'native_functions.dart';
 
 class NoSuchChannelException implements Exception {
@@ -45,7 +46,7 @@ class MessageChannelContextError implements Exception {
   String toString() => message;
 }
 
-class MessageChannelContext {
+class MessageChannelContext implements FinalizableHandleProvider {
   MessageChannelContext._(this.functions) {
     _init();
   }
@@ -142,7 +143,7 @@ class MessageChannelContext {
       if (message is List) {
         final d = message.last as Uint8List;
         final data = ByteData.view(d.buffer, d.offsetInBytes, d.length);
-        final v = Deserializer().deserialize(data, message);
+        final v = Deserializer().deserialize(data, message, this);
         _handleMessage(v as List);
       }
     }
@@ -153,4 +154,11 @@ class MessageChannelContext {
   final _channels = <String, MessageChannel>{};
   late final IsolateId isolateId;
   final NativeFunctions functions;
+
+  @override
+  FinalizableHandle getFinalizableHandle(int id) {
+    final handle = FinalizableHandle(id);
+    functions.attachWeakPersistentHandle(handle, id);
+    return handle;
+  }
 }

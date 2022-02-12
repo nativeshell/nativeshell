@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'finalizable_handle.dart';
 import 'native_functions.dart';
 import 'native_list.dart';
-import 'native_pointer.dart';
 import 'write_buffer.dart';
 import 'read_buffer.dart';
 
@@ -29,11 +29,15 @@ const int _valueFloat64List = 255 - 15;
 
 // Deserialization
 const int _valueAttachment = _valueString;
-const int _valueNativePointer = _valueAttachment - 1;
+const int _valueFinalizableHandle = _valueAttachment - 1;
 
 const int _valueList = 255 - 16;
 const int _valueMap = 255 - 17;
 const int _valueLast = _valueMap;
+
+abstract class FinalizableHandleProvider {
+  FinalizableHandle getFinalizableHandle(int id);
+}
 
 /// Similar to StandardMessageCodec, but uses NativeList for typed lists
 class Serializer {
@@ -183,12 +187,14 @@ class Serializer {
 }
 
 class Deserializer {
-  Object? deserialize(ByteData data, List attachments) {
+  Object? deserialize(ByteData data, List attachments,
+      FinalizableHandleProvider finalizableHandleProvider) {
     final buffer = ReadBuffer(data);
-    return _readValue(buffer, attachments);
+    return _readValue(buffer, attachments, finalizableHandleProvider);
   }
 
-  Object? _readValue(ReadBuffer buffer, List attachments) {
+  Object? _readValue(ReadBuffer buffer, List attachments,
+      FinalizableHandleProvider finalizableHandleProvider) {
     if (!buffer.hasRemaining) throw const FormatException('Message corrupted');
     final int type = buffer.getUint8();
     if (type < _valueLast) {
@@ -211,15 +217,15 @@ class Deserializer {
       case _valueAttachment:
         final index = _readSize(buffer);
         return attachments[index];
-      case _valueNativePointer:
-        final value = buffer.getInt64();
-        final index = _readSize(buffer);
-        return NativePointer(value, attachments[index]);
+      case _valueFinalizableHandle:
+        final id = _readSize(buffer);
+        return finalizableHandleProvider.getFinalizableHandle(id);
       case _valueList:
         final int length = _readSize(buffer);
         final List<Object?> result = List<Object?>.filled(length, null);
         for (int i = 0; i < length; i++) {
-          result[i] = _readValue(buffer, attachments);
+          result[i] =
+              _readValue(buffer, attachments, finalizableHandleProvider);
         }
         return result;
       case _valueMap:
@@ -228,8 +234,10 @@ class Deserializer {
         // Allow deserializing with JSON if keys are all Strings
         bool allStrings = true;
         for (int i = 0; i < length; i++) {
-          final key = _readValue(buffer, attachments);
-          result[key] = _readValue(buffer, attachments);
+          final key =
+              _readValue(buffer, attachments, finalizableHandleProvider);
+          result[key] =
+              _readValue(buffer, attachments, finalizableHandleProvider);
           if (key is! String) {
             allStrings = false;
           }

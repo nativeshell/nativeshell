@@ -1,9 +1,9 @@
 use std::{
     cmp::Ordering, collections::HashMap, convert::Infallible, fmt::Display, hash::Hash,
-    num::TryFromIntError, ops::Deref,
+    num::TryFromIntError, ops::Deref, rc::Rc,
 };
 
-use crate::{raw, NativePointer};
+use crate::{raw, FinalizableHandle};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
@@ -30,13 +30,14 @@ pub enum Value {
 
     // Special dart values. These can only be sent from Rust to Dart
     Dart(DartObject),
+
+    FinalizableHandle(Rc<FinalizableHandle>),
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Hash)]
 pub enum DartObject {
     SendPort(raw::DartCObjectSendPort),
     Capability(raw::DartCObjectCapability),
-    NativePointer(NativePointer),
 }
 
 /// Wrapper for Value tuple that ensures that the underyling list is sorted
@@ -83,6 +84,7 @@ impl_from!(Value::F64List, Vec<f64>);
 impl_from!(Value::List, Vec<Value>);
 impl_from!(Value::Map, Vec<(Value, Value)>);
 impl_from!(Value::Dart, DartObject);
+impl_from!(Value::FinalizableHandle, Rc<FinalizableHandle>);
 
 impl<T: Into<Value>> From<Option<T>> for Value {
     fn from(v: Option<T>) -> Self {
@@ -207,6 +209,7 @@ impl_try_from!(Value::List, Vec<Value>);
 impl_try_from!(Value::Map, ValueTupleList);
 impl_try_from!(Value::Map, Vec<(Value, Value)>);
 impl_try_from!(Value::Dart, DartObject);
+impl_try_from!(Value::FinalizableHandle, Rc<FinalizableHandle>);
 
 // Allow converting to any Kind of HashMap as long as key and value
 // are types that can be converted from Value.
@@ -272,6 +275,7 @@ impl std::hash::Hash for Value {
             Value::List(v) => v.hash(state),
             Value::Map(v) => v.hash(state),
             Value::Dart(v) => v.hash(state),
+            Value::FinalizableHandle(v) => v.hash(state),
         }
     }
 }
@@ -329,6 +333,15 @@ impl From<ValueTupleList> for Vec<(Value, Value)> {
 impl From<ValueTupleList> for HashMap<Value, Value> {
     fn from(value: ValueTupleList) -> Self {
         value.into_iter().collect()
+    }
+}
+
+impl From<DartObject> for crate::DartValue {
+    fn from(object: DartObject) -> Self {
+        match object {
+            DartObject::SendPort(port) => port.into(),
+            DartObject::Capability(capability) => capability.into(),
+        }
     }
 }
 

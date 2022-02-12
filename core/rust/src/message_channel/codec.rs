@@ -21,7 +21,7 @@ const VALUE_FLOAT64LIST: u8 = 255 - 15;
 
 // Serialization
 const VALUE_ATTACHMENT: u8 = VALUE_STRING; // this will be passed directly as Dart_CObject
-const VALUE_NATIVE_POINTER: u8 = VALUE_ATTACHMENT - 1;
+const VALUE_FINALIZABLE_HANDLE: u8 = VALUE_ATTACHMENT - 1;
 
 const VALUE_LIST: u8 = 255 - 16;
 const VALUE_MAP: u8 = 255 - 17;
@@ -252,25 +252,14 @@ impl Serializer {
                     Self::write_value(writer, v.1, attachments);
                 });
             }
-            Value::Dart(v) => match &v {
-                crate::DartObject::NativePointer(p) => {
-                    Self::write_native_pointer(writer, p.pointer, v, attachments)
-                }
-                _ => Self::write_attachment(writer, v, attachments),
+            Value::Dart(v) => {
+                 Self::write_attachment(writer, v, attachments);
             },
+            Value::FinalizableHandle(handle) => {
+                writer.write_u8(VALUE_FINALIZABLE_HANDLE);
+                writer.write_size(handle.id as usize);
+            }
         }
-    }
-
-    fn write_native_pointer<T: Into<DartValue>>(
-        writer: &mut Writer,
-        pointer: isize,
-        v: T,
-        attachments: &mut Vec<DartValue>,
-    ) {
-        writer.write_u8(VALUE_NATIVE_POINTER);
-        writer.write_i64(pointer as i64);
-        writer.write_size(attachments.len()); // current index
-        attachments.push(v.into());
     }
 
     fn write_attachment<T: Into<DartValue>>(

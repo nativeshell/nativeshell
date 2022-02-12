@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use crate::api::nativeshell_init_ffi;
+use crate::{api::nativeshell_init_ffi, attach_weak_persistent_handle};
 
 use self::{
     message_channel::{post_message, register_isolate},
@@ -26,6 +26,7 @@ struct MessageChannelContext {
     ffi_data: *mut c_void,
     register_isolate: *mut c_void,
     send_message: *mut c_void,
+    attach_weak_persistent_handle: *mut c_void,
 
     allocate_vec_i8: *mut c_void,
     allocate_vec_u8: *mut c_void,
@@ -66,6 +67,7 @@ pub extern "C" fn nativeshell_init_message_channel_context(data: *mut c_void) ->
     nativeshell_init_ffi(context.ffi_data);
     context.register_isolate = register_isolate as *mut _;
     context.send_message = post_message as *mut _;
+    context.attach_weak_persistent_handle = attach_weak_persistent_handle as *mut _;
     context.allocate_vec_i8 = allocate_vec_i8 as *mut _;
     context.allocate_vec_u8 = allocate_vec_u8 as *mut _;
     context.allocate_vec_i16 = allocate_vec_i16 as *mut _;

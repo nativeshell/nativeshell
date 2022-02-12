@@ -11,6 +11,7 @@ class NativeFunctions {
     required this.token,
     required this.registerIsolate,
     required this.postMessage,
+    required this.attachWeakPersistentHandle,
     required this.vecAllocateInt8,
     required this.vecAllocateUint8,
     required this.vecAllocateInt16,
@@ -37,6 +38,7 @@ class NativeFunctions {
 
   final RegisterIsolate registerIsolate;
   final PostMessage postMessage;
+  final AttachWeakPersistentHandle attachWeakPersistentHandle;
 
   final VecAllocate<Int8> vecAllocateInt8;
   final VecAllocate<Uint8> vecAllocateUint8;
@@ -103,6 +105,8 @@ class NativeFunctions {
         registerIsolate:
             context.ref.registerIsolate.asFunction<RegisterIsolate>(),
         postMessage: context.ref.postMessage.asFunction<PostMessage>(),
+        attachWeakPersistentHandle: context.ref.attachWeakPersistentHandle
+            .asFunction<AttachWeakPersistentHandle>(),
         vecAllocateInt8:
             context.ref.vecAllocateInt8.asFunction<VecAllocate<Int8>>(),
         vecAllocateUint8:
@@ -240,6 +244,8 @@ class _GetFunctions extends Struct {
   // out
   external Pointer<NativeFunction<_RegisterIsolate>> registerIsolate;
   external Pointer<NativeFunction<_PostMessage>> postMessage;
+  external Pointer<NativeFunction<_AttachWeakPersistentHandle>>
+      attachWeakPersistentHandle;
   external Pointer<NativeFunction<_VecAllocate<Int8>>> vecAllocateInt8;
   external Pointer<NativeFunction<_VecAllocate<Uint8>>> vecAllocateUint8;
   external Pointer<NativeFunction<_VecAllocate<Int16>>> vecAllocateInt16;
@@ -266,6 +272,9 @@ typedef RegisterIsolate = IsolateId Function(int dartPort);
 
 typedef _PostMessage = Void Function(Int64, Pointer<Uint8>, Int64);
 typedef PostMessage = void Function(IsolateId, Pointer<Uint8>, int len);
+
+typedef _AttachWeakPersistentHandle = Void Function(Handle, Int64);
+typedef AttachWeakPersistentHandle = void Function(Object, int);
 
 typedef _VecAllocate<T extends NativeType> = Pointer<T> Function(Uint64 size);
 typedef VecAllocate<T extends NativeType> = Pointer<T> Function(int size);
