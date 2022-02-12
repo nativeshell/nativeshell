@@ -1,4 +1,4 @@
-pub mod api;
+pub mod functions;
 
 mod port;
 mod value;

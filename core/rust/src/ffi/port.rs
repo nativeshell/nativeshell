@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::{api, raw, DartValue, IntoDart};
+use super::{functions, raw, DartValue, IntoDart};
 use once_cell::sync::OnceCell;
 
 /// Wraps dart port and provides a method to send messages.
@@ -24,7 +24,7 @@ impl DartPort {
     pub fn send<T: IntoDart>(&self, value: T) -> bool {
         let mut value = value.into_dart();
 
-        let functions = api::DartFunctions::get();
+        let functions = functions::DartFunctions::get();
         let res = unsafe { (functions.post_cobject)(self.port, &mut value as *mut _) };
         if !res {
             // If Dart_PostCObject returns false we need to perform the cleanup ourself.
@@ -45,7 +45,7 @@ impl NativePort {
         F: Fn(raw::DartPort, DartValue) + Send + Sync + 'static,
     {
         let name = CString::new(name).unwrap();
-        let functions = api::DartFunctions::get();
+        let functions = functions::DartFunctions::get();
         let port =
             unsafe { (functions.new_native_port)(name.as_ptr(), Self::handle_message, false) };
         let global_data = Self::global_data();
@@ -94,7 +94,7 @@ impl Drop for NativePort {
         let global_data = Self::global_data();
         let mut global_data = global_data.lock().unwrap();
         global_data.remove(&self.port);
-        let functions = api::DartFunctions::get();
+        let functions = functions::DartFunctions::get();
         unsafe { (functions.close_native_port)(self.port) };
     }
 }

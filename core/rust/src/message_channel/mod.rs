@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use crate::{api::nativeshell_init_ffi, attach_weak_persistent_handle};
+use crate::{attach_weak_persistent_handle, functions::nativeshell_init_ffi};
 
 use self::{
     message_channel::{post_message, register_isolate},

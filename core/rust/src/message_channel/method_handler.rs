@@ -73,6 +73,7 @@ pub trait MethodHandler: Sized + 'static {
     }
 }
 
+#[derive(Clone)]
 pub struct MethodInvoker {
     channel_name: String,
 }

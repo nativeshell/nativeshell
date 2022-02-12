@@ -28,9 +28,17 @@ pub enum Value {
     // functionality and we'll save time building HashMap that is not used.
     Map(ValueTupleList),
 
-    // Special dart values. These can only be sent from Rust to Dart
+    /// Special Dart objects. These can only be sent from Rust to Dart
     Dart(DartObject),
 
+    /// Can only be send from rust to Dart. On Dart side this will be a
+    /// `FinalizableHandle` instance. When handle gets garbage collected, the
+    /// finalizer closure that [`FinalizableHandle`] was created with will be invoked.
+    ///
+    /// You can send single `FinalizableHandle` instance to Dart more than once
+    /// and it will always result in the same Dart object.
+    ///
+    /// If the [`FinalizableHandle`] has already finalized it will be received as `null`.
     FinalizableHandle(Rc<FinalizableHandle>),
 }
 

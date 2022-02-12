@@ -273,8 +273,8 @@ typedef RegisterIsolate = IsolateId Function(int dartPort);
 typedef _PostMessage = Void Function(Int64, Pointer<Uint8>, Int64);
 typedef PostMessage = void Function(IsolateId, Pointer<Uint8>, int len);
 
-typedef _AttachWeakPersistentHandle = Void Function(Handle, Int64);
-typedef AttachWeakPersistentHandle = void Function(Object, int);
+typedef _AttachWeakPersistentHandle = Handle Function(Handle, Int64, Handle);
+typedef AttachWeakPersistentHandle = Object? Function(Object, int, Object?);
 
 typedef _VecAllocate<T extends NativeType> = Pointer<T> Function(Uint64 size);
 typedef VecAllocate<T extends NativeType> = Pointer<T> Function(int size);

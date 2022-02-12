@@ -156,9 +156,10 @@ class MessageChannelContext implements FinalizableHandleProvider {
   final NativeFunctions functions;
 
   @override
-  FinalizableHandle getFinalizableHandle(int id) {
+  FinalizableHandle? getFinalizableHandle(int id) {
     final handle = FinalizableHandle(id);
-    functions.attachWeakPersistentHandle(handle, id);
-    return handle;
+    // Let native code override the return value in case there already is one
+    return functions.attachWeakPersistentHandle(handle, id, null)
+        as FinalizableHandle?;
   }
 }

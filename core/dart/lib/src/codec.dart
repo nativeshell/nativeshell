@@ -36,7 +36,7 @@ const int _valueMap = 255 - 17;
 const int _valueLast = _valueMap;
 
 abstract class FinalizableHandleProvider {
-  FinalizableHandle getFinalizableHandle(int id);
+  FinalizableHandle? getFinalizableHandle(int id);
 }
 
 /// Similar to StandardMessageCodec, but uses NativeList for typed lists
