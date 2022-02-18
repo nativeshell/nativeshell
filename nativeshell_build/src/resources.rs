@@ -20,6 +20,10 @@ impl Resources {
         Ok(())
     }
 
+    pub fn path(&self) -> &Path {
+        &self.resources_dir
+    }
+
     pub fn link<P, Q>(&self, src: P, dst: Q) -> BuildResult<()>
     where
         P: AsRef<Path>,
