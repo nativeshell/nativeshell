@@ -110,10 +110,14 @@ impl<'a> Plugins<'a> {
                 let plugin_class: Option<String> =
                     platform.1["pluginClass"].as_str().map(|s| s.into());
                 if let Some(plugin_class) = plugin_class {
-                    res.insert(
-                        platform.0.as_str().unwrap().into(),
-                        PluginPlatformInfo { plugin_class },
-                    );
+                    // This was a temporary hack in flutter, but some plugins are
+                    // still using it
+                    if plugin_class != "none" {
+                        res.insert(
+                            platform.0.as_str().unwrap().into(),
+                            PluginPlatformInfo { plugin_class },
+                        );
+                    }
                 }
             }
         }
