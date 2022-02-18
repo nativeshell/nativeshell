@@ -4,8 +4,7 @@ use nativeshell_build::Flutter;
 mod gen_keyboard_map;
 
 fn main() {
-    #[cfg(target_os = "macos")]
-    {
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos" {
         let files = ["src/shell/platform/macos/window_buttons.m"];
         let mut build = cc::Build::new();
         for file in files.iter() {

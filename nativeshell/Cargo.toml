@@ -22,6 +22,7 @@ once_cell = "1.8.0"
 
 [build-dependencies]
 cargo-emit = "0.2.1"
+cc = "1.0"
 nativeshell_build = { version="0.1.1", path = "../nativeshell_build" }
 serde = { version = "1.0.119", features = ["derive"] }
 serde_json = "1.0.59"
@@ -37,9 +38,6 @@ block = "0.1.6"
 exec = "0.3.1"
 process_path = "0.1.3"
 url = "2.2.1"
-
-[target.'cfg(target_os = "macos")'.build-dependencies]
-cc = "1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 utf16_lit = "2.0.1"
