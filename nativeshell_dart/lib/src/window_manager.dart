@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:io';
 
@@ -161,6 +162,9 @@ class _LocalWindow extends LocalWindow {
 
   WindowState? _currentState;
 
+  bool _shown = false;
+  bool _paused = false;
+
   final _dragDriver = _WindowDragDriver();
 
   @override
@@ -170,6 +174,44 @@ class _LocalWindow extends LocalWindow {
     } else {
       await close();
     }
+  }
+
+  @override
+  Future<void> readyToShow() {
+    // ignore: unnecessary_non_null_assertion
+    SchedulerBinding.instance!.addPostFrameCallback((_) {
+      if (!_paused && !_shown) {
+        _pushPause();
+        _paused = true;
+      }
+    });
+
+    return super.readyToShow();
+  }
+
+  @override
+  Future<void> show() {
+    _shown = true;
+    if (_paused) {
+      _popPause();
+      _paused = false;
+    }
+    return super.show();
+  }
+
+  @override
+  Future<void> hide() {
+    _shown = false;
+    if (!_paused) {
+      _paused = true;
+      _pushPause();
+    }
+    return super.hide();
+  }
+
+  @override
+  void onMessage(String message, dynamic arguments) {
+    super.onMessage(message, arguments);
   }
 }
 
