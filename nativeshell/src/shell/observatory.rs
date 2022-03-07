@@ -1,4 +1,4 @@
-use std::{thread, time::Instant};
+use std::thread;
 
 use crate::util::errno::{errno, set_errno};
 
@@ -87,7 +87,6 @@ fn _register_observatory_listener(file_suffix: String) {
         let mut buf = [0u8; 1024];
         let mut string = String::new();
         let mut have_url = false;
-        let mut last = Instant::now();
 
         const URL_PREFIX: &str = "flutter: Observatory listening on ";
         loop {
@@ -103,21 +102,16 @@ fn _register_observatory_listener(file_suffix: String) {
                 }
 
                 #[cfg(target_family = "windows")]
-                {
-                    // let prefix = format!("{: >8} | ", last.elapsed().as_millis());
-                    // last = Instant::now();
-                    // libc::write(stdout, prefix.as_ptr() as *const _, prefix.len() as u32);
-                    // libc::write(stdout, buf.as_ptr() as *const _, read as u32);
-                }
+                libc::write(stdout, buf.as_ptr() as *const _, read as u32);
 
                 #[cfg(target_family = "unix")]
                 libc::write(stdout, buf.as_ptr() as *const _, read as usize);
                 read
             };
 
-            // if have_url {
-            // continue;
-            // }
+            if have_url {
+                continue;
+            }
 
             let utf8 = String::from_utf8_lossy(&buf[0..read as usize]);
             string.push_str(&utf8);
@@ -147,16 +141,6 @@ fn _register_observatory_listener(file_suffix: String) {
                             return;
                         }
                     }
-                    #[cfg(target_family = "windows")]
-                    {
-                        let prefix = format!("{: >8} | ", last.elapsed().as_millis());
-                        last = Instant::now();
-                        unsafe {
-                            libc::write(stdout, prefix.as_ptr() as *const _, prefix.len() as u32);
-                            libc::write(stdout, substr.as_ptr() as *const _, substr.len() as u32);
-                            libc::write(stdout, "\n".as_ptr() as *const _, 1);
-                        }
-                    }
                 }
                 string.replace_range(..i + 1, "");
             }
@@ -166,7 +150,7 @@ fn _register_observatory_listener(file_suffix: String) {
 
 #[allow(unused_variables)]
 pub fn register_observatory_listener(file_suffix: String) {
-    // #[cfg(any(flutter_profile, debug_assertions))]
+    #[cfg(any(flutter_profile, debug_assertions))]
     {
         _register_observatory_listener(file_suffix);
     }
