@@ -9,8 +9,7 @@ class Shell {
     FileSystemEntity file = File(path);
     if (Platform.isWindows) {
       await Process.run('explorer.exe', [
-        if (file.statSync().type != FileSystemEntityType.directory) '/select',
-        file.absolute.path
+        '/select,${file.absolute.path}',
       ]);
     } else if (Platform.isMacOS) {
       await Process.run('/usr/bin/osascript', [
