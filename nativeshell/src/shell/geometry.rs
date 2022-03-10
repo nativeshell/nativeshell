@@ -139,9 +139,9 @@ where
     }
 
     pub fn distance(&self, p: &_Point<T>) -> f64 {
-        let x = p.x - self.x;
-        let y = p.y - self.y;
-        let d: f64 = (x * x + y * y).into();
+        let x: f64 = (p.x - self.x).into();
+        let y: f64 = (p.y - self.y).into();
+        let d: f64 = x * x + y * y;
         d.sqrt()
     }
 
@@ -336,3 +336,23 @@ pub type Point = _Point<f64>;
 pub type IPoint = _Point<i32>;
 pub type Size = _Size<f64>;
 pub type ISize = _Size<i32>;
+
+#[cfg(test)]
+mod tests {
+    use super::IPoint;
+
+    #[test]
+    fn test_distance() {
+        let p1 = IPoint::xy(-300, -400);
+        let p2 = IPoint::xy(300, 400);
+        assert_eq!(p1.distance(&p2), 1000.0);
+
+        let p1 = IPoint::xy(-3000, -4000);
+        let p2 = IPoint::xy(3000, 4000);
+        assert_eq!(p1.distance(&p2), 10000.0);
+
+        let p1 = IPoint::xy(-600000, 0);
+        let p2 = IPoint::xy(600000, 0);
+        assert_eq!(p1.distance(&p2), 1200000.0);
+    }
+}
