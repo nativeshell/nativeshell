@@ -25,6 +25,9 @@ class Shell {
         file = file.parent;
       }
       await Process.run('xdg-open', [file.absolute.path]);
+    } else {
+      throw UnimplementedError(
+          'Target platform does not support `revealPath` function.');
     }
   }
 
