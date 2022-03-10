@@ -11,6 +11,7 @@ export 'src/menu_bar.dart';
 export 'src/menu.dart';
 export 'src/screen.dart';
 export 'src/shader_warmup.dart';
+export 'src/shell.dart';
 export 'src/status_item.dart';
 export 'src/window_widget.dart';
 export 'src/window.dart';
