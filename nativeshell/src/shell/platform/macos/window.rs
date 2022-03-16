@@ -73,6 +73,7 @@ pub struct PlatformWindow {
     mouse_down: Cell<bool>,
     mouse_dragged: Cell<bool>,
     window_state_flags: RefCell<WindowStateFlags>,
+    window_dragging: Cell<bool>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -135,6 +136,7 @@ impl PlatformWindow {
                 mouse_down: Cell::new(false),
                 mouse_dragged: Cell::new(false),
                 window_state_flags: RefCell::new(WindowStateFlags::default()),
+                window_dragging: Cell::new(false),
             }
         })
     }
@@ -380,6 +382,9 @@ impl PlatformWindow {
     }
 
     pub fn perform_window_drag(&self) -> PlatformResult<()> {
+        if self.window_dragging.get() {
+            return Ok(());
+        }
         unsafe {
             let last_event = self
                 .last_event
@@ -392,6 +397,10 @@ impl PlatformWindow {
                 .max_by_key(|x| x.eventNumber())
                 .cloned();
             if let Some(last_event) = last_event {
+                // ensure flutter doesn't get mouse events during dragging
+                // (to be consistent with other platforms)
+                self.synthetize_mouse_up_event();
+                self.window_dragging.set(true);
                 let () = msg_send![*self.platform_window, performWindowDragWithEvent:*last_event];
                 Ok(())
             } else {
@@ -877,6 +886,7 @@ impl PlatformWindow {
         } else if event_type == NSLeftMouseUp {
             self.mouse_down.set(false);
             self.mouse_dragged.set(false);
+            self.window_dragging.set(false);
         } else if event_type == NSLeftMouseDragged
             && !self.mouse_down.get()
             && !self.mouse_dragged.get()
@@ -887,6 +897,7 @@ impl PlatformWindow {
         } else if event_type == NSLeftMouseDragged
             && !self.mouse_down.get()
             && self.mouse_dragged.get()
+            && !self.window_dragging.get()
         {
             // Second NSLeftMouseDragged without prior NSLeftMouseDown; This likely
             // means user started dragging window while popup menu was opened.
