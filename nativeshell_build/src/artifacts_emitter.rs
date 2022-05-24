@@ -217,13 +217,7 @@ impl<'a> ArtifactsEmitter<'a> {
             }
             None => {
                 let platform = match self.build.target_platform.as_str() {
-                    "darwin" => {
-                        let darwin_os = match self.build.darwin_arch.as_ref().unwrap().as_str() {
-                            "x86_64" => "x64",
-                            other => other,
-                        };
-                        format!("{}-{}", self.build.target_platform, darwin_os)
-                    }
+                    "darwin" => format!("{}-{}", self.build.target_platform, "x64"),
                     other => other.into(),
                 };
 
