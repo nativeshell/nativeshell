@@ -178,8 +178,7 @@ class _LocalWindow extends LocalWindow {
 
   @override
   Future<void> readyToShow() {
-    // ignore: unnecessary_non_null_assertion
-    SchedulerBinding.instance!.addPostFrameCallback((_) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!_paused && !_shown) {
         _pushPause();
         _paused = true;
@@ -220,8 +219,7 @@ int _pauseCount = 0;
 void _pushPause() {
   ++_pauseCount;
   if (_pauseCount > 0) {
-    // ignore: unnecessary_non_null_assertion
-    WidgetsBinding.instance!
+    WidgetsBinding.instance
         .handleAppLifecycleStateChanged(AppLifecycleState.paused);
   }
 }
@@ -230,8 +228,7 @@ void _popPause() {
   assert(_pauseCount > 0);
   --_pauseCount;
   if (_pauseCount == 0) {
-    // ignore: unnecessary_non_null_assertion
-    WidgetsBinding.instance!
+    WidgetsBinding.instance
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   }
 }

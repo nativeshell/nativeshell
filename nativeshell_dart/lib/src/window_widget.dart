@@ -177,8 +177,7 @@ class _WindowWidgetState extends State<WindowWidget> {
         WindowManager.instance.haveWindowState(_windowState!);
       }
       if (_windowState!.windowSizingMode == WindowSizingMode.manual) {
-        // ignore: unnecessary_non_null_assertion
-        WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
           _prepareAndShow(_windowState!, () => Size(0, 0));
         });
       } else {
@@ -486,8 +485,7 @@ Size _sanitizeAndSnapToPixelBoundary(Size size) {
   }
   size = Size(w, h);
 
-  // ignore: unnecessary_non_null_assertion
-  final ratio = WidgetsBinding.instance!.window.devicePixelRatio;
+  final ratio = WidgetsBinding.instance.window.devicePixelRatio;
   size = size * ratio;
   size = Size(size.width.ceilToDouble(), size.height.ceilToDouble());
   size /= ratio;

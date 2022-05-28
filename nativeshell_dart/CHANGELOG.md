@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] - 2022-03-28
+
+- Support for Flutter 3
+
 ## [0.1.13] - 2021-10-11
 
 - Added `StatusItem`

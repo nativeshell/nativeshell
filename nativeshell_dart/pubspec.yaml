@@ -1,12 +1,12 @@
 name: nativeshell
 description: NativeShell Dart API. Used to interact with NativeShell platform code.
-version: 0.1.13
+version: 0.1.14
 homepage: https://nativeshell.dev
 repository: https://github.com/nativeshell/nativeshell
 
 environment:
   sdk: ">=2.13.0 <3.0.0"
-  flutter: ">=2.2.1"
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
