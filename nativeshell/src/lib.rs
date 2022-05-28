@@ -1,6 +1,7 @@
 #![allow(clippy::new_without_default)]
 #![allow(clippy::manual_range_contains)]
 #![allow(clippy::type_complexity)]
+#![allow(clippy::await_holding_refcell_ref)]
 
 pub mod codec;
 pub mod shell;
