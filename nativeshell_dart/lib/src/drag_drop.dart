@@ -423,8 +423,7 @@ class DragDriver {
 
     _allDropMonitors.removeWhere((element) => !element.attached);
 
-    // ignore: unnecessary_non_null_assertion
-    GestureBinding.instance!.hitTest(hitTest, info.position);
+    GestureBinding.instance.hitTest(hitTest, info.position);
 
     for (final item in hitTest.path) {
       final target = item.target;
