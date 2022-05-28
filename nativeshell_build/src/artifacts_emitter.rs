@@ -220,6 +220,7 @@ impl<'a> ArtifactsEmitter<'a> {
                     "darwin" => {
                         let darwin_os = match self.build.darwin_arch.as_ref().unwrap().as_str() {
                             "x86_64" => "x64",
+                            "arm64" => "x64", // Flutter now ships with universal framework, but in x64 folder
                             other => other,
                         };
                         format!("{}-{}", self.build.target_platform, darwin_os)
