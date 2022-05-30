@@ -88,7 +88,7 @@ fn _register_observatory_listener(file_suffix: String) {
         let mut string = String::new();
         let mut have_url = false;
 
-        const URL_PREFIX: &str = "flutter: Observatory listening on ";
+        const URL_PREFIX: &str = "flutter: The Dart VM service is listening on ";
         loop {
             let read = unsafe {
                 #[cfg(target_family = "windows")]
