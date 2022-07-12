@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'dart:io';
 
 import 'api_constants.dart';
 import 'drag_drop.dart';
@@ -237,7 +237,7 @@ void _popPause() {
 // large delays when creating new window. As a workaround, we briefly pause
 // current isolate rasterization when creating window.
 bool _needPauseWhenCreatingWindow() {
-  return Platform.isWindows;
+  return defaultTargetPlatform == TargetPlatform.windows;
 }
 
 void _maybePause() {

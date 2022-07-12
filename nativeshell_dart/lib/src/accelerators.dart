@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'accelerator.dart';
 
@@ -37,7 +37,8 @@ final arrowLeft = _accelerator(LogicalKeyboardKey.arrowLeft);
 final arrowRight = _accelerator(LogicalKeyboardKey.arrowRight);
 
 Accelerator _cmdOrCtrl() {
-  return Accelerator(meta: Platform.isMacOS, control: !Platform.isMacOS);
+  final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
+  return Accelerator(meta: isMacOS, control: !isMacOS);
 }
 
 Accelerator _accelerator(LogicalKeyboardKey key) => Accelerator(key: key);
