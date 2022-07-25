@@ -130,7 +130,7 @@ class MenuItem {
           (action == null) == (other.action == null));
 
   @override
-  int get hashCode => hashValues(title, separator, submenu != null);
+  int get hashCode => Object.hash(title, separator, submenu != null);
 
   static String _titleForRole(MenuItemRole role) {
     switch (role) {
