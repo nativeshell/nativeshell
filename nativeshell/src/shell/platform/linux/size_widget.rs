@@ -47,7 +47,7 @@ unsafe extern "C" fn get_preferred_width(
 ) {
     let widget = Widget::from_glib_none(widget);
     let width: Option<ptr::NonNull<i32>> = widget.data("nativeshell_minimum_width");
-    if let Some(width) = width.map(|w| *unsafe { w.as_ref() }) {
+    if let Some(width) = width.map(|w| *w.as_ref()) {
         *minimum = max(width, 1);
         *natural = max(width, 1);
     } else {
@@ -63,7 +63,7 @@ unsafe extern "C" fn get_preferred_height(
 ) {
     let widget = Widget::from_glib_none(widget);
     let height: Option<ptr::NonNull<i32>> = widget.data("nativeshell_minimum_height");
-    if let Some(height) = height.map(|h| *unsafe { h.as_ref() }) {
+    if let Some(height) = height.map(|h| *h.as_ref()) {
         *minimum = max(height, 1);
         *natural = max(height, 1);
     } else {
