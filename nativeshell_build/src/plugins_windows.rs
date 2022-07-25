@@ -60,7 +60,7 @@ impl<'a> PluginsImpl<'a> {
 
         let mut cmakelist: String = include_str!("res/windows/CMakeLists.txt").into();
         for plugin in plugins {
-            write!(cmakelist, "add_subdirectory(\"flutter/{}\")\n", plugin.name).ok();
+            writeln!(cmakelist, "add_subdirectory(\"flutter/{}\")", plugin.name).ok();
         }
 
         let cmakelist_path = plugins_dir.join("CMakeLists.txt");
