@@ -1050,10 +1050,17 @@ static WINDOW_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     // FlutterView doesn't override acceptsFirstMouse: so we do it here
     {
         let mut class = class_decl_from_name("FlutterView");
-        class.add_method(
-            sel!(acceptsFirstMouse:),
-            accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
-        );
+        let accepts_first_mouse_defined: BOOL = msg_send![
+            class!(FlutterView),
+            instancesRespondToSelector: sel!(acceptsFirstMouse:)
+        ];
+
+        if accepts_first_mouse_defined != YES {
+            class.add_method(
+                sel!(acceptsFirstMouse:),
+                accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
+            );
+        }
     }
 
     let window_superclass = class!(NSWindow);
