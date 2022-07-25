@@ -1,4 +1,5 @@
 use std::{
+    fmt::Write as _,
     fs::{self, File},
     io::Write,
     path::Path,
@@ -59,7 +60,7 @@ impl<'a> PluginsImpl<'a> {
 
         let mut cmakelist: String = include_str!("res/windows/CMakeLists.txt").into();
         for plugin in plugins {
-            cmakelist.push_str(&format!("add_subdirectory(\"flutter/{}\")\n", plugin.name));
+            write!(cmakelist, "add_subdirectory(\"flutter/{}\")\n", plugin.name).ok();
         }
 
         let cmakelist_path = plugins_dir.join("CMakeLists.txt");
