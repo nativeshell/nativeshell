@@ -1,3 +1,4 @@
+#![allow(clippy::let_unit_value)]
 #![allow(clippy::new_without_default)]
 #![allow(clippy::manual_range_contains)]
 #![allow(clippy::type_complexity)]

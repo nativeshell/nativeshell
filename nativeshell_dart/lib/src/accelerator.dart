@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'key_interceptor.dart';
 import 'keyboard_map.dart';
@@ -82,7 +81,7 @@ class Accelerator {
           key == other.key);
 
   @override
-  int get hashCode => hashValues(alt, control, meta, shift, key);
+  int get hashCode => Object.hash(alt, control, meta, shift, key);
 
   bool matches(RawKeyEvent event) {
     final key = this.key;
