@@ -158,11 +158,29 @@ class _LocalWindow extends LocalWindow {
     WindowHandle handle, {
     WindowHandle? parentWindow,
     dynamic initData,
-  }) : super(handle, parentWindow: parentWindow, initData: initData);
+  }) : super(handle, parentWindow: parentWindow, initData: initData) {
+    visibilityChangedEvent.addListener(_visibilityChanged);
+  }
 
   WindowState? _currentState;
 
-  bool _shown = false;
+  bool _visible = false;
+
+  void _updatePause() {
+    if (!_visible && !_paused) {
+      _pushPause();
+      _paused = true;
+    } else if (_visible && _paused) {
+      _popPause();
+      _paused = false;
+    }
+  }
+
+  void _visibilityChanged(bool visible) {
+    _visible = visible;
+    _updatePause();
+  }
+
   bool _paused = false;
 
   final _dragDriver = _WindowDragDriver();
@@ -179,33 +197,10 @@ class _LocalWindow extends LocalWindow {
   @override
   Future<void> readyToShow() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!_paused && !_shown) {
-        _pushPause();
-        _paused = true;
-      }
+      _updatePause();
     });
 
     return super.readyToShow();
-  }
-
-  @override
-  Future<void> show() {
-    _shown = true;
-    if (_paused) {
-      _popPause();
-      _paused = false;
-    }
-    return super.show();
-  }
-
-  @override
-  Future<void> hide() {
-    _shown = false;
-    if (!_paused) {
-      _paused = true;
-      _pushPause();
-    }
-    return super.hide();
   }
 
   @override
