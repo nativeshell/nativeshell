@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'key_interceptor.dart';
 import 'keyboard_map.dart';
