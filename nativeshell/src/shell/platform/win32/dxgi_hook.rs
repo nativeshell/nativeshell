@@ -96,7 +96,10 @@ unsafe extern "system" fn dcomposition_create_device(
     if global.create_target_for_hwnd.is_none() {
         let device = &*(dcomposition_device as *const Option<IUnknown>);
         let vtable = ::windows::core::Interface::vtable(device.as_ref().unwrap());
-        let myvtable: &[usize] = std::slice::from_raw_parts(std::mem::transmute(vtable), 7);
+        let myvtable: &[usize] = std::slice::from_raw_parts(
+            vtable as *const windows::core::IUnknown_abi as *const usize,
+            7,
+        );
 
         let dt = ManuallyDrop::new(Box::new(
             RawDetour::new(

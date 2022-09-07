@@ -1,4 +1,5 @@
 #![allow(clippy::forget_copy)] // windows-rs !implement macro
+#![allow(clippy::useless_transmute)]
 
 use Windows::{
     core::Interface,

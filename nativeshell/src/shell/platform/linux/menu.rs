@@ -444,7 +444,7 @@ impl PlatformMenu {
     }
 
     fn can_update(old_item: &MenuItem, new_item: &MenuItem) -> bool {
-        #[derive(PartialEq)]
+        #[derive(PartialEq, Eq)]
         enum MenuItemType {
             Separator,
             Regular,

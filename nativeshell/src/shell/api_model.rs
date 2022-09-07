@@ -134,7 +134,7 @@ pub struct DragData {
     pub properties: HashMap<String, Value>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Copy, Clone, PartialEq, Eq)]
 pub enum DragEffect {
     None,
     Copy,
@@ -174,7 +174,7 @@ pub struct DragRequest {
     pub data: DragData,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum WindowFrame {
     Regular,
@@ -202,7 +202,7 @@ pub struct WindowStyle {
     pub traffic_light_offset: Option<Point>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum BoolTransition {
     No,
     NoToYes,
@@ -216,7 +216,7 @@ impl Default for BoolTransition {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowStateFlags {
     pub maximized: BoolTransition,
@@ -288,7 +288,7 @@ pub struct Accelerator {
     pub control: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum CheckStatus {
     None,

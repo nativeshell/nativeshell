@@ -1,5 +1,6 @@
 // in generated code
 #![allow(clippy::forget_copy)]
+#![allow(clippy::useless_transmute)]
 
 use std::{
     cell::{RefCell, RefMut},
