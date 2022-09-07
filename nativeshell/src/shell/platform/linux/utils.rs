@@ -1,7 +1,7 @@
 use gdk::{Event, EventType, Window};
 use glib::translate::{FromGlibPtrFull, ToGlibPtr, ToGlibPtrMut};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub(super) enum SessionType {
     X11,
     Wayland,
