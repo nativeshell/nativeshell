@@ -190,6 +190,8 @@ end\n";
                 .arg("-verbose")
                 .arg("-workspace")
                 .arg("DummyProject.xcworkspace")
+                .arg("-derivedDataPath")
+                .arg("DerivedData")
                 .arg("-scheme")
                 .arg("DummyProject")
                 .arg("-destination")
