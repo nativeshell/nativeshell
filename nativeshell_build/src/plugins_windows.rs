@@ -83,7 +83,7 @@ impl<'a> PluginsImpl<'a> {
                 .join("build")
                 .join("flutter")
                 .join(&plugin.name)
-                .join(&configuration);
+                .join(configuration);
 
             for entry in fs::read_dir(&plugin_artifacts_path)
                 .wrap_error(FileOperation::ReadDir, || plugin_artifacts_path.clone())?

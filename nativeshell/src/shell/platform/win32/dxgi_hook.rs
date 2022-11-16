@@ -291,7 +291,7 @@ unsafe extern "system" fn d3d11_create_device(
         pp_immediate_context,
     );
 
-    if let Some(device) = (&*pp_device).clone() {
+    if let Some(device) = (*pp_device).clone() {
         let device = device.cast::<IDXGIDevice>().unwrap();
         let adapter: Option<IDXGIAdapter> = device.GetAdapter().ok_log();
         if let Some(adapter) = adapter {

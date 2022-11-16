@@ -112,7 +112,7 @@ impl DragDataAdapter for UrlsDragDataAdapter {
                 warn!("Only one URL is supported in drag data on Windows");
             }
             if let Some(url) = strings.first() {
-                let url = WideCString::from_str(&url).unwrap();
+                let url = WideCString::from_str(url).unwrap();
                 let bytes = url.as_slice().as_byte_slice();
                 let mut data = Vec::from(bytes);
                 data.extend_from_slice(&[0, 0]);

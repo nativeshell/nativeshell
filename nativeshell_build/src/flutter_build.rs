@@ -165,7 +165,7 @@ impl Flutter<'_> {
             root_dir: std::env::var("CARGO_MANIFEST_DIR")
                 .unwrap()
                 .as_path()
-                .join(&options.project_root.unwrap_or_else(|| "".as_path())),
+                .join(options.project_root.unwrap_or_else(|| "".as_path())),
             out_dir: std::env::var("OUT_DIR").unwrap().into(),
             options,
             build_mode: Flutter::build_mode(),
@@ -496,7 +496,7 @@ impl Flutter<'_> {
             ))
             .arg(format!(
                 "--define=TargetFile={}",
-                rebased.join(&self.options.target_file).to_str().unwrap()
+                rebased.join(self.options.target_file).to_str().unwrap()
             ))
             .arg(defines)
             .arg("-v")
@@ -547,12 +547,12 @@ impl Flutter<'_> {
         };
 
         for path in roots {
-            self.emit_checks_for_dir(path)?;
+            Self::emit_checks_for_dir(path)?;
         }
 
         for asset in assets {
             if asset.is_dir() {
-                self.emit_checks_for_dir(asset)?;
+                Self::emit_checks_for_dir(asset)?;
             } else {
                 cargo_emit::rerun_if_changed! {
                     asset.to_string_lossy()
@@ -565,14 +565,14 @@ impl Flutter<'_> {
         Ok(())
     }
 
-    fn emit_checks_for_dir(&self, path: &Path) -> BuildResult<()> {
+    fn emit_checks_for_dir(path: &Path) -> BuildResult<()> {
         for entry in fs::read_dir(path).wrap_error(FileOperation::ReadDir, || path.into())? {
             let entry = entry.wrap_error(FileOperation::ReadDir, || path.into())?;
             let metadata = entry
                 .metadata()
                 .wrap_error(FileOperation::MetaData, || entry.path())?;
             if metadata.is_dir() {
-                self.emit_checks_for_dir(entry.path().as_path())?;
+                Self::emit_checks_for_dir(entry.path().as_path())?;
             } else {
                 cargo_emit::rerun_if_changed! {
                     entry.path().to_string_lossy(),
