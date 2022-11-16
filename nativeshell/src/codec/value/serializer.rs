@@ -145,7 +145,7 @@ impl serde::Serializer for Serializer {
         T: serde::Serialize,
     {
         let mut values = HashMap::new();
-        values.insert(Value::from(variant.to_owned()), to_value(&value)?);
+        values.insert(Value::from(variant.to_owned()), to_value(value)?);
         Ok(Value::Map(values))
     }
 
@@ -240,7 +240,7 @@ impl serde::ser::SerializeSeq for SerializeList {
     where
         T: serde::Serialize,
     {
-        self.vec.push(to_value(&value)?);
+        self.vec.push(to_value(value)?);
         Ok(())
     }
 
@@ -289,7 +289,7 @@ impl serde::ser::SerializeTupleVariant for SerializeTupleVariant {
     where
         T: serde::Serialize,
     {
-        self.vec.push(to_value(&value)?);
+        self.vec.push(to_value(value)?);
         Ok(())
     }
 
@@ -310,7 +310,7 @@ impl serde::ser::SerializeMap for SerializeMap {
     where
         T: serde::Serialize,
     {
-        self.next_key = Some(to_value(&key)?);
+        self.next_key = Some(to_value(key)?);
         Ok(())
     }
 
@@ -320,7 +320,7 @@ impl serde::ser::SerializeMap for SerializeMap {
     {
         let key = self.next_key.take();
         let key = key.expect("no value for serialized key");
-        self.map.insert(key, to_value(&value)?);
+        self.map.insert(key, to_value(value)?);
         Ok(())
     }
 
@@ -363,7 +363,7 @@ impl serde::ser::SerializeStructVariant for SerializeStructVariant {
         T: serde::Serialize,
     {
         self.map
-            .insert(Value::from(String::from(key)), to_value(&value)?);
+            .insert(Value::from(String::from(key)), to_value(value)?);
         Ok(())
     }
 
