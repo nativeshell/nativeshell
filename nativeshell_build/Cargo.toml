@@ -1,6 +1,6 @@
 [package]
 name = "nativeshell_build"
-version = "0.1.15"
+version = "0.1.16"
 authors = ["Matej Knopp <matej.knopp@gmail.com>"]
 edition = "2018"
 description = "Integrate Flutter build process with Cargo"
