@@ -177,7 +177,7 @@ extern "system" fn wnd_proc(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPA
             let bridge = &*(ptr as *const EventBridge);
             let handler = &*(bridge.handler);
             let res = handler.wnd_proc(h_wnd, msg, w_param, l_param);
-            if msg == WM_NCDESTROY as u32 {
+            if msg == WM_NCDESTROY {
                 // make sure bridge is dropped
                 let _ = Box::<EventBridge>::from_raw(ptr as *mut EventBridge);
             }

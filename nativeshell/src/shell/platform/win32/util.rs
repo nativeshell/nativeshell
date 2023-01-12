@@ -75,9 +75,9 @@ pub trait BoolResultExt {
 #[allow(non_snake_case)]
 fn HRESULT_FROM_WIN32(x: u32) -> u32 {
     if x as i32 <= 0 {
-        x as u32
+        x
     } else {
-        ((x & 0x0000FFFF) | (FACILITY_WIN32.0 << 16) | 0x80000000) as u32
+        (x & 0x0000FFFF) | (FACILITY_WIN32.0 << 16) | 0x80000000
     }
 }
 

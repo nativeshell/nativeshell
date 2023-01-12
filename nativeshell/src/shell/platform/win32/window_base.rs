@@ -307,7 +307,7 @@ impl WindowBaseState {
         unsafe {
             SendMessageW(
                 self.hwnd,
-                WM_NCCALCSIZE as u32,
+                WM_NCCALCSIZE,
                 WPARAM(0),
                 LPARAM(&rect as *const _ as isize),
             );
@@ -426,11 +426,7 @@ impl WindowBaseState {
         if enabled {
             EnableMenuItem(menu, SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
         } else {
-            EnableMenuItem(
-                menu,
-                SC_CLOSE as u32,
-                MF_BYCOMMAND | MF_DISABLED | MF_GRAYED,
-            );
+            EnableMenuItem(menu, SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
         }
     }
 
@@ -559,7 +555,7 @@ impl WindowBaseState {
     }
 
     pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
-        let buffer = base64::decode(&position).map_err(|e| PlatformError::OtherError {
+        let buffer = base64::decode(position).map_err(|e| PlatformError::OtherError {
             error: format!("{}", e),
         })?;
         if buffer.len() != mem::size_of::<WINDOWPLACEMENT>() {
@@ -592,7 +588,7 @@ impl WindowBaseState {
             ReleaseCapture();
             SendMessageW(
                 self.hwnd,
-                WM_NCLBUTTONDOWN as u32,
+                WM_NCLBUTTONDOWN,
                 WPARAM(HTCAPTION as usize),
                 LPARAM(0),
             );
