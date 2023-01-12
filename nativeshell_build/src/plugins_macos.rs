@@ -91,7 +91,7 @@ end\n";
         let src = src
             .canonicalize()
             .wrap_error(FileOperation::Canonicalize, || src.clone())?;
-        symlink(&src, &dst)?;
+        symlink(src, &dst)?;
         Ok(())
     }
 
