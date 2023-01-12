@@ -169,7 +169,7 @@ impl State {
     }
 
     fn stop(&self) {
-        unsafe { PostMessageW(HWND(0), WM_QUIT as u32, WPARAM(0), LPARAM(0)) };
+        unsafe { PostMessageW(HWND(0), WM_QUIT, WPARAM(0), LPARAM(0)) };
     }
 }
 
@@ -280,7 +280,7 @@ impl PlatformRunLoopSender {
             callbacks.push(Box::new(callback));
         }
         unsafe {
-            PostMessageW(self.hwnd, WM_USER as u32, WPARAM(0), LPARAM(0));
+            PostMessageW(self.hwnd, WM_USER, WPARAM(0), LPARAM(0));
         }
     }
 }
