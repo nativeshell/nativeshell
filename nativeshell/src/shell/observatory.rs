@@ -38,7 +38,7 @@ fn have_observatory_url(url: &str, file_suffix: &str) {
             );
 
             let file = format!("{}{}{}", dir, separator, file_name);
-            std::fs::write(file, &content).unwrap();
+            std::fs::write(file, content).unwrap();
         }
         None => {
             println!("nativeshell: Could not determine temporary folder environment variable.");

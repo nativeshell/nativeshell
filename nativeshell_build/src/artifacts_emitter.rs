@@ -80,7 +80,7 @@ impl<'a> ArtifactsEmitter<'a> {
             let app_so = self.flutter_out_dir.join("lib").join("libapp.so");
             if app_so.exists() {
                 let lib_dir = mkdir(&self.artifacts_out_dir, Some("lib"))?;
-                copy_to(&app_so, &lib_dir, false)?;
+                copy_to(&app_so, lib_dir, false)?;
             }
         }
 
@@ -90,7 +90,7 @@ impl<'a> ArtifactsEmitter<'a> {
     // MacOS only
     pub fn emit_app_framework(&self) -> BuildResult<()> {
         copy_to(
-            &self.flutter_out_dir.join("App.framework"),
+            self.flutter_out_dir.join("App.framework"),
             &self.artifacts_out_dir,
             true,
         )?;
@@ -141,7 +141,10 @@ impl<'a> ArtifactsEmitter<'a> {
                     src
                 )));
             }
+            // false positives :-/
+            #[allow(clippy::needless_borrow)]
             copy_to(&src, &artifacts_out_dir, true)?;
+            #[allow(clippy::needless_borrow)]
             copy_to(&src, &deps_out_dir, true)?;
         }
 

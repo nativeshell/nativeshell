@@ -235,18 +235,18 @@ impl WindowMenu {
                     parent = msg.hwnd;
                 }
 
-                if msg.message == WM_PAINT as u32 {
+                if msg.message == WM_PAINT {
                     POPUP_PARENT.with(|parent| {
                         SendMessageW(
                             parent.get(),
-                            Self::WM_MENU_HWND as u32,
+                            Self::WM_MENU_HWND,
                             WPARAM(msg.hwnd.0 as usize),
                             LPARAM(0),
                         );
                     });
                 }
 
-                SendMessageW(parent, Self::WM_MENU_HOOK as u32, w_param, l_param);
+                SendMessageW(parent, Self::WM_MENU_HOOK, w_param, l_param);
             }
             CallNextHookEx(HHOOK(0), code, w_param, l_param)
         }
@@ -261,7 +261,7 @@ impl WindowMenu {
     ) -> Option<LRESULT> {
         let mouse_state = self.mouse_state.borrow_mut();
 
-        if u_msg == WM_MOUSELEAVE as u32 && mouse_state.ignore_mouse_leave {
+        if u_msg == WM_MOUSELEAVE && mouse_state.ignore_mouse_leave {
             return Some(LRESULT(0));
         }
         None
@@ -269,12 +269,7 @@ impl WindowMenu {
 
     unsafe fn preselect_first_enabled_item(menu_hwnd: HWND, menu: HMENU) {
         for i in 0..GetMenuItemCount(menu) {
-            SendMessageW(
-                menu_hwnd,
-                WM_KEYDOWN as u32,
-                WPARAM(VK_DOWN.0 as usize),
-                LPARAM(0),
-            );
+            SendMessageW(menu_hwnd, WM_KEYDOWN, WPARAM(VK_DOWN.0 as usize), LPARAM(0));
             let mut item_info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as u32,
                 fMask: MIIM_STATE,
@@ -336,7 +331,7 @@ impl WindowMenu {
 
         if (message == WM_KEYUP || message == WM_SYSKEYUP) && !current_menu.seen_key_down {
             unsafe {
-                SendMessageW(self.child_hwnd, WM_KEYUP as u32, msg.wParam, msg.lParam);
+                SendMessageW(self.child_hwnd, WM_KEYUP, msg.wParam, msg.lParam);
             }
         }
 
@@ -401,7 +396,7 @@ impl WindowMenu {
             current_menu.mouse_in = false;
             self.mouse_state.borrow_mut().ignore_mouse_leave = false;
             unsafe {
-                SendMessageW(self.child_hwnd, WM_MOUSELEAVE as u32, WPARAM(1), LPARAM(0));
+                SendMessageW(self.child_hwnd, WM_MOUSELEAVE, WPARAM(1), LPARAM(0));
             }
             self.mouse_state.borrow_mut().ignore_mouse_leave = true;
         }

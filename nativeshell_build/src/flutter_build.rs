@@ -420,7 +420,7 @@ impl Flutter<'_> {
                 source: e,
             })?;
 
-        fs::write(&new, &serialized).wrap_error(FileOperation::Write, || new.as_ref().into())?;
+        fs::write(&new, serialized).wrap_error(FileOperation::Write, || new.as_ref().into())?;
 
         Ok(())
     }

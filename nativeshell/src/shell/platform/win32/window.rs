@@ -452,12 +452,7 @@ impl PlatformWindow {
                         hwnd,
                         null_mut(),
                     );
-                    SendMessageW(
-                        hwnd,
-                        WM_SYSCOMMAND as u32,
-                        WPARAM(cmd.0 as usize),
-                        LPARAM(0),
-                    );
+                    SendMessageW(hwnd, WM_SYSCOMMAND, WPARAM(cmd.0 as usize), LPARAM(0));
                 })
                 .detach();
         }
@@ -548,12 +543,7 @@ impl PlatformWindow {
             }
             WM_DISPLAYCHANGE => {
                 unsafe {
-                    SendMessageW(
-                        self.child_hwnd(),
-                        WM_SHOWWINDOW as u32,
-                        WPARAM(1),
-                        LPARAM(1),
-                    );
+                    SendMessageW(self.child_hwnd(), WM_SHOWWINDOW, WPARAM(1), LPARAM(1));
                 }
                 let hwnd = self.child_hwnd();
                 if let Some(context) = self.context.get() {
@@ -561,7 +551,7 @@ impl PlatformWindow {
                         .run_loop
                         .borrow()
                         .schedule(Duration::from_secs(1), move || unsafe {
-                            SendMessageW(hwnd, WM_SHOWWINDOW as u32, WPARAM(1), LPARAM(1));
+                            SendMessageW(hwnd, WM_SHOWWINDOW, WPARAM(1), LPARAM(1));
                         })
                         .detach();
                 }
@@ -649,10 +639,10 @@ impl PlatformWindow {
         // synthetize mouse up / down event
         let mouse_msg = self.mouse_state.borrow_mut().last_button_down.take();
         if let Some(mut mouse_msg) = mouse_msg {
-            if mouse_msg.message == WM_LBUTTONDOWN as u32 {
-                mouse_msg.message = WM_LBUTTONUP as u32;
-            } else if mouse_msg.message == WM_RBUTTONDOWN as u32 {
-                mouse_msg.message = WM_RBUTTONUP as u32;
+            if mouse_msg.message == WM_LBUTTONDOWN {
+                mouse_msg.message = WM_LBUTTONUP;
+            } else if mouse_msg.message == WM_RBUTTONDOWN {
+                mouse_msg.message = WM_RBUTTONUP;
             }
             unsafe {
                 SendMessageW(
@@ -675,7 +665,7 @@ impl PlatformWindow {
         {
             let mut mouse_state = self.mouse_state.borrow_mut();
 
-            if u_msg == WM_LBUTTONDOWN as u32 || u_msg == WM_RBUTTONDOWN as u32 {
+            if u_msg == WM_LBUTTONDOWN || u_msg == WM_RBUTTONDOWN {
                 mouse_state.last_button_down.replace(MSG {
                     hwnd: h_wnd,
                     message: u_msg,
@@ -683,7 +673,7 @@ impl PlatformWindow {
                     lParam: l_param,
                     ..Default::default()
                 });
-            } else if u_msg == WM_LBUTTONUP as u32 || u_msg == WM_RBUTTONUP as u32 {
+            } else if u_msg == WM_LBUTTONUP || u_msg == WM_RBUTTONUP {
                 mouse_state.last_button_down.take();
             }
 

@@ -73,7 +73,7 @@ impl MacOSBundle {
 
         symlink(
             artifacts_dir.join(&self.options.executable_path),
-            &bundle_executable_path,
+            bundle_executable_path,
         )?;
 
         self.write_info_plist(&contents)?;
