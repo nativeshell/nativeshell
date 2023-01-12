@@ -44,14 +44,14 @@ impl<'a> PluginsImpl<'a> {
             "flutter_windows.dll.lib",
         ];
         for file in &flutter_files {
-            copy_to(&flutter_artifacts.join(file), &plugins_dir, true)?;
+            copy_to(flutter_artifacts.join(file), &plugins_dir, true)?;
         }
 
         let cpp_client_wrapper = self
             .artifacts_emitter
             .find_artifacts_location("debug")?
             .join("cpp_client_wrapper");
-        copy_to(&cpp_client_wrapper, &plugins_dir, true)?;
+        copy_to(cpp_client_wrapper, &plugins_dir, true)?;
 
         let flutter = mkdir(&plugins_dir, Some("flutter"))?;
         for plugin in plugins {
@@ -94,6 +94,8 @@ impl<'a> PluginsImpl<'a> {
                 let name = entry.file_name();
                 let name = name.to_string_lossy();
                 if name.ends_with(".dll") || name.ends_with(".lib") {
+                    // false positive :-/
+                    #[allow(clippy::needless_borrow)]
                     copy_to(entry.path(), &artifacts_dir, true)?;
                 }
                 if let Some(name) = name.strip_suffix(".dll") {
