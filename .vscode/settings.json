@@ -1,5 +1,3 @@
 {
-    "rust-analyzer.check.command": "clippy",
-    "dart.flutterSdkPath": "/Users/Matej/Projects/flutter/flutter"
-    // "dart.flutterSdkPath": "/Users/Matej/Projects/superlist1/.flutter",
+    "rust-analyzer.check.command": "clippy"
 }

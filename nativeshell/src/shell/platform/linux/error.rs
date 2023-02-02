@@ -20,10 +20,10 @@ impl Display for PlatformError {
                 write!(f, "Unknown Error")
             }
             PlatformError::GLibError { message } => {
-                write!(f, "GLibError: {}", message)
+                write!(f, "GLibError: {message}")
             }
             PlatformError::OtherError { error } => {
-                write!(f, "{}", error)
+                write!(f, "{error}")
             }
         }
     }
