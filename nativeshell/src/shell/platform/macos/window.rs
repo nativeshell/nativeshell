@@ -20,7 +20,7 @@ use crate::{
 };
 use cocoa::{
     appkit::{
-        CGPoint, NSApplication, NSEvent, NSEventType, NSView, NSViewHeightSizable,
+        CGPoint, NSApplication, NSColor, NSEvent, NSEventType, NSView, NSViewHeightSizable,
         NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
         NSWindowTabbingMode, NSWindowTitleVisibility,
     },
@@ -153,6 +153,11 @@ impl PlatformWindow {
 
             let state_ptr = weak.clone().into_raw() as *mut c_void;
             (**self.platform_window).set_ivar("imState", state_ptr);
+
+            let () = msg_send![
+                *engine.view_controller,
+                setBackgroundColor: NSColor::clearColor(nil)
+            ];
 
             let flutter_view: id = msg_send![*engine.view_controller, view];
             self.flutter_view.set(StrongPtr::retain(flutter_view));
