@@ -57,8 +57,8 @@ where
 {
     fn from(e: Error) -> Self {
         Self {
-            code: format!("{:?}", e),
-            message: Some(format!("{}", e)),
+            code: format!("{e:?}"),
+            message: Some(format!("{e}")),
             details: Default::default(),
         }
     }

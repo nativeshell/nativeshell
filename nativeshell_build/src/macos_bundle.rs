@@ -137,7 +137,7 @@ impl MacOSBundle {
     }
 
     fn replace_plist_value(plist: &mut String, key: &str, value: &str) {
-        *plist = plist.replace(&format!("${{{}}}", key), value);
+        *plist = plist.replace(&format!("${{{key}}}"), value);
     }
 
     fn get_info_plist_template(&self) -> BuildResult<String> {

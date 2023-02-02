@@ -94,7 +94,7 @@ pub(super) fn run_command(mut command: Command, command_name: &str) -> BuildResu
     }
     if !success {
         Err(BuildError::ToolError {
-            command: format!("{:?}", command),
+            command: format!("{command:?}"),
             status: output.status,
             stderr: String::from_utf8_lossy(&output.stderr).into(),
             stdout: stdout.into(),
