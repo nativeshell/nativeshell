@@ -112,7 +112,7 @@ impl<'a> PluginsImpl<'a> {
                 .plugin_class
                 .from_case(Case::Pascal)
                 .to_case(Case::Snake);
-            writeln!(file, "  extern \"C\" {{ pub fn {}_register_with_registrar(registrar: *mut std::os::raw::c_void); }}", snake_case_class)?;
+            writeln!(file, "  extern \"C\" {{ pub fn {snake_case_class}_register_with_registrar(registrar: *mut std::os::raw::c_void); }}")?;
         }
 
         writeln!(file, "  vec![")?;
@@ -122,8 +122,7 @@ impl<'a> PluginsImpl<'a> {
             writeln!(
                 file,
                 "    nativeshell::shell::platform::engine::PlatformPlugin {{ \
-                name: \"{}\".into(), register_func: Some({}_register_with_registrar) }},",
-                class, snake_case_class,
+                name: \"{class}\".into(), register_func: Some({snake_case_class}_register_with_registrar) }},",
             )?;
         }
 
