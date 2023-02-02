@@ -135,8 +135,7 @@ impl<'a> PluginsImpl<'a> {
             writeln!(
                 file,
                 "    nativeshell::shell::platform::engine::PlatformPlugin {{ \
-                name: \"{}\".into(), register_func: Some({}RegisterWithRegistrar) }},",
-                class, class,
+                name: \"{class}\".into(), register_func: Some({class}RegisterWithRegistrar) }},",
             )?;
         }
 
