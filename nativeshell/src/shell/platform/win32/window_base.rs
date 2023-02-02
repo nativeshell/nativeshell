@@ -556,7 +556,7 @@ impl WindowBaseState {
 
     pub fn restore_position_from_string(&self, position: String) -> PlatformResult<()> {
         let buffer = base64::decode(position).map_err(|e| PlatformError::OtherError {
-            error: format!("{}", e),
+            error: format!("{e}"),
         })?;
         if buffer.len() != mem::size_of::<WINDOWPLACEMENT>() {
             return Err(PlatformError::OtherError {
