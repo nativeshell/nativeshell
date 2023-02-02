@@ -30,14 +30,13 @@ fn have_observatory_url(url: &str, file_suffix: &str) {
             let separator = if dir.ends_with('/') { "" } else { "/" };
             let info = VMServiceInfoFile { uri: url.into() };
             let content = serde_json::to_string_pretty(&info).unwrap();
-            let file_name = format!("vmservice.{}", file_suffix);
+            let file_name = format!("vmservice.{file_suffix}");
 
             println!(
-                "nativeshell: Writing VM Service info file into ${{{}}}{}{}",
-                temp, separator, file_name,
+                "nativeshell: Writing VM Service info file into ${{{temp}}}{separator}{file_name}",
             );
 
-            let file = format!("{}{}{}", dir, separator, file_name);
+            let file = format!("{dir}{separator}{file_name}");
             std::fs::write(file, content).unwrap();
         }
         None => {

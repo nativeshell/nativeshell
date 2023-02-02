@@ -62,8 +62,7 @@ impl Display for BuildError {
             } => {
                 write!(
                     f,
-                    "External Tool Failed!\nStatus: {:?}\nCommand: {}\nStderr:\n{}\nStdout:\n{}",
-                    status, command, stderr, stdout
+                    "External Tool Failed!\nStatus: {status:?}\nCommand: {command}\nStderr:\n{stderr}\nStdout:\n{stdout}"
                 )
             }
             BuildError::FileOperationError {
@@ -75,30 +74,28 @@ impl Display for BuildError {
                 Some(source_path) => {
                     write!(
                         f,
-                        "File operation failed: {:?}, target path: {:?}, source path: {:?}, error: {}",
-                        operation, path, source_path, source
+                        "File operation failed: {operation:?}, target path: {path:?}, source path: {source_path:?}, error: {source}"
                     )
                 }
                 None => {
                     write!(
                         f,
-                        "File operation failed: {:?}, path: {:?}, error: {}",
-                        operation, path, source
+                        "File operation failed: {operation:?}, path: {path:?}, error: {source}"
                     )
                 }
             },
             BuildError::JsonError { text, source } => {
-                write!(f, "JSON operation failed: ${}", source)?;
+                write!(f, "JSON operation failed: ${source}")?;
                 if let Some(text) = text {
-                    write!(f, "Text:\n{}", text)?;
+                    write!(f, "Text:\n{text}")?;
                 }
                 Ok(())
             }
             BuildError::YamlError { source } => {
-                write!(f, "{}", source)
+                write!(f, "{source}")
             }
             BuildError::OtherError(err) => {
-                write!(f, "{}", err)
+                write!(f, "{err}")
             }
             BuildError::FlutterNotFoundError => {
                 write!(
@@ -111,8 +108,7 @@ impl Display for BuildError {
             BuildError::FlutterPathInvalidError { path } => {
                 write!(
                     f,
-                    "Flutter path {:?} does not point to a valid flutter installation",
-                    path
+                    "Flutter path {path:?} does not point to a valid flutter installation"
                 )
             }
             BuildError::FlutterLocalEngineNotFound => {

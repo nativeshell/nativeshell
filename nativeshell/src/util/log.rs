@@ -18,7 +18,7 @@ where
                 let location = Location::caller();
                 log::logger().log(
                     &Record::builder()
-                        .args(format_args!("Unexpected error {} at {}", err, location))
+                        .args(format_args!("Unexpected error {err} at {location}"))
                         .file(Some(location.file()))
                         .line(Some(location.line()))
                         .level(Level::Error)

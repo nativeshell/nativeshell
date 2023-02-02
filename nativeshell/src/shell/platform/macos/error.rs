@@ -18,7 +18,7 @@ impl Display for PlatformError {
                 write!(f, "Unknown Error")
             }
             PlatformError::SendMessageFailure { channel } => {
-                write!(f, "Failed to send message on channel {}", channel)
+                write!(f, "Failed to send message on channel {channel}")
             }
             PlatformError::LaunchEngineFailure => {
                 write!(f, "Failed to launch Flutter engine")

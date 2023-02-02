@@ -332,8 +332,8 @@ impl Flutter<'_> {
         };
         match Flutter::target_os() {
             TargetOS::Mac => "darwin".into(),
-            TargetOS::Windows => format!("windows-{}", arch),
-            TargetOS::Linux => format!("linux-{}", arch),
+            TargetOS::Windows => format!("windows-{arch}"),
+            TargetOS::Linux => format!("linux-{arch}"),
         }
     }
 
@@ -407,9 +407,9 @@ impl Flutter<'_> {
                 let absolute = simplified(&absolute);
                 let mut absolute = absolute.to_slash_lossy();
                 if !absolute.starts_with('/') {
-                    absolute = format!("/{}", absolute);
+                    absolute = format!("/{absolute}");
                 }
-                absolute = format!("file://{}", absolute);
+                absolute = format!("file://{absolute}");
                 package.root_uri = absolute;
             }
         }
@@ -478,7 +478,7 @@ impl Flutter<'_> {
         command.current_dir(&working_dir);
 
         if let Some(local_engine) = &self.options.local_engine {
-            command.arg(format!("--local-engine={}", local_engine));
+            command.arg(format!("--local-engine={local_engine}"));
 
             command.arg(format!(
                 "--local-engine-src-path={}",

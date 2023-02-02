@@ -32,8 +32,8 @@ pub enum AsyncMethodCallError<V> {
 impl std::fmt::Display for AsyncMethodCallError<Value> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AsyncMethodCallError::ShellError(error) => write!(f, "NativeShell Error: {}", error),
-            AsyncMethodCallError::MethodCallError(error) => write!(f, "MethodCallError: {}", error),
+            AsyncMethodCallError::ShellError(error) => write!(f, "NativeShell Error: {error}"),
+            AsyncMethodCallError::MethodCallError(error) => write!(f, "MethodCallError: {error}"),
         }
     }
 }

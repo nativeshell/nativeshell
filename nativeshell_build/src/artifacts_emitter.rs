@@ -137,8 +137,7 @@ impl<'a> ArtifactsEmitter<'a> {
             };
             if !src.exists() {
                 return Err(BuildError::OtherError(format!(
-                    "File {:?} does not exist. Try running 'flutter precache'.",
-                    src
+                    "File {src:?} does not exist. Try running 'flutter precache'."
                 )));
             }
             // false positives :-/
@@ -194,8 +193,7 @@ impl<'a> ArtifactsEmitter<'a> {
 
         if !res.exists() {
             Err(BuildError::OtherError(format!(
-                "Flutter build directory at {:?} does not exist",
-                res
+                "Flutter build directory at {res:?} does not exist"
             )))
         } else {
             Ok(res)
@@ -233,7 +231,7 @@ impl<'a> ArtifactsEmitter<'a> {
 
                 let engine = match (&platform, build_mode) {
                     (platform, "debug") => platform.into(),
-                    (platform, mode) => format!("{}-{}", platform, mode),
+                    (platform, mode) => format!("{platform}-{mode}"),
                 };
                 self.find_flutter_bundled_artifacts_location()?.join(engine)
             }
@@ -241,8 +239,7 @@ impl<'a> ArtifactsEmitter<'a> {
 
         if !path.exists() {
             Err(BuildError::OtherError(format!(
-                "Flutter artifact location path at {:?} does not exist! Try running 'flutter precache'",
-                path
+                "Flutter artifact location path at {path:?} does not exist! Try running 'flutter precache'"
             )))
         } else {
             Ok(path)

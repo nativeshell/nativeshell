@@ -133,7 +133,7 @@ end\n";
         }
 
         for pod in self.build.options.macos_extra_pods {
-            writeln!(contents, "  {}", pod).unwrap();
+            writeln!(contents, "  {pod}").unwrap();
         }
 
         writeln!(contents, "  target 'DummyProject' do").unwrap();
