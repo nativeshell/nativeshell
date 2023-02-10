@@ -20,9 +20,10 @@ use crate::{
 };
 use cocoa::{
     appkit::{
-        CGPoint, NSApplication, NSColor, NSEvent, NSEventType, NSView, NSViewHeightSizable,
-        NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
-        NSWindowTabbingMode, NSWindowTitleVisibility,
+        CGPoint, NSApplication, NSColor, NSEvent, NSEventPhase,
+        NSEventType::{self, NSEventTypeMagnify, NSEventTypeRotate},
+        NSView, NSViewHeightSizable, NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior,
+        NSWindowStyleMask, NSWindowTabbingMode, NSWindowTitleVisibility,
     },
     base::{id, nil, BOOL, NO, YES},
     foundation::{
@@ -30,7 +31,7 @@ use cocoa::{
     },
 };
 use core_foundation::base::CFRelease;
-use core_graphics::event::CGEventType;
+use core_graphics::event::{CGEventField, CGEventType};
 use objc::{
     class,
     declare::ClassDecl,
@@ -745,6 +746,45 @@ impl PlatformWindow {
         Ok(true)
     }
 
+    unsafe fn finish_momentum_events(&self) {
+        // Unfinished momentum events will cause pan gesture recognizer
+        // stuck since Flutter 3.3
+        let momentum_events: Vec<_> = self
+            .last_event
+            .borrow_mut()
+            .values()
+            .filter(|e| {
+                if e.eventType() == NSEventType::NSScrollWheel
+                    || e.eventType() == NSEventTypeMagnify
+                    || e.eventType() == NSEventTypeRotate
+                {
+                    let phase = e.phase();
+                    phase != NSEventPhase::NSEventPhaseNone
+                        && phase != NSEventPhase::NSEventPhaseEnded
+                        && phase != NSEventPhase::NSEventPhaseCancelled
+                } else {
+                    false
+                }
+            })
+            .cloned()
+            .collect();
+
+        for event in momentum_events {
+            let event = NSEvent::CGEvent(*event) as core_graphics::sys::CGEventRef;
+            let event = CGEventCreateCopy(event);
+            CGEventSetIntegerValueField(
+                event, //
+                99,    // kCGScrollWheelEventScrollPhase
+                NSEventPhase::NSEventPhaseEnded.bits() as i64,
+            );
+
+            let synthetized: id = msg_send![class!(NSEvent), eventWithCGEvent: event];
+            CFRelease(event as *mut _);
+
+            let () = msg_send![*self.platform_window, sendEvent: synthetized];
+        }
+    }
+
     unsafe fn synthetize_mouse_up_event(&self) {
         let last_event = self
             .last_event
@@ -776,6 +816,8 @@ impl PlatformWindow {
 
             let () = msg_send![*self.platform_window, sendEvent: synthetized];
         }
+
+        self.finish_momentum_events();
     }
 
     pub(super) fn synthetize_mouse_move_if_needed(&self) {
@@ -1255,6 +1297,11 @@ extern "C" {
     fn CGEventSetType(event: core_graphics::sys::CGEventRef, eventType: CGEventType);
     fn CGEventSetLocation(event: core_graphics::sys::CGEventRef, location: CGPoint);
     fn CGEventSetWindowLocation(event: core_graphics::sys::CGEventRef, location: CGPoint);
+    fn CGEventSetIntegerValueField(
+        event: core_graphics::sys::CGEventRef,
+        field: CGEventField,
+        value: i64,
+    );
     fn CGEventCreateCopy(event: core_graphics::sys::CGEventRef) -> core_graphics::sys::CGEventRef;
 }
 
