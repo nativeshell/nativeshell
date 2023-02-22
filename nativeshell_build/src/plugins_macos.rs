@@ -32,7 +32,7 @@ impl<'a> PluginsImpl<'a> {
         let xcode = mkdir(&self.build.out_dir, Some("xcode"))?;
         let symlinks_dir = self.create_plugin_symlinks(&xcode, plugins)?;
         let framework_dir = mkdir(&xcode, Some("FlutterMacOS"))?;
-        let podfile = xcode.join("PodFile");
+        let podfile = xcode.join("Podfile");
         let build_ok = xcode.join("build_ok");
         let mut skip_build = self
             .write_podfile(&podfile, plugins, &symlinks_dir, &framework_dir)
