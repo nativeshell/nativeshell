@@ -22,7 +22,11 @@ impl<'a> PluginsImpl<'a> {
         Self { build }
     }
 
-    pub fn process(&self, plugins: &[Plugin], _skip_build: bool) -> BuildResult<()> {
+    pub fn process(
+        &self,
+        plugins: &[Plugin],
+        flutter_plugins_not_changed: bool,
+    ) -> BuildResult<()> {
         // Nothing to do here
         if plugins.is_empty() && self.build.options.macos_extra_pods.is_empty() {
             self.write_plugin_registrar(&HashMap::new())?;
@@ -38,6 +42,7 @@ impl<'a> PluginsImpl<'a> {
             .write_podfile(&podfile, plugins, &symlinks_dir, &framework_dir)
             .wrap_error(FileOperation::Write, || podfile.clone())?;
         skip_build &= build_ok.exists();
+        skip_build &= flutter_plugins_not_changed;
         if !skip_build {
             if build_ok.exists() {
                 fs::remove_file(&build_ok).wrap_error(FileOperation::Remove, || build_ok.clone())?
