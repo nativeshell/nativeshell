@@ -71,6 +71,7 @@ fn hash_map<H: std::hash::Hasher>(map: &HashMap<Value, Value>, state: &mut H) {
     }
 }
 
+#[allow(renamed_and_removed_lints)]
 #[allow(clippy::derive_hash_xor_eq)]
 impl std::hash::Hash for Value {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
