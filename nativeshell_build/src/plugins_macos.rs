@@ -269,6 +269,8 @@ end\n";
                 .join("Headers")
                 .join(format!("{}-Swift.h", plugin.name));
 
+            let mut found_swift_plugin = false;
+
             if swift_header_path.exists() {
                 let file = File::open(&swift_header_path)
                     .wrap_error(FileOperation::Open, || swift_header_path.clone())?;
@@ -281,12 +283,15 @@ end\n";
                             // the of suffix of mangled name should match plugin class
                             if line.ends_with(&plugin.platform_info.plugin_class) {
                                 res.insert(plugin.platform_info.plugin_class.clone(), line.into());
+                                found_swift_plugin = true;
                                 break;
                             }
                         }
                     }
                 }
-            } else {
+            }
+
+            if !found_swift_plugin {
                 // possibly not a swift plugin
                 res.insert(
                     plugin.platform_info.plugin_class.clone(),
