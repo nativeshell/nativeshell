@@ -75,6 +75,7 @@ pub struct PlatformWindow {
     mouse_dragged: Cell<bool>,
     window_state_flags: RefCell<WindowStateFlags>,
     window_dragging: Cell<bool>,
+    notify_geometry_changes: Cell<bool>,
 }
 
 #[link(name = "AppKit", kind = "framework")]
@@ -138,6 +139,7 @@ impl PlatformWindow {
                 mouse_dragged: Cell::new(false),
                 window_state_flags: RefCell::new(WindowStateFlags::default()),
                 window_dragging: Cell::new(false),
+                notify_geometry_changes: Cell::new(false),
             }
         })
     }
@@ -189,6 +191,8 @@ impl PlatformWindow {
             drag_context.register(*self.platform_window);
             self.drag_context.set(drag_context);
         }
+
+        self.notify_geometry_changes.replace(true);
     }
 
     pub fn get_platform_window(&self) -> PlatformWindowType {
@@ -1182,6 +1186,11 @@ static WINDOW_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
     );
 
     decl.add_method(
+        sel!(windowDidResize:),
+        window_did_resize as extern "C" fn(&Object, Sel, id),
+    );
+
+    decl.add_method(
         sel!(windowShouldClose:),
         window_should_close as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
@@ -1306,7 +1315,19 @@ extern "C" {
 }
 
 extern "C" fn window_did_move(this: &Object, _: Sel, _: id) {
-    with_state_delegate(this, |_state, _delegate| {});
+    with_state_delegate(this, |state, delegate| {
+        if state.notify_geometry_changes.get() {
+            delegate.geometry_changed();
+        }
+    });
+}
+
+extern "C" fn window_did_resize(this: &Object, _: Sel, _: id) {
+    with_state_delegate(this, |state, delegate| {
+        if state.notify_geometry_changes.get() {
+            delegate.geometry_changed();
+        }
+    });
 }
 
 extern "C" fn window_should_close(this: &Object, _: Sel, _: id) -> BOOL {

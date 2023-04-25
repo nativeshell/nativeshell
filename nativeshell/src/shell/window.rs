@@ -428,6 +428,7 @@ pub trait PlatformWindowDelegate {
     fn did_request_close(&self);
     fn will_close(&self);
     fn state_flags_changed(&self);
+    fn geometry_changed(&self);
 
     fn dragging_exited(&self);
     fn dragging_updated(&self, info: &DraggingInfo);
@@ -458,6 +459,13 @@ impl PlatformWindowDelegate for Window {
         let flags = self.platform_window.borrow().get_window_state_flags();
         if let Ok(flags) = flags {
             self.broadcast_message(event::window::STATE_FLAGS_CHANGED, to_value(flags).unwrap());
+        }
+    }
+
+    fn geometry_changed(&self) {
+        let geometry = self.platform_window.borrow().get_geometry();
+        if let Ok(geometry) = geometry {
+            self.broadcast_message(event::window::GEOMETRY_CHANGED, to_value(geometry).unwrap());
         }
     }
 

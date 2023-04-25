@@ -17,6 +17,7 @@ class Events {
   static final windowInitialize = 'event:Window.initialize';
   static final windowVisibilityChanged = 'event:Window.visibilityChanged';
   static final WindowStateFlagsChanged = 'event:Window.stateFlagsChanged';
+  static final WindowGeometryChanged = 'event:Window.geometryChanged';
   static final windowCloseRequest = 'event:Window.closeRequest';
   static final windowClose = 'event:Window.close';
 }

@@ -164,6 +164,9 @@ pub(crate) mod event {
         // Called when window state flags have changed
         pub const STATE_FLAGS_CHANGED: &str = "event:Window.stateFlagsChanged";
 
+        // Called when window geometry has changed
+        pub const GEOMETRY_CHANGED: &str = "event:Window.geometryChanged";
+
         // Delivered when user requested closing the window; Target window is responsible
         // for actually closing the window
         pub const CLOSE_REQUEST: &str = "event:Window.closeRequest";
