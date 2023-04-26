@@ -100,7 +100,7 @@ class WindowManager {
   }
 
   void windowClosed(Window window) {
-    _windows.remove(window.handle);
+    _windows.remove(window.handle)?.dispose();
   }
 
   final _windows = <WindowHandle, Window>{};

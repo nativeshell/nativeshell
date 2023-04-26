@@ -185,6 +185,14 @@ class Window {
   final windowStateFlagsEvent = Event<WindowStateFlags>();
   final geometryChangedEvent = Event<Geometry>();
 
+  void dispose() {
+    visibilityChangedEvent.dispose();
+    closeRequestEvent.dispose();
+    closeEvent.dispose();
+    windowStateFlagsEvent.dispose();
+    geometryChangedEvent.dispose();
+  }
+
   void onMessage(String message, dynamic arguments) {
     if (message == Events.windowInitialize) {
       _initialized = true;

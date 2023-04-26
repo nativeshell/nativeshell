@@ -20,6 +20,10 @@ class Event<T> {
     }
   }
 
+  void dispose() {
+    _listeners.clear();
+  }
+
   final _listeners = List<Listener<T>>.empty(growable: true);
 }
 
@@ -39,6 +43,10 @@ class VoidEvent {
         l();
       }
     }
+  }
+
+  void dispose() {
+    _listeners.clear();
   }
 
   final _listeners = List<VoidCallback>.empty(growable: true);
