@@ -311,20 +311,33 @@ class _WindowLayoutInner extends SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _RenderWindowLayoutInner(windowState);
+    return _RenderWindowLayoutInner(
+      windowState,
+      MediaQuery.devicePixelRatioOf(context),
+    );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayoutInner renderObject) {
     renderObject.windowState = windowState;
+    renderObject.devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 }
 
 class _RenderWindowLayoutInner extends RenderProxyBox {
-  _RenderWindowLayoutInner(this.windowState);
+  _RenderWindowLayoutInner(this.windowState, this._devicePixelRatio);
 
   WindowState windowState;
+
+  double _devicePixelRatio;
+
+  set devicePixelRatio(double ratio) {
+    if (_devicePixelRatio != ratio) {
+      _devicePixelRatio = ratio;
+      markNeedsLayout();
+    }
+  }
 
   @override
   void performLayout() {
@@ -338,7 +351,7 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
               child!.size.height != constraints.maxHeight,
           "Child failed to constraint itself! If you're using Row or Column, "
           "don't forget to set mainAxisSize to MainAxisSize.min");
-      size = _sanitizeAndSnapToPixelBoundary(child!.size);
+      size = _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, child!.size);
       if (size != child!.size) {
         // This can happen for fractional scaling when child didn't land exactly
         // on physical fixel boundaries. Hopefully in future Flutter will do better
@@ -359,7 +372,8 @@ class _RenderWindowLayoutInner extends RenderProxyBox {
       _geometryPending = true;
     } else {
       _geometryInProgress = true;
-      await windowState.updateWindowSize(_sanitizeAndSnapToPixelBoundary(size));
+      await windowState.updateWindowSize(
+          _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, size));
       _geometryInProgress = false;
       if (_geometryPending) {
         _geometryPending = false;
@@ -382,6 +396,7 @@ class _WindowLayout extends SingleChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return _RenderWindowLayout(
       windowState,
+      MediaQuery.devicePixelRatioOf(context),
     );
   }
 
@@ -389,13 +404,23 @@ class _WindowLayout extends SingleChildRenderObjectWidget {
   void updateRenderObject(
       BuildContext context, covariant _RenderWindowLayout renderObject) {
     renderObject.windowState = windowState;
+    renderObject.devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 }
 
 class _RenderWindowLayout extends RenderProxyBox {
-  _RenderWindowLayout(this.windowState);
+  _RenderWindowLayout(this.windowState, this._devicePixelRatio);
 
   WindowState windowState;
+
+  double _devicePixelRatio;
+
+  set devicePixelRatio(double ratio) {
+    if (_devicePixelRatio != ratio) {
+      _devicePixelRatio = ratio;
+      markNeedsLayout();
+    }
+  }
 
   Size? _lastConstraints;
 
@@ -411,7 +436,8 @@ class _RenderWindowLayout extends RenderProxyBox {
       var w = child!.getMaxIntrinsicWidth(double.infinity);
       var h = child!.getMinIntrinsicHeight(w);
 
-      final intrinsicSize = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+      final intrinsicSize =
+          _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, Size(w, h));
 
       if (_lastConstraints != intrinsicSize) {
         windowState.updateWindowConstraints(intrinsicSize);
@@ -424,7 +450,8 @@ class _RenderWindowLayout extends RenderProxyBox {
           max(intrinsicSize.height, size.height));
 
       if (maxSize.width > size.width || maxSize.height > size.height) {
-        windowState.updateWindowSize(_sanitizeAndSnapToPixelBoundary(maxSize));
+        windowState.updateWindowSize(
+            _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, maxSize));
       }
       final constraints = BoxConstraints.tight(maxSize);
       child!.layout(constraints, parentUsesSize: true);
@@ -439,11 +466,11 @@ class _RenderWindowLayout extends RenderProxyBox {
           WindowSizingMode.atLeastIntrinsicSize) {
         var w = child!.getMaxIntrinsicWidth(double.infinity);
         var h = child!.getMinIntrinsicHeight(w);
-        size = _sanitizeAndSnapToPixelBoundary(Size(w, h));
+        size = _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, Size(w, h));
       } else if (windowState.windowSizingMode == WindowSizingMode.manual) {
         size = Size(0, 0);
       } else {
-        size = _sanitizeAndSnapToPixelBoundary(child!.size);
+        size = _sanitizeAndSnapToPixelBoundary(_devicePixelRatio, child!.size);
       }
       return size;
     });
@@ -467,7 +494,7 @@ void _prepareAndShow(
 
 bool _windowShown = false;
 
-Size _sanitizeAndSnapToPixelBoundary(Size size) {
+Size _sanitizeAndSnapToPixelBoundary(double devicePixelRatio, Size size) {
   var w = size.width;
   var h = size.height;
   // sane default in case intrinsic size can't be determined
@@ -485,9 +512,8 @@ Size _sanitizeAndSnapToPixelBoundary(Size size) {
   }
   size = Size(w, h);
 
-  final ratio = WidgetsBinding.instance.window.devicePixelRatio;
-  size = size * ratio;
+  size = size * devicePixelRatio;
   size = Size(size.width.ceilToDouble(), size.height.ceilToDouble());
-  size /= ratio;
+  size /= devicePixelRatio;
   return size;
 }
