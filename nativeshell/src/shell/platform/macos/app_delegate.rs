@@ -1,5 +1,5 @@
 use super::utils::from_nsstring;
-use crate::shell::{platform::platform_impl::utils::superclass, Context, ContextRef};
+use crate::shell::{Context, ContextRef};
 use block::{Block, RcBlock};
 use cocoa::{
     appkit::{NSApplication, NSApplicationTerminateReply},
@@ -268,18 +268,16 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
         };
         Weak::from_raw(state_ptr);
 
-        let superclass = superclass(this);
-        let () = msg_send![super(this, superclass), dealloc];
+        let () = msg_send![super(this, class!(FlutterAppDelegate)), dealloc];
     }
 }
 
 extern "C" fn will_finish_launching(this: &Object, _sel: Sel, notification: id) {
     unsafe {
-        let superclass = superclass(this);
-        msg_send![
-            super(this, superclass),
+        let () = msg_send![
+            super(this, class!(FlutterAppDelegate)),
             applicationWillFinishLaunching: notification
-        ]
+        ];
     }
     with_delegate(this, |delegate| {
         delegate.application_will_finish_launching();
@@ -331,8 +329,10 @@ extern "C" fn should_terminate(this: &Object, _sel: Sel, sender: id) -> NSUInteg
             NSApplicationTerminateReply::NSTerminateLater as NSUInteger
         }
         ApplicationTerminateReply::DelegateToSuper => unsafe {
-            let superclass = superclass(this);
-            msg_send![super(this, superclass), applicationShouldTerminate: sender]
+            msg_send![
+                super(this, class!(FlutterAppDelegate)),
+                applicationShouldTerminate: sender
+            ]
         },
     }
 }
