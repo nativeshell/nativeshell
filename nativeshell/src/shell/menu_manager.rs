@@ -171,7 +171,7 @@ impl MenuDelegate for MenuManager {
             invoker
                 .call_method(
                     method::menu::ON_ACTION,
-                    to_value(&MenuAction {
+                    to_value(MenuAction {
                         handle: menu_handle,
                         id,
                     })
@@ -187,7 +187,7 @@ impl MenuDelegate for MenuManager {
             invoker
                 .call_method(
                     method::menu::ON_OPEN,
-                    to_value(&MenuOpen {
+                    to_value(MenuOpen {
                         handle: menu_handle,
                     })
                     .unwrap(),

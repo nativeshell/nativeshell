@@ -73,7 +73,7 @@ impl HotKeyManagerDelegate for HotKeyManager {
         invoker
             .call_method(
                 method::hot_key::ON_PRESSED,
-                to_value(&HotKeyPressed { handle }).unwrap(),
+                to_value(HotKeyPressed { handle }).unwrap(),
                 |_| {},
             )
             .ok_log();

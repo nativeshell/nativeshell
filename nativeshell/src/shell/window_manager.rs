@@ -195,7 +195,7 @@ impl WindowManager {
     ) -> WindowMethodCallResult {
         self.create_window(argument, Some(parent))
             .map_err(MethodCallError::from)
-            .map(|win| to_value(&WindowCreateResponse { window_handle: win }).unwrap())
+            .map(|win| to_value(WindowCreateResponse { window_handle: win }).unwrap())
     }
 
     pub(crate) fn message_sender_for_window(

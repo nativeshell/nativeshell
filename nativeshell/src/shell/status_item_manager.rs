@@ -237,7 +237,7 @@ impl StatusItemDelegate for StatusItemManager {
             invoker
                 .call_method(
                     method::status_item::ON_ACTION,
-                    to_value(&StatusItemAction {
+                    to_value(StatusItemAction {
                         handle,
                         action,
                         position,
