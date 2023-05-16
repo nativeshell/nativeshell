@@ -36,6 +36,7 @@ impl AppTermination {
 }
 
 pub enum ApplicationTerminateReply {
+    DelegateToSuper,
     Cancel,
     Now,
     Later,
@@ -55,7 +56,7 @@ pub trait ApplicationDelegate {
         &mut self,
         _termination: AppTermination,
     ) -> ApplicationTerminateReply {
-        ApplicationTerminateReply::Now
+        ApplicationTerminateReply::DelegateToSuper
     }
 
     fn application_should_terminate_after_last_window_closed(&mut self) -> bool {
@@ -161,8 +162,8 @@ impl ApplicationDelegateManager {
 }
 
 static APPLICATION_DELEGATE_CLASS: Lazy<&'static Class> = Lazy::new(|| unsafe {
-    let superclass = class!(NSObject);
-    let mut decl = ClassDecl::new("IMApplicationDeleagte", superclass).unwrap();
+    let superclass = class!(FlutterAppDelegate);
+    let mut decl = ClassDecl::new("IMApplicationDelegate", superclass).unwrap();
     decl.add_ivar::<*mut c_void>("imState");
     if let Some(protocol) = Protocol::get("NSApplicationDelegate") {
         decl.add_protocol(protocol);
@@ -272,7 +273,14 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
     }
 }
 
-extern "C" fn will_finish_launching(this: &Object, _sel: Sel, _notification: id) {
+extern "C" fn will_finish_launching(this: &Object, _sel: Sel, notification: id) {
+    unsafe {
+        let superclass = superclass(this);
+        msg_send![
+            super(this, superclass),
+            applicationWillFinishLaunching: notification
+        ]
+    }
     with_delegate(this, |delegate| {
         delegate.application_will_finish_launching();
     });
@@ -308,7 +316,7 @@ extern "C" fn did_resign_active(this: &Object, _sel: Sel, _notification: id) {
     });
 }
 
-extern "C" fn should_terminate(this: &Object, _sel: Sel, _sender: id) -> NSUInteger {
+extern "C" fn should_terminate(this: &Object, _sel: Sel, sender: id) -> NSUInteger {
     let res = with_delegate_res(
         this,
         |delegate| delegate.application_should_terminate(AppTermination {}),
@@ -322,6 +330,10 @@ extern "C" fn should_terminate(this: &Object, _sel: Sel, _sender: id) -> NSUInte
         ApplicationTerminateReply::Later => {
             NSApplicationTerminateReply::NSTerminateLater as NSUInteger
         }
+        ApplicationTerminateReply::DelegateToSuper => unsafe {
+            let superclass = superclass(this);
+            msg_send![super(this, superclass), applicationShouldTerminate: sender]
+        },
     }
 }
 
