@@ -211,6 +211,7 @@ class _WindowWidgetState extends State<WindowWidget> {
       await WindowManager.initialize();
       status = _Status.initialized;
       setState(() {});
+      WidgetsBinding.instance.scheduleForcedFrame();
     }
   }
 
