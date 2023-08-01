@@ -1,5 +1,5 @@
 // in generated code
-#![allow(clippy::forgetting_copy_types)]
+#![allow(forgetting_copy_types)]
 #![allow(clippy::useless_transmute)]
 #![allow(unused_must_use)]
 
