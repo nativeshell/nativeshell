@@ -474,6 +474,13 @@ impl PlatformWindow {
             }
             NSWindow::setCollectionBehavior_(*self.platform_window, collection_behavior);
 
+            // Workaround for  NSWindowStyleMaskFullScreen cleared on a window outside of a full screen transition.
+            // Make sure to preserve the full screen mask.
+            let current_mask = NSWindow::styleMask(*self.platform_window);
+            if current_mask.contains(NSWindowStyleMask::NSFullScreenWindowMask) {
+                mask |= NSWindowStyleMask::NSFullScreenWindowMask;
+            }
+
             NSWindow::setStyleMask_(*self.platform_window, mask);
 
             NSWindow::setLevel_(
