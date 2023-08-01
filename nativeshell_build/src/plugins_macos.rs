@@ -78,7 +78,7 @@ impl<'a> PluginsImpl<'a> {
   s.license          = { :type => 'MIT' }\n\
   s.author           = { 'Flutter Dev Team' => 'flutter-dev@googlegroups.com' }\n\
   s.source           = { :git => 'https://github.com/flutter/engine', :tag => s.version.to_s }\n\
-  s.osx.deployment_target = '10.11'\n\
+  s.osx.deployment_target = '10.14'\n\
   s.vendored_frameworks = 'FlutterMacOS.framework'\n\
 end\n";
         let podspec_file = folder.join("FlutterMacOS.podspec");
