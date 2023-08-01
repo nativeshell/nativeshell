@@ -53,7 +53,7 @@ impl Displays {
 
     fn display_for_state(d: &DisplayState) -> Display {
         let mut monitor_info_ex = MONITORINFOEXW::default();
-        let mut monitor_info: &mut MONITORINFO = unsafe { transmute(&mut monitor_info_ex) };
+        let monitor_info: &mut MONITORINFO = unsafe { transmute(&mut monitor_info_ex) };
         monitor_info.cbSize = mem::size_of::<MONITORINFOEXW>() as u32;
         unsafe { GetMonitorInfoW(d.original.handle, monitor_info as *mut _) };
         // Only used as key in map, don't care about null termination

@@ -353,7 +353,7 @@ impl Flutter<'_> {
         match Flutter::target_os() {
             TargetOS::Mac => {
                 // FIXME: This needs better default
-                std::env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "10.13".into())
+                std::env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "10.14".into())
             }
             _ => {
                 panic!("Deployment target can only be called on Mac")

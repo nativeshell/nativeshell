@@ -1,4 +1,4 @@
-#![allow(clippy::forget_copy)] // windows-rs !implement macro
+#![allow(forgetting_copy_types)] // windows-rs !implement macro
 #![allow(clippy::useless_transmute)]
 #![allow(unused_must_use)]
 

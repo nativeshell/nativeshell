@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use velcro::hash_map;
 
@@ -134,13 +134,12 @@ impl WindowManager {
 
     pub fn get_platform_window(&self, handle: WindowHandle) -> Option<PlatformWindowType> {
         self.windows
-            .borrow()
             .get(&handle)
             .map(|w| w.platform_window.borrow().get_platform_window())
     }
 
     pub fn get_engine_for_window(&self, handle: WindowHandle) -> Option<EngineHandle> {
-        self.windows.borrow().get(&handle).map(|w| w.engine_handle)
+        self.windows.get(&handle).map(|w| w.engine_handle)
     }
 
     pub(super) fn remove_window(&mut self, window: &Window) {
