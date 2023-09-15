@@ -1,6 +1,5 @@
 use std::mem::size_of;
 
-use libc::c_void;
 use windows::{
     core::{Interface, RawPtr, GUID, HRESULT},
     Win32::{
@@ -169,7 +168,7 @@ pub fn image_data_to_hbitmap(image: &ImageData) -> HBITMAP {
             dc,
             &bitmap as *const _,
             DIB_RGB_COLORS,
-            &mut ptr as *mut *mut _ as *mut *mut c_void,
+            &mut ptr as *mut *mut _,
             HANDLE(0),
             0,
         );
