@@ -215,7 +215,7 @@ impl Flutter<'_> {
         )?;
 
         self.set_flutter_root()?;
-        self.remove_cargo_from_env()?;
+        self.remove_rustc_from_env()?;
         self.precache()?;
         self.run_flutter_assemble(&flutter_out_root)?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
@@ -603,12 +603,9 @@ impl Flutter<'_> {
         Ok(())
     }
 
-    pub fn remove_cargo_from_env(&self) -> BuildResult<()> {
+    pub fn remove_rustc_from_env(&self) -> BuildResult<()> {
         let vars = std::env::vars();
         for (key, _) in vars {
-            if key.starts_with("CARGO_") {
-                std::env::remove_var(&key);
-            }
             if key.starts_with("RUSTC") {
                 std::env::remove_var(&key);
             }
