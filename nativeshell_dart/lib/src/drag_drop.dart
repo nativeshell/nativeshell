@@ -423,6 +423,7 @@ class DragDriver {
 
     _allDropMonitors.removeWhere((element) => !element.attached);
 
+    // ignore: deprecated_member_use
     GestureBinding.instance.hitTest(hitTest, info.position);
 
     for (final item in hitTest.path) {
