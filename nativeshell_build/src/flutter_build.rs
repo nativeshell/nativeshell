@@ -214,6 +214,7 @@ impl Flutter<'_> {
             &flutter_out_root.join("pubspec.yaml"),
         )?;
 
+        self.set_flutter_root()?;
         self.precache()?;
         self.run_flutter_assemble(&flutter_out_root)?;
         self.emit_flutter_artifacts(&flutter_out_root)?;
@@ -588,6 +589,17 @@ impl Flutter<'_> {
             || to.as_ref().into(),
             || from.as_ref().into(),
         )
+    }
+
+    pub fn set_flutter_root(&self) -> BuildResult<()> {
+        if std::env::var("FLUTTER_ROOT").ok().is_some() {
+            return Ok(());
+        }
+        let flutter_bin = self.options.find_flutter_bin()?;
+        let root = flutter_bin.parent().unwrap();
+        // May be required when building plugins.
+        std::env::set_var("FLUTTER_ROOT", root);
+        Ok(())
     }
 
     pub fn precache(&self) -> BuildResult<()> {
