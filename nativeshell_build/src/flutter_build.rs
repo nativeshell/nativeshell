@@ -33,6 +33,9 @@ pub struct FlutterOptions<'a> {
     // Name of local engine
     pub local_engine: Option<&'a str>,
 
+    // Name of local engine for host platform
+    pub local_engine_host: Option<&'a str>,
+
     // Source path of local engine. If not specified, NativeShell will try to locate
     // it relative to flutter path.
     pub local_engine_src_path: Option<&'a Path>,
@@ -54,6 +57,7 @@ impl Default for FlutterOptions<'_> {
             target_file: "lib/main.dart".as_path(),
             flutter_path: None,
             local_engine: None,
+            local_engine_host: None,
             local_engine_src_path: None,
             dart_defines: &[],
             macos_extra_pods: &[],
@@ -481,6 +485,10 @@ impl Flutter<'_> {
 
         if let Some(local_engine) = &self.options.local_engine {
             command.arg(format!("--local-engine={local_engine}"));
+
+            if let Some(local_engine_host) = &self.options.local_engine_host {
+                command.arg(format!("--local-engine-host={}", local_engine_host));
+            }
 
             command.arg(format!(
                 "--local-engine-src-path={}",
