@@ -56,7 +56,6 @@ impl<V> EngineMethodChannel<V> {
 
         let engine = engine_manager.get_engine(engine_handle);
         if let Some(engine) = engine {
-            let codec = codec;
             engine
                 .binary_messenger()
                 .register_channel_handler(channel_name, move |data, reply| {

@@ -191,7 +191,7 @@ impl MessageManager {
             engine_manager,
         );
         let map = self.message_channels.entry(engine);
-        let entry = map.or_insert_with(HashMap::new);
+        let entry = map.or_default();
         entry.insert(channel.into(), message_channel);
     }
 
@@ -214,7 +214,7 @@ impl MessageManager {
             engine_manager,
         );
         let map = self.method_channels.entry(engine);
-        let entry = map.or_insert_with(HashMap::new);
+        let entry = map.or_default();
         entry.insert(channel.into(), method_channel);
     }
 }
