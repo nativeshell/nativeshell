@@ -3,10 +3,13 @@ import 'dart:math';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:logging/logging.dart';
 
 import 'api_model.dart';
 import 'window.dart';
 import 'window_manager.dart';
+
+final _log = Logger('nativeshell');
 
 enum WindowSizingMode {
   // Window is always sized to match the content. This is useful for non-resizable
@@ -174,6 +177,7 @@ class _WindowWidgetState extends State<WindowWidget> {
       final emptyBefore = _windowState == null;
       _windowState ??= widget.onCreateState(window.initData);
       if (emptyBefore) {
+        _log.fine('Have window state');
         WindowManager.instance.haveWindowState(_windowState!);
       }
       if (_windowState!.windowSizingMode == WindowSizingMode.manual) {
@@ -208,9 +212,11 @@ class _WindowWidgetState extends State<WindowWidget> {
   void _maybeInitialize() async {
     if (status == _Status.notInitialized) {
       status = _Status.initializing;
+      _log.fine('Initializing WindowManager');
       await WindowManager.initialize();
       status = _Status.initialized;
       setState(() {});
+      _log.fine('Scheduling forced frame');
       WidgetsBinding.instance.scheduleForcedFrame();
     }
   }
@@ -483,6 +489,7 @@ void _prepareAndShow(
   if (_windowShown) {
     return;
   }
+  _log.fine('Prepare and show');
   _windowShown = true;
   final win = WindowManager.instance.currentWindow;
   final size = getInitialSize();
