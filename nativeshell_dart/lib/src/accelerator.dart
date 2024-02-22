@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/services.dart';
 import 'key_interceptor.dart';
 import 'keyboard_map.dart';
@@ -71,7 +73,7 @@ class Accelerator {
   }
 
   @override
-  bool operator ==(dynamic other) =>
+  bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Accelerator &&
           alt == other.alt &&

@@ -33,7 +33,6 @@ pub use geometry::*;
 pub use handle::*;
 pub use hot_key_manager::*;
 pub use keyboard_map_manager::*;
-pub use macros::*;
 pub use menu_manager::*;
 pub use message_manager::*;
 pub use method_call_handler::*;

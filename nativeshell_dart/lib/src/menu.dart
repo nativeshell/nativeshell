@@ -118,7 +118,7 @@ class MenuItem {
   final Accelerator? accelerator;
 
   @override
-  bool operator ==(dynamic other) =>
+  bool operator ==(Object other) =>
       identical(this, other) ||
       (other is MenuItem && separator && other.separator) ||
       (other is MenuItem &&
