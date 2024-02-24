@@ -33,6 +33,7 @@ impl PlatformEngine {
             aot_library_path: aot.as_ptr(),
             dart_entrypoint_argc: 0,
             dart_entrypoint_argv: ptr::null_mut(),
+            dart_entrypoint: ptr::null(),
         };
 
         let engine = unsafe { FlutterDesktopEngineCreate(&properties) };
