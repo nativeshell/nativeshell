@@ -11,7 +11,7 @@ use crate::shell::BinaryMessengerReply;
 use super::{
     error::{PlatformError, PlatformResult},
     flutter_sys::{
-        size_t, FlutterDesktopMessage, FlutterDesktopMessengerRef, FlutterDesktopMessengerSend,
+        FlutterDesktopMessage, FlutterDesktopMessengerRef, FlutterDesktopMessengerSend,
         FlutterDesktopMessengerSendResponse, FlutterDesktopMessengerSendWithReply,
         FlutterDesktopMessengerSetCallback,
     },
@@ -112,7 +112,7 @@ impl PlatformBinaryMessenger {
 
     unsafe extern "C" fn send_message_reply(
         data: *const u8,
-        data_size: size_t,
+        data_size: usize,
         user_data: *mut ::std::os::raw::c_void,
     ) {
         let data = slice::from_raw_parts(data, data_size);

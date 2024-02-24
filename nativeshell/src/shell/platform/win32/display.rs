@@ -188,7 +188,7 @@ extern "system" fn enum_monitors(
                 rect.right - rect.left,
                 rect.bottom - rect.top,
             ),
-            scale: FlutterDesktopGetDpiForMonitor(hmonitor.0) as f64 / 96.0,
+            scale: FlutterDesktopGetDpiForMonitor(hmonitor.0 as _) as f64 / 96.0,
             handle: hmonitor,
         });
     }

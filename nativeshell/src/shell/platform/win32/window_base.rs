@@ -8,7 +8,7 @@ use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::{
         Dwm::DwmExtendFrameIntoClientArea,
-        Gdi::{ClientToScreen, ScreenToClient},
+        Gdi::{ClientToScreen, ScreenToClient, HMONITOR},
     },
     UI::{
         Controls::MARGINS,
@@ -408,12 +408,12 @@ impl WindowBaseState {
     }
 
     pub fn get_scaling_factor(&self) -> f64 {
-        unsafe { FlutterDesktopGetDpiForHWND(self.hwnd) as f64 / 96.0 }
+        unsafe { FlutterDesktopGetDpiForHWND(self.hwnd.0 as _) as f64 / 96.0 }
     }
 
     #[allow(unused)]
-    fn get_scaling_factor_for_monitor(&self, monitor: isize) -> f64 {
-        unsafe { FlutterDesktopGetDpiForMonitor(monitor) as f64 / 96.0 }
+    fn get_scaling_factor_for_monitor(&self, monitor: HMONITOR) -> f64 {
+        unsafe { FlutterDesktopGetDpiForMonitor(monitor.0 as _) as f64 / 96.0 }
     }
 
     fn delegate(&self) -> Rc<dyn WindowDelegate> {

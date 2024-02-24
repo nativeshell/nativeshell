@@ -139,7 +139,8 @@ impl PlatformWindow {
                 .set(FlutterDesktopViewControllerCreate(1, 1, engine.handle));
 
             let view = FlutterDesktopViewControllerGetView(*self.flutter_controller.borrow());
-            self.child_hwnd.set(FlutterDesktopViewGetHWND(view));
+            self.child_hwnd
+                .set(HWND(FlutterDesktopViewGetHWND(view) as _));
 
             // remove parent override, just in case
             take_override_parent_hwnd();
@@ -560,16 +561,16 @@ impl PlatformWindow {
         }
         if self.flutter_controller.is_set() {
             unsafe {
-                let mut lresult: LRESULT = Default::default();
+                let mut lresult: i64 = Default::default();
                 if FlutterDesktopViewControllerHandleTopLevelWindowProc(
                     *self.flutter_controller.borrow(),
-                    h_wnd,
+                    h_wnd.0 as _,
                     msg,
-                    w_param,
-                    l_param,
+                    w_param.0 as _,
+                    l_param.0 as _,
                     &mut lresult as *mut _,
                 ) {
-                    return Some(lresult);
+                    return Some(LRESULT(lresult as _));
                 }
             }
         }
