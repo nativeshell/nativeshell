@@ -98,9 +98,15 @@ impl<'a> ArtifactsEmitter<'a> {
     }
 
     pub fn emit_external_libraries(&self) -> BuildResult<()> {
+        let flutter_artifacts = self.find_artifacts_location(self.build.build_mode.as_str())?;
+
         let files = {
             if cfg!(target_os = "macos") {
-                vec!["FlutterMacOS.framework"]
+                if flutter_artifacts.join("FlutterMacOS.xcframework").exists() {
+                    vec!["FlutterMacOS.xcframework/macos-arm64_x86_64/FlutterMacOS.framework"]
+                } else {
+                    vec!["FlutterMacOS.framework"]
+                }
             } else if cfg!(target_os = "windows") {
                 vec![
                     "flutter_windows.dll",
@@ -124,7 +130,6 @@ impl<'a> ArtifactsEmitter<'a> {
         };
 
         let deps_out_dir = self.artifacts_out_dir.join("deps");
-        let flutter_artifacts = self.find_artifacts_location(self.build.build_mode.as_str())?;
         let flutter_artifacts_debug = self.find_artifacts_location("debug")?;
         for file in files {
             // on linux the unstripped libraries in local engien build are in
