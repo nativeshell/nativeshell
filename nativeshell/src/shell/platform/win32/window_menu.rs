@@ -72,7 +72,7 @@ struct MenuState {
 }
 
 thread_local! {
-    static POPUP_PARENT: Cell<HWND> = Cell::new(HWND(0));
+    static POPUP_PARENT: Cell<HWND> = const { Cell::new(HWND(0)) };
 }
 
 // Support mouse tracking while popup menu is visible

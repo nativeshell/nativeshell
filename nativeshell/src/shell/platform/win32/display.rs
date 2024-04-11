@@ -209,7 +209,7 @@ fn displays_from_system() -> Vec<PhysicalDisplay> {
 }
 
 thread_local! {
-    static DISPLAYS: RefCell<Option<Displays>> = RefCell::new(None);
+    static DISPLAYS: RefCell<Option<Displays>> = const { RefCell::new(None) };
     static AUX_STATE: RefCell<AuxState> = RefCell::new(AuxState::new());
 }
 

@@ -21,7 +21,7 @@ use std::{
 };
 
 thread_local! {
-    static WINDOW_CLASS: RefCell<Weak<WindowClass>> = RefCell::new(Weak::new());
+    static WINDOW_CLASS: RefCell<Weak<WindowClass>> = const { RefCell::new(Weak::new()) };
 }
 
 struct WindowClass {
