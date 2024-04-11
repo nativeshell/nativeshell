@@ -138,7 +138,7 @@ impl Context {
 }
 
 thread_local! {
-    static CURRENT_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+    static CURRENT_CONTEXT: RefCell<Option<Context>> = const { RefCell::new(None) };
 }
 
 pub struct CurrentContextHandle {
