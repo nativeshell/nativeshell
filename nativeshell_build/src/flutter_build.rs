@@ -359,7 +359,7 @@ impl Flutter<'_> {
         match Flutter::target_os() {
             TargetOS::Mac => {
                 // FIXME: This needs better default
-                std::env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "10.14".into())
+                std::env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "10.15".into())
             }
             _ => {
                 panic!("Deployment target can only be called on Mac")
@@ -522,7 +522,12 @@ impl Flutter<'_> {
     ) -> BuildResult<()> {
         let artifacts_dir = get_artifacts_dir()?;
         let flutter_out_root = self.out_dir.join("flutter");
-        let emitter = ArtifactsEmitter::new(self, flutter_out_root, artifacts_dir)?;
+        let emitter = ArtifactsEmitter::new(
+            self,
+            flutter_out_root,
+            artifacts_dir,
+            self.options.local_engine.is_some(),
+        )?;
 
         let plugins = Plugins::new(self, &emitter);
         plugins.process()?;

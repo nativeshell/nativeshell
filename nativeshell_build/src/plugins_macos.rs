@@ -78,7 +78,7 @@ impl<'a> PluginsImpl<'a> {
   s.license          = { :type => 'MIT' }\n\
   s.author           = { 'Flutter Dev Team' => 'flutter-dev@googlegroups.com' }\n\
   s.source           = { :git => 'https://github.com/flutter/engine', :tag => s.version.to_s }\n\
-  s.osx.deployment_target = '10.14'\n\
+  s.osx.deployment_target = '10.15'\n\
   s.vendored_frameworks = 'FlutterMacOS.framework'\n\
 end\n";
         let podspec_file = folder.join("FlutterMacOS.podspec");
@@ -123,11 +123,12 @@ end\n";
 
         for plugin in plugins {
             let plugin_path = symlinks_dir.join(&plugin.name);
+            let platform_name = plugin.platform_path.file_name().unwrap();
             writeln!(
                 contents,
                 "  pod '{}', :path => '{}'",
                 plugin.name,
-                plugin_path.join(&plugin.platform_name).to_string_lossy()
+                plugin_path.join(platform_name).to_string_lossy()
             )
             .unwrap();
         }
