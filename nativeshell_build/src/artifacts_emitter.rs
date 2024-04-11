@@ -13,6 +13,7 @@ pub(super) struct ArtifactsEmitter<'a> {
     flutter_out_dir: PathBuf,
     flutter_build_dir: PathBuf,
     artifacts_out_dir: PathBuf,
+    is_local_engine: bool,
 }
 
 impl<'a> ArtifactsEmitter<'a> {
@@ -20,12 +21,14 @@ impl<'a> ArtifactsEmitter<'a> {
         build: &'a Flutter,
         flutter_out_dir: P,
         artifacts_out_dir: P,
+        is_local_engine: bool,
     ) -> Result<Self, BuildError> {
         Ok(Self {
             build,
             flutter_out_dir: flutter_out_dir.as_ref().into(),
             flutter_build_dir: Self::find_flutter_build_dir(flutter_out_dir)?,
             artifacts_out_dir: artifacts_out_dir.as_ref().into(),
+            is_local_engine,
         })
     }
 
@@ -102,7 +105,9 @@ impl<'a> ArtifactsEmitter<'a> {
 
         let files = {
             if cfg!(target_os = "macos") {
-                if flutter_artifacts.join("FlutterMacOS.xcframework").exists() {
+                if !self.is_local_engine
+                    && flutter_artifacts.join("FlutterMacOS.xcframework").exists()
+                {
                     vec!["FlutterMacOS.xcframework/macos-arm64_x86_64/FlutterMacOS.framework"]
                 } else {
                     vec!["FlutterMacOS.framework"]
@@ -132,7 +137,7 @@ impl<'a> ArtifactsEmitter<'a> {
         let deps_out_dir = self.artifacts_out_dir.join("deps");
         let flutter_artifacts_debug = self.find_artifacts_location("debug")?;
         for file in files {
-            // on linux the unstripped libraries in local engien build are in
+            // on linux the unstripped libraries in local engine build are in
             // lib.unstripped folder; so if unstripped version exists we prefer that
             let unstripped = flutter_artifacts.join("lib.unstripped").join(file);
             let src = if unstripped.exists() {
