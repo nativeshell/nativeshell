@@ -118,8 +118,8 @@ unsafe extern "system" fn dcomposition_create_device(
 }
 
 thread_local! {
-    static IGNORE_NEXT_PRESENT : Cell<bool> = Cell::new(false);
-    static OVERRIDE_PARENT_HWND: Cell<HWND> = Cell::new(HWND(0));
+    static IGNORE_NEXT_PRESENT : Cell<bool> = const { Cell::new(false) };
+    static OVERRIDE_PARENT_HWND: Cell<HWND> = const { Cell::new(HWND(0)) };
 }
 
 pub(super) fn set_override_parent_hwnd(hwnd: HWND) {
