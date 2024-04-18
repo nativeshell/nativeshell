@@ -20,7 +20,7 @@ use crate::{
 };
 use cocoa::{
     appkit::{
-        CGPoint, NSApplication, NSColor, NSEvent, NSEventPhase,
+        NSApplication, NSColor, NSEvent, NSEventPhase,
         NSEventType::{self, NSEventTypeMagnify, NSEventTypeRotate},
         NSView, NSViewHeightSizable, NSViewWidthSizable, NSWindow, NSWindowCollectionBehavior,
         NSWindowStyleMask, NSWindowTabbingMode, NSWindowTitleVisibility,
@@ -50,8 +50,8 @@ use std::{
     time::Duration,
 };
 use NSEventType::{
-    NSLeftMouseDown, NSLeftMouseDragged, NSLeftMouseUp, NSMouseEntered, NSMouseExited,
-    NSMouseMoved, NSRightMouseDown, NSRightMouseUp,
+    NSLeftMouseDown, NSLeftMouseUp, NSMouseEntered, NSMouseExited, NSMouseMoved, NSRightMouseDown,
+    NSRightMouseUp,
 };
 
 pub type PlatformWindowType = StrongPtr;
@@ -71,10 +71,7 @@ pub struct PlatformWindow {
     ignore_enter_leave_until: Cell<f64>,
     window_buttons: StrongPtr,
     flutter_view: LateRefCell<StrongPtr>,
-    mouse_down: Cell<bool>,
-    mouse_dragged: Cell<bool>,
     window_state_flags: RefCell<WindowStateFlags>,
-    window_dragging: Cell<bool>,
     notify_geometry_changes: Cell<bool>,
 }
 
@@ -135,10 +132,7 @@ impl PlatformWindow {
                 ignore_enter_leave_until: Cell::new(0.0),
                 window_buttons,
                 flutter_view: LateRefCell::new(),
-                mouse_down: Cell::new(false),
-                mouse_dragged: Cell::new(false),
                 window_state_flags: RefCell::new(WindowStateFlags::default()),
-                window_dragging: Cell::new(false),
                 notify_geometry_changes: Cell::new(false),
             }
         })
@@ -392,9 +386,6 @@ impl PlatformWindow {
     }
 
     pub fn perform_window_drag(&self) -> PlatformResult<()> {
-        if self.window_dragging.get() {
-            return Ok(());
-        }
         unsafe {
             let last_event = self
                 .last_event
@@ -410,7 +401,6 @@ impl PlatformWindow {
                 // ensure flutter doesn't get mouse events during dragging
                 // (to be consistent with other platforms)
                 self.synthetize_mouse_up_event();
-                self.window_dragging.set(true);
                 let () = msg_send![*self.platform_window, performWindowDragWithEvent:*last_event];
                 Ok(())
             } else {
@@ -900,95 +890,7 @@ impl PlatformWindow {
                 return false;
             }
         }
-        self.check_window_dragging(event);
         true
-    }
-
-    // Special handling for dragging window with popup menu open.
-    //
-    // If user drags mouse on window with popup menu open, the LeftMouseDown event
-    // swallowed (used to close the popup menu) and the window start getting
-    // NSLeftMouseDragged events. We try to detect that, and upon getting the second
-    // NSLeftMouseDragged event without prior NSLeftMouseDown, we synthetize the
-    // NSLeftMouseDown event ourself (necessary for flutter view to start getting
-    // mouse drag events). We ignore the first NSLeftMouseDragged event because
-    // that's sometimes posted without a subsequent NSLeftMouseUp event.
-    //
-    // This all is necessary to have custom titlebars draggable while popup menu
-    // is open.
-    fn check_window_dragging(&self, event: StrongPtr) {
-        let event_type = unsafe { NSEvent::eventType(*event) };
-
-        // println!(
-        //     "EVent type {:?} {} {}",
-        //     event_type,
-        //     self.mouse_down.get(),
-        //     self.mouse_dragged.get()
-        // );
-
-        // NSMouseMoved after NSLeftMouseDragged without NSLeftMouseUp
-        if event_type == NSMouseMoved {
-            if self.mouse_down.get() {
-                unsafe {
-                    // println!("Synthetizing up");
-                    self.synthetize_mouse_up_event();
-                }
-            }
-            self.mouse_down.set(false);
-            self.mouse_dragged.set(false);
-        }
-
-        if event_type == NSLeftMouseDown {
-            self.mouse_down.set(true);
-            self.mouse_dragged.set(false);
-        } else if event_type == NSLeftMouseUp {
-            self.mouse_down.set(false);
-            self.mouse_dragged.set(false);
-            self.window_dragging.set(false);
-        } else if event_type == NSLeftMouseDragged
-            && !self.mouse_down.get()
-            && !self.mouse_dragged.get()
-        {
-            // first NSLeftMouseDragged, ignore it because sometimes window
-            // server sends it without subsequent NSLeftMouseUp
-            self.mouse_dragged.set(true);
-        } else if event_type == NSLeftMouseDragged
-            && !self.mouse_down.get()
-            && self.mouse_dragged.get()
-            && !self.window_dragging.get()
-        {
-            // Second NSLeftMouseDragged without prior NSLeftMouseDown; This likely
-            // means user started dragging window while popup menu was opened.
-            // On this case we synthetize LeftMouseDown event at the location
-            // of lastest hitTest in IMContentView. While window server swallows
-            // the mouseDown event, it still generates hitTest at the location
-            // where user pressed the button to possibly initiate regular
-            // window drag.
-            unsafe {
-                let event = NSEvent::CGEvent(*event) as core_graphics::sys::CGEventRef;
-                let event = CGEventCreateCopy(event);
-                CGEventSetType(event, CGEventType::LeftMouseDown);
-                let location: CGPoint = msg_send![
-                    NSWindow::contentView(*self.platform_window),
-                    lastHitTestScreen
-                ];
-                let location_win: CGPoint = msg_send![
-                    NSWindow::contentView(*self.platform_window),
-                    lastHitTestWindow
-                ];
-                CGEventSetLocation(event, location);
-                CGEventSetWindowLocation(event, location_win);
-
-                println!("Synthetizing left mouse down");
-
-                let synthetized: id = msg_send![class!(NSEvent), eventWithCGEvent: event];
-                CFRelease(event as *mut _);
-
-                let () = msg_send![*self.platform_window, sendEvent: synthetized];
-                self.mouse_down.set(true);
-                self.mouse_dragged.set(false);
-            }
-        }
     }
 
     pub fn set_pending_effect(&self, effect: DragEffect) {
@@ -1311,8 +1213,6 @@ where
 // #[link(name = "CoreGraphics", kind = "framework")]
 extern "C" {
     fn CGEventSetType(event: core_graphics::sys::CGEventRef, eventType: CGEventType);
-    fn CGEventSetLocation(event: core_graphics::sys::CGEventRef, location: CGPoint);
-    fn CGEventSetWindowLocation(event: core_graphics::sys::CGEventRef, location: CGPoint);
     fn CGEventSetIntegerValueField(
         event: core_graphics::sys::CGEventRef,
         field: CGEventField,
