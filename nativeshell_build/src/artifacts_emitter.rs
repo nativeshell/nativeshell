@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     util::{copy, copy_to, mkdir},
-    BuildError, BuildResult, FileOperation, Flutter, IOResultExt,
+    BuildError, BuildResult, FileOperation, Flutter, IOResultExt, TargetOS,
 };
 
 pub(super) struct ArtifactsEmitter<'a> {
@@ -97,6 +97,42 @@ impl<'a> ArtifactsEmitter<'a> {
             &self.artifacts_out_dir,
             true,
         )?;
+        Ok(())
+    }
+
+    pub fn emit_native_assets(&self, target_os: &TargetOS) -> BuildResult<()> {
+        let os_dir: &str = match target_os {
+            TargetOS::Mac => "macos",
+            TargetOS::Windows => "windows",
+            TargetOS::Linux => "linux",
+        };
+        let source_dir = self
+            .flutter_out_dir
+            .join("build")
+            .join("native_assets")
+            .join(os_dir);
+        if source_dir.exists() {
+            let dest_dir = self.artifacts_out_dir.join("native_assets");
+            copy(&source_dir, &dest_dir, true)?;
+
+            let artifacts_out_dir = {
+                if cfg!(target_os = "linux") {
+                    // RUNPATH is set to $origin/lib
+                    mkdir(&self.artifacts_out_dir, Some("lib"))?
+                } else {
+                    self.artifacts_out_dir.clone()
+                }
+            };
+
+            // copy individual files / frameworks
+            for entry in
+                fs::read_dir(&dest_dir).wrap_error(FileOperation::ReadDir, || dest_dir.clone())?
+            {
+                let entry = entry.wrap_error(FileOperation::Read, || dest_dir.clone())?;
+                let entry_path = entry.path();
+                copy_to(entry_path, &artifacts_out_dir, true)?;
+            }
+        }
         Ok(())
     }
 

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:nativeshell/nativeshell.dart';
+import 'package:native_assets_package/native_assets_package.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final s = sum(1, 2);
+  print('SUM $s');
+  final path = (await getApplicationDocumentsDirectory()).path;
+  print('PATH $path');
   runApp(MyApp());
 }
 
@@ -39,7 +46,7 @@ class MainWindowState extends WindowState {
     return WindowLayoutProbe(
       child: Container(
         padding: EdgeInsets.all(20),
-        child: Center(child: Text('Welcome to NativeShell!')),
+        child: Center(child: Text('Welcome to NativeShell.')),
       ),
     );
   }
