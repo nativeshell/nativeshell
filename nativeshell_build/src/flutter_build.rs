@@ -48,6 +48,9 @@ pub struct FlutterOptions<'a> {
     // macOS: Allow specifying extra pods to be built in addition to pods from
     // Flutter plugins. For example: macos_extra_pods: &["pod 'Sparkle'"],
     pub macos_extra_pods: &'a [&'a str],
+
+    // Whether to output linker flags for settings the rpath.
+    pub set_rpath: bool,
 }
 
 impl Default for FlutterOptions<'_> {
@@ -61,6 +64,7 @@ impl Default for FlutterOptions<'_> {
             local_engine_src_path: None,
             dart_defines: &[],
             macos_extra_pods: &[],
+            set_rpath: true,
         }
     }
 }
@@ -140,7 +144,7 @@ impl FlutterOptions<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TargetOS {
     Mac,
     Windows,
@@ -227,6 +231,18 @@ impl Flutter<'_> {
 
         if Self::build_mode() == "profile" {
             cargo_emit::rustc_cfg!("flutter_profile");
+        }
+
+        if self.options.set_rpath {
+            if self.target_os == TargetOS::Mac {
+                cargo_emit::rustc_link_arg! {
+                    "-Wl,-rpath,@executable_path",
+                };
+            } else if self.target_os == TargetOS::Linux {
+                cargo_emit::rustc_link_arg! {
+                    "-Wl,-rpath,$ORIGIN/lib"
+                };
+            }
         }
 
         Ok(())
@@ -538,16 +554,19 @@ impl Flutter<'_> {
                     working_dir.as_ref().to_str().unwrap() => "framework",
                 };
                 emitter.emit_app_framework()?;
+                emitter.emit_native_assets(&self.target_os)?;
                 emitter.emit_external_libraries()?;
                 emitter.emit_linker_flags()?;
             }
             TargetOS::Windows => {
                 emitter.emit_flutter_data()?;
+                emitter.emit_native_assets(&self.target_os)?;
                 emitter.emit_external_libraries()?;
                 emitter.emit_linker_flags()?;
             }
             TargetOS::Linux => {
                 emitter.emit_flutter_data()?;
+                emitter.emit_native_assets(&self.target_os)?;
                 emitter.emit_external_libraries()?;
                 emitter.emit_linker_flags()?;
             }

@@ -77,7 +77,10 @@ where
 }
 
 pub(super) fn run_command(mut command: Command, command_name: &str) -> BuildResult<()> {
+    // OUT_DIR environment variable confuses native assets builder which reads the json
+    // configuration file but overrides properties from the file with environment variables
     let output = command
+        .env_remove("OUT_DIR")
         .output()
         .wrap_error(FileOperation::Command, || command_name.into())?;
 

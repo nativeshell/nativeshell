@@ -34,8 +34,9 @@ dependencies:
   # Include flutter plugins for build test
   url_launcher: ^6.0.9
   path_provider: ^2.0.15
-  package_info_plus: ^3.0.3
-
+  package_info_plus: ^8.0.0
+  native_assets_package:
+    path: "../native_assets_package/"
 
 dev_dependencies:
   flutter_test:
