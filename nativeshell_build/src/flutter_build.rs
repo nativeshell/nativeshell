@@ -474,7 +474,10 @@ impl Flutter<'_> {
             // the only published action that builds desktop aot is *_bundle_*_assets; it also
             // produces other artifacts (i.e. flutter dll), but we ignore those and handle
             // artifacts on our own
-            (TargetOS::Windows, _) => vec![format!("{}_bundle_windows_assets", self.build_mode)],
+            (TargetOS::Windows, _) => vec![format!(
+                "{}_bundle_{}_assets",
+                self.build_mode, self.target_platform
+            )],
 
             // quicker, no need to copy flutter artifacts, we'll do it ourselves
             (TargetOS::Linux, "debug") => vec!["kernel_snapshot".into(), "copy_assets".into()],
