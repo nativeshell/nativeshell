@@ -179,6 +179,7 @@ pub(super) fn class_decl_from_name(name: &str) -> ManuallyDrop<ClassDecl> {
     let res = MyClassDecl { _cls: class };
     // bit dirty, unfortunatelly ClassDecl doesn't let us create instance with custom
     // class, and it's now worth replicating the entire functionality here
+    #[allow(clippy::missing_transmute_annotations)]
     ManuallyDrop::new(unsafe { std::mem::transmute(res) })
 }
 

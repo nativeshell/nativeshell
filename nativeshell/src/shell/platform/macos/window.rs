@@ -545,13 +545,19 @@ impl PlatformWindow {
             b |= NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary;
         }
         if behavior.full_screen_none {
-            b |= unsafe { std::mem::transmute((1 << 9) as NSUInteger) };
+            b |= unsafe {
+                std::mem::transmute::<u64, NSWindowCollectionBehavior>((1 << 9) as NSUInteger)
+            };
         }
         if behavior.allows_tiling {
-            b |= unsafe { std::mem::transmute((1 << 11) as NSUInteger) };
+            b |= unsafe {
+                std::mem::transmute::<u64, NSWindowCollectionBehavior>((1 << 11) as NSUInteger)
+            };
         }
         if behavior.disallows_tiling {
-            b |= unsafe { std::mem::transmute((1 << 12) as NSUInteger) };
+            b |= unsafe {
+                std::mem::transmute::<u64, NSWindowCollectionBehavior>((1 << 12) as NSUInteger)
+            };
         }
         unsafe {
             NSWindow::setCollectionBehavior_(*self.platform_window, b);
