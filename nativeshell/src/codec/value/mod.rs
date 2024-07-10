@@ -1,7 +1,7 @@
 mod deserializer;
 mod serializer;
 
-use std::{convert::TryFrom, f64::NAN, fmt};
+use std::{convert::TryFrom, fmt};
 
 use std::{collections::HashMap, hash::Hash};
 
@@ -59,7 +59,7 @@ impl Eq for Value {}
 
 fn hash_f64<H: std::hash::Hasher>(value: f64, state: &mut H) {
     // normalize NAN
-    let value: f64 = if value.is_nan() { NAN } else { value };
+    let value: f64 = if value.is_nan() { f64::NAN } else { value };
     let transmuted: u64 = value.to_bits();
     state.write_u64(transmuted);
 }

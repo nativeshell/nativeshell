@@ -255,7 +255,7 @@ impl Work {
 
     // move physical displays so that minimum is at 0 0
     fn adjust(&mut self) {
-        let mut min = (std::i32::MAX, std::i32::MAX);
+        let mut min = (i32::MAX, i32::MAX);
         for d in &mut self.state {
             min.0 = cmp::min(min.0, d.original.physical.x);
             min.1 = cmp::min(min.1, d.original.physical.y);

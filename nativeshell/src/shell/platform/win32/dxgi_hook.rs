@@ -110,6 +110,7 @@ unsafe extern "system" fn dcomposition_create_device(
         ));
         dt.enable().ok();
 
+        #[allow(clippy::missing_transmute_annotations)]
         global
             .create_target_for_hwnd
             .replace(mem::transmute(dt.trampoline()));
@@ -200,6 +201,7 @@ unsafe fn hook_swap_chain(swap_chain: IDXGISwapChain1) {
         ));
         dt.enable().ok();
 
+        #[allow(clippy::missing_transmute_annotations)]
         global.present1.replace(mem::transmute(dt.trampoline()));
     }
     if global.resize_buffers.is_none() {
@@ -209,6 +211,7 @@ unsafe fn hook_swap_chain(swap_chain: IDXGISwapChain1) {
         ));
         dt.enable().ok();
 
+        #[allow(clippy::missing_transmute_annotations)]
         global
             .resize_buffers
             .replace(mem::transmute(dt.trampoline()));
@@ -310,6 +313,7 @@ unsafe extern "system" fn d3d11_create_device(
                     )
                     .unwrap(),
                 ));
+                #[allow(clippy::missing_transmute_annotations)]
                 global
                     .create_swap_chain_for_hwnd
                     .replace(mem::transmute(dt.trampoline()));
@@ -323,6 +327,7 @@ unsafe extern "system" fn d3d11_create_device(
                     )
                     .unwrap(),
                 ));
+                #[allow(clippy::missing_transmute_annotations)]
                 global
                     .create_swap_chain_for_composition
                     .replace(mem::transmute(dt.trampoline()));
@@ -369,6 +374,7 @@ pub(super) fn init_dxgi_hook() {
                 )
                 .unwrap(),
             ));
+            #[allow(clippy::missing_transmute_annotations)]
             global
                 .dcomposition_create_device
                 .replace(mem::transmute(detour.trampoline()));
@@ -384,6 +390,7 @@ pub(super) fn init_dxgi_hook() {
                 let detour = ManuallyDrop::new(Box::new(
                     RawDetour::new(address as *const (), d3d11_create_device as *const ()).unwrap(),
                 ));
+                #[allow(clippy::missing_transmute_annotations)]
                 global
                     .d3d11_create_device
                     .replace(mem::transmute(detour.trampoline()));

@@ -290,10 +290,10 @@ impl Writer {
     fn write_size(&mut self, n: usize) {
         if n < 254 {
             self.write_u8(n as u8);
-        } else if n <= u16::max_value() as usize {
+        } else if n <= u16::MAX as usize {
             self.write_u8(254);
             self.write_u16(n as u16);
-        } else if n < u32::max_value() as usize {
+        } else if n < u32::MAX as usize {
             self.write_u8(255);
             self.write_u32(n as u32);
         } else {
