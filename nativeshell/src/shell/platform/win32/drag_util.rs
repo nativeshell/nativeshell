@@ -1,5 +1,5 @@
 use core::slice;
-use std::{ffi::CStr, mem::size_of, ptr::null_mut, u32};
+use std::{ffi::CStr, mem::size_of, ptr::null_mut};
 
 use widestring::WideCStr;
 use windows::{
