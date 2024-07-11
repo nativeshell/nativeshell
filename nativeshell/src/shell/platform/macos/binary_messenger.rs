@@ -72,7 +72,11 @@ impl PlatformBinaryMessenger {
             let closure = move |data: id| {
                 let bytes: *const u8 = msg_send![data, bytes];
                 let length: usize = msg_send![data, length];
-                let data: &[u8] = std::slice::from_raw_parts(bytes, length);
+                let data: &[u8] = if bytes.is_null() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(bytes, length)
+                };
                 let reply = r.clone();
                 let function = reply.borrow_mut().take().unwrap();
                 function(data);
