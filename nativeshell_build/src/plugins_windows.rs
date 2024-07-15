@@ -126,12 +126,17 @@ impl<'a> PluginsImpl<'a> {
         )?;
 
         for plugin in plugins {
-            writeln!(file, "  extern \"C\" {{ pub fn {}RegisterWithRegistrar(registrar: *mut std::os::raw::c_void); }}", plugin.platform_info.plugin_class)?;
+            let Some(plugin_class) = plugin.platform_info.plugin_class.clone() else {
+                continue;
+            };
+            writeln!(file, "  extern \"C\" {{ pub fn {}RegisterWithRegistrar(registrar: *mut std::os::raw::c_void); }}", plugin_class)?;
         }
 
         writeln!(file, "  vec![")?;
         for plugin in plugins {
-            let class = &plugin.platform_info.plugin_class;
+            let Some(class) = plugin.platform_info.plugin_class.clone() else {
+                continue;
+            };
             writeln!(
                 file,
                 "    nativeshell::shell::platform::engine::PlatformPlugin {{ \
