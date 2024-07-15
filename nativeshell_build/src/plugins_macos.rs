@@ -264,6 +264,10 @@ end\n";
         // Swift class names are mangled. Try to extract mangled name from <plugin_name>-Swift.h
         // objc compatibility header
         for plugin in plugins {
+            let Some(plugin_class) = plugin.platform_info.plugin_class.clone() else {
+                continue;
+            };
+
             let swift_header_path = product_path
                 .join(&plugin.name)
                 .join(format!("{}.framework", plugin.name))
@@ -282,8 +286,8 @@ end\n";
                     if let Some(line) = line.strip_prefix("SWIFT_CLASS(\"") {
                         if let Some(line) = line.strip_suffix("\")") {
                             // the of suffix of mangled name should match plugin class
-                            if line.ends_with(&plugin.platform_info.plugin_class) {
-                                res.insert(plugin.platform_info.plugin_class.clone(), line.into());
+                            if line.ends_with(&plugin_class) {
+                                res.insert(plugin_class.clone(), line.into());
                                 found_swift_plugin = true;
                                 break;
                             }
@@ -294,10 +298,7 @@ end\n";
 
             if !found_swift_plugin {
                 // possibly not a swift plugin
-                res.insert(
-                    plugin.platform_info.plugin_class.clone(),
-                    plugin.platform_info.plugin_class.clone(),
-                );
+                res.insert(plugin_class.clone(), plugin_class.clone());
             }
         }
 

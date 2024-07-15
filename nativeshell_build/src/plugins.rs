@@ -25,7 +25,7 @@ mod plugins_impl;
 
 #[derive(Debug)]
 pub(crate) struct PluginPlatformInfo {
-    pub plugin_class: String,
+    pub plugin_class: Option<String>,
     pub platform_directory: PathBuf,
 }
 
@@ -95,7 +95,7 @@ impl<'a> Plugins<'a> {
         plugin_path: P,
     ) -> BuildResult<HashMap<String, PluginPlatformInfo>> {
         let mut res = HashMap::new();
-
+        println!("PP {:?}", plugin_path.as_ref());
         let path = plugin_path.as_ref().join("pubspec.yaml");
         let pub_spec = fs::read_to_string(&path).wrap_error(FileOperation::Read, || path)?;
         let pub_spec = YamlLoader::load_from_str(&pub_spec)
@@ -109,7 +109,13 @@ impl<'a> Plugins<'a> {
             for platform in platforms {
                 let plugin_class: Option<String> =
                     platform.1["pluginClass"].as_str().map(|s| s.into());
-                if let Some(plugin_class) = plugin_class {
+                let ffi_plugin = platform.1["ffiPlugin"].as_bool().unwrap_or(false);
+                if plugin_class.is_some() || ffi_plugin {
+                    // This was a temporary hack in flutter, but some plugins are
+                    // still using it
+                    if plugin_class.as_deref() == Some("none") {
+                        continue;
+                    }
                     let platform_directory = {
                         let yaml_platform = platform.0.as_str().unwrap();
                         if yaml_platform == "ios" || yaml_platform == "macos" {
@@ -125,17 +131,13 @@ impl<'a> Plugins<'a> {
                             yaml_platform.into()
                         }
                     };
-                    // This was a temporary hack in flutter, but some plugins are
-                    // still using it
-                    if plugin_class != "none" {
-                        res.insert(
-                            platform.0.as_str().unwrap().into(),
-                            PluginPlatformInfo {
-                                plugin_class,
-                                platform_directory,
-                            },
-                        );
-                    }
+                    res.insert(
+                        platform.0.as_str().unwrap().into(),
+                        PluginPlatformInfo {
+                            plugin_class,
+                            platform_directory,
+                        },
+                    );
                 }
             }
         }

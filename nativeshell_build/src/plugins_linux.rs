@@ -107,17 +107,18 @@ impl<'a> PluginsImpl<'a> {
         )?;
 
         for plugin in plugins {
-            let snake_case_class = plugin
-                .platform_info
-                .plugin_class
-                .from_case(Case::Pascal)
-                .to_case(Case::Snake);
+            let Some(plugin_class) = plugin.platform_info.plugin_class.clone() else {
+                continue;
+            };
+            let snake_case_class = plugin_class.from_case(Case::Pascal).to_case(Case::Snake);
             writeln!(file, "  extern \"C\" {{ pub fn {snake_case_class}_register_with_registrar(registrar: *mut std::os::raw::c_void); }}")?;
         }
 
         writeln!(file, "  vec![")?;
         for plugin in plugins {
-            let class = &plugin.platform_info.plugin_class;
+            let Some(class) = plugin.platform_info.plugin_class.clone() else {
+                continue;
+            };
             let snake_case_class = class.from_case(Case::Pascal).to_case(Case::Snake);
             writeln!(
                 file,
