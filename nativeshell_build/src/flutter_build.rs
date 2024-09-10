@@ -189,13 +189,29 @@ impl Flutter<'_> {
         self.run_flutter_command(command)
     }
 
+    fn find_package_config(&self) -> BuildResult<PathBuf> {
+        let mut dir = Some(self.root_dir.clone());
+        loop {
+            if let Some(d) = dir.as_ref() {
+                let package_config = d.join(".dart_tool").join("package_config.json");
+                if package_config.exists() {
+                    return Ok(package_config);
+                } else {
+                    dir = d.parent().map(|p| p.into());
+                }
+            } else {
+                return Err(BuildError::OtherError("Package config not found".into()));
+            }
+        }
+    }
+
     fn do_build(&self) -> BuildResult<()> {
         let flutter_out_root = self.out_dir.join("flutter");
         let flutter_out_dart_tool = flutter_out_root.join(".dart_tool");
         fs::create_dir_all(&flutter_out_dart_tool)
             .wrap_error(FileOperation::CreateDir, || flutter_out_dart_tool.clone())?;
 
-        let package_config = self.root_dir.join(".dart_tool").join("package_config.json");
+        let package_config = self.find_package_config()?;
         let package_config_out = flutter_out_dart_tool.join("package_config.json");
 
         if !Path::exists(&package_config) {
@@ -577,14 +593,32 @@ impl Flutter<'_> {
         Ok(())
     }
 
+    fn find_pubspec_lock(&self) -> BuildResult<PathBuf> {
+        let mut dir = Some(self.root_dir.clone());
+        loop {
+            if let Some(d) = dir.as_ref() {
+                let pubspec_lock = d.join("pubspec.lock");
+                if pubspec_lock.exists() {
+                    return Ok(pubspec_lock);
+                } else {
+                    dir = d.parent().map(|p| p.into());
+                }
+            } else {
+                return Err(BuildError::OtherError("pubspec.lock not found".into()));
+            }
+        }
+    }
+
     fn emit_flutter_checks(&self, roots: &HashSet<PathBuf>, assets: &[PathBuf]) -> BuildResult<()> {
         cargo_emit::rerun_if_changed! {
             self.root_dir.join("pubspec.yaml").to_str().unwrap(),
-            self.root_dir.join("pubspec.lock").to_str().unwrap(),
+            self.find_pubspec_lock()?.to_str().unwrap(),
         };
 
         for path in roots {
-            Self::emit_checks_for_dir(path)?;
+            if path.exists() {
+                Self::emit_checks_for_dir(path)?;
+            }
         }
 
         for asset in assets {

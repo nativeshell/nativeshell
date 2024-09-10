@@ -7,12 +7,7 @@ extern "C" {
         link_name = "__error"
     )]
     #[cfg_attr(
-        any(
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "bitrig",
-            target_os = "android"
-        ),
+        any(target_os = "openbsd", target_os = "netbsd", target_os = "android"),
         link_name = "__errno"
     )]
     #[cfg_attr(

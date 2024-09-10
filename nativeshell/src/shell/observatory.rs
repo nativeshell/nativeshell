@@ -149,7 +149,7 @@ fn _register_observatory_listener(file_suffix: String) {
 
 #[allow(unused_variables)]
 pub fn register_observatory_listener(file_suffix: String) {
-    #[cfg(any(flutter_profile, debug_assertions))]
+    #[cfg(any(feature = "flutter_profile", debug_assertions))]
     {
         _register_observatory_listener(file_suffix);
     }
