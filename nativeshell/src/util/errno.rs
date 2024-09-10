@@ -10,7 +10,6 @@ extern "C" {
         any(
             target_os = "openbsd",
             target_os = "netbsd",
-            target_os = "bitrig",
             target_os = "android"
         ),
         link_name = "__errno"
