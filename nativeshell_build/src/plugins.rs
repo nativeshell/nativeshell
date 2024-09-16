@@ -51,18 +51,35 @@ impl<'a> Plugins<'a> {
         }
     }
 
+    fn find_flutter_plugins(&self) -> Option<PathBuf> {
+        let mut dir = Some(self.build.root_dir.clone());
+        loop {
+            if let Some(d) = dir.as_ref() {
+                let flutter_plugins = d.join(".flutter-plugins");
+                if flutter_plugins.exists() {
+                    return Some(flutter_plugins);
+                } else {
+                    dir = d.parent().map(|p| p.into());
+                }
+            } else {
+                return None;
+            }
+        }
+    }
+
     pub fn process(&self) -> BuildResult<()> {
-        let plugins_path = self.build.root_dir.join(".flutter-plugins");
+        let plugins_path = self.find_flutter_plugins();
         let platform = plugins_impl::PluginsImpl::new(self.build, self.artifacts_emitter);
-        let (plugins, plugins_file_content) = if plugins_path.exists() {
-            let plugins_file_content = fs::read_to_string(&plugins_path)
-                .wrap_error(crate::FileOperation::Read, || plugins_path.clone())?;
-            (
-                self.load_plugins(&plugins_file_content)?,
-                plugins_file_content,
-            )
-        } else {
-            (Vec::new(), String::new())
+        let (plugins, plugins_file_content) = match plugins_path {
+            Some(plugins_path) => {
+                let plugins_file_content = fs::read_to_string(&plugins_path)
+                    .wrap_error(crate::FileOperation::Read, || plugins_path.clone())?;
+                (
+                    self.load_plugins(&plugins_file_content)?,
+                    plugins_file_content,
+                )
+            }
+            None => (Vec::new(), String::new()),
         };
 
         let skip_build =
