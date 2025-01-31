@@ -82,7 +82,7 @@ unsafe extern "system" fn create_target_for_hwnd(
         hwnd = parent;
     }
     let global = GLOBAL.lock().unwrap();
-    global.create_target_for_hwnd.as_ref().unwrap()(this, hwnd, topmost, target);
+    global.create_target_for_hwnd.as_ref().unwrap()(this, hwnd, topmost, target)
 }
 
 unsafe extern "system" fn dcomposition_create_device(
