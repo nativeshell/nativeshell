@@ -116,7 +116,7 @@ where
         if allow_symlinks {
             let src_can = canonicalize(src.as_ref())
                 .wrap_error(FileOperation::Canonicalize, || src.as_ref().into())?;
-        let dst_can = canonicalize(dst.as_ref())
+            let dst_can = canonicalize(dst.as_ref())
                 .wrap_error(FileOperation::Canonicalize, || dst.as_ref().into())?;
             if src_can == dst_can {
                 // nothing to do here; This is useful on windows where often the symlink
