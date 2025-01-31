@@ -250,7 +250,7 @@ impl Work {
                     adjusted_logical: Default::default(),
                 })
                 .collect(),
-        };
+        }
     }
 
     // move physical displays so that minimum is at 0 0
