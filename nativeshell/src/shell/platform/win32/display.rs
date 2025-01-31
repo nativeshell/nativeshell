@@ -241,7 +241,7 @@ struct Work {
 
 impl Work {
     fn new(displays: &[PhysicalDisplay]) -> Self {
-        return Work {
+        Work {
             state: displays
                 .iter()
                 .map(|d| DisplayState {

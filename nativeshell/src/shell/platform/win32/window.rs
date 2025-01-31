@@ -380,16 +380,13 @@ impl PlatformWindow {
             .borrow_mut()
             .replace(Box::new(done_callback));
 
-        match &self.parent {
-            Some(parent) => {
-                let hwnd = Some(self.hwnd());
-                parent.modal_child.set(hwnd);
-                unsafe {
-                    EnableWindow(parent.hwnd(), false);
-                    SetWindowLongPtrW(self.hwnd(), GWL_HWNDPARENT.0, parent.hwnd().0);
-                }
+        if let Some(parent) = &self.parent {
+            let hwnd = Some(self.hwnd());
+            parent.modal_child.set(hwnd);
+            unsafe {
+                EnableWindow(parent.hwnd(), false);
+                SetWindowLongPtrW(self.hwnd(), GWL_HWNDPARENT.0, parent.hwnd().0);
             }
-            None => {}
         }
         if let Err(error) = self.show() {
             let cb = self.modal_close_callback.borrow_mut().take();
