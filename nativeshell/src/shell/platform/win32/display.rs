@@ -241,7 +241,7 @@ struct Work {
 
 impl Work {
     fn new(displays: &[PhysicalDisplay]) -> Self {
-        return Work {
+        Work {
             state: displays
                 .iter()
                 .map(|d| DisplayState {
@@ -250,7 +250,7 @@ impl Work {
                     adjusted_logical: Default::default(),
                 })
                 .collect(),
-        };
+        }
     }
 
     // move physical displays so that minimum is at 0 0

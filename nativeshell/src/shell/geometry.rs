@@ -206,7 +206,7 @@ where
     }
 }
 
-impl<'a, 'b, T> std::ops::Sub<&'b _Size<T>> for &'a _Size<T>
+impl<'b, T> std::ops::Sub<&'b _Size<T>> for &_Size<T>
 where
     T: Sub<Output = T> + Copy,
 {
@@ -220,7 +220,7 @@ where
     }
 }
 
-impl<'a, 'b, T> std::ops::Add<&'b _Size<T>> for &'a _Size<T>
+impl<'b, T> std::ops::Add<&'b _Size<T>> for &_Size<T>
 where
     T: Add<Output = T> + Copy,
 {

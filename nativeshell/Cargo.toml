@@ -11,6 +11,10 @@ license = "MIT OR Apache-2.0"
 [features]
 flutter_profile = []
 
+# TODO(knopp) Remove once objc 0.2.8 is published
+# https://github.com/SSheldon/rust-objc/issues/125
+cargo-clippy = []
+
 [dependencies]
 serde = { version = "1.0.119", features = ["derive"] }
 serde_bytes = "0.11.5"

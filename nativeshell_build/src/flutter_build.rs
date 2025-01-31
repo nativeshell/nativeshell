@@ -13,7 +13,7 @@ use crate::{
     artifacts_emitter::ArtifactsEmitter,
     error::BuildError,
     plugins::Plugins,
-    util::{copy_to, find_executable, get_artifacts_dir, run_command},
+    util::{copy, copy_to, find_executable, get_artifacts_dir, run_command},
     BuildResult, FileOperation, IOResultExt,
 };
 
@@ -221,7 +221,23 @@ impl Flutter<'_> {
 
         Self::copy(&package_config, &package_config_out)?;
 
+        let root = package_config.parent().unwrap().parent().unwrap();
+        let lib = root.join("lib");
+        if lib.exists() {
+            copy(lib, flutter_out_root.join("lib"), true)?;
+        }
+
         let mut local_roots = HashSet::<PathBuf>::new();
+
+        // This must be copied before package_config. Flutter build will
+        // run `dart pub deps --json` and if pubspec.lock is newer than package_config.json
+        // it will do a full pub get, which will fail because the package paths in copied
+        // pubspec.yaml are wrong.
+        let assets = self.copy_pubspec_yaml(
+            &self.root_dir.join("pubspec.yaml"),
+            &flutter_out_root.join("pubspec.yaml"),
+        )?;
+        copy_to(self.root_dir.join("pubspec.lock"), &flutter_out_root, false)?;
 
         self.update_package_config_paths(package_config, package_config_out, &mut local_roots)?;
 
@@ -230,11 +246,6 @@ impl Flutter<'_> {
             flutter_out_root
                 .join(".dart_tool")
                 .join("package_config_subset"),
-        )?;
-
-        let assets = self.copy_pubspec_yaml(
-            &self.root_dir.join("pubspec.yaml"),
-            &flutter_out_root.join("pubspec.yaml"),
         )?;
 
         self.set_flutter_root()?;
@@ -423,6 +434,9 @@ impl Flutter<'_> {
                 source: e,
             })?;
 
+        let original_parent = original.as_ref().parent().unwrap().parent().unwrap();
+        let new_parent = new.as_ref().parent().unwrap().parent().unwrap();
+
         for package in &mut package_config.packages {
             if package.root_uri.starts_with("..") {
                 // relative path
@@ -441,7 +455,12 @@ impl Flutter<'_> {
                 }
 
                 // remove unc from windows canonicalize
-                let absolute = simplified(&absolute);
+                let mut absolute = simplified(&absolute);
+
+                if absolute == original_parent {
+                    absolute = new_parent;
+                }
+
                 let mut absolute = absolute.to_slash_lossy();
                 if !absolute.starts_with('/') {
                     absolute = format!("/{absolute}");

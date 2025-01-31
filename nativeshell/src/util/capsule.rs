@@ -101,5 +101,8 @@ fn get_thread_id() -> usize {
 
 fn next_thread_id() -> usize {
     static mut COUNTER: AtomicUsize = AtomicUsize::new(0);
-    unsafe { COUNTER.fetch_add(1, Ordering::SeqCst) }
+    #[allow(static_mut_refs)]
+    unsafe {
+        COUNTER.fetch_add(1, Ordering::SeqCst)
+    }
 }
