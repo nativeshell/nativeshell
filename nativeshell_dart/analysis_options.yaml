@@ -1,1 +1,7 @@
 include: package:pedantic/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - target/**
+    - build_test/project1/target/**
+    - build_test/project2/target/**
