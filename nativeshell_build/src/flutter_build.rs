@@ -224,11 +224,20 @@ impl Flutter<'_> {
         let root = package_config.parent().unwrap().parent().unwrap();
         let lib = root.join("lib");
         if lib.exists() {
-            println!("EXISTS");
             copy(lib, flutter_out_root.join("lib"), true)?;
         }
 
         let mut local_roots = HashSet::<PathBuf>::new();
+
+        // This must be copied before package_config. Flutter build will
+        // run `dart pub deps --json` and if pubspec.lock is newer than package_config.json
+        // it will do a full pub get, which will fail because the package paths in copied
+        // pubspec.yaml are wrong.
+        let assets = self.copy_pubspec_yaml(
+            &self.root_dir.join("pubspec.yaml"),
+            &flutter_out_root.join("pubspec.yaml"),
+        )?;
+        copy_to(self.root_dir.join("pubspec.lock"), &flutter_out_root, false)?;
 
         self.update_package_config_paths(package_config, package_config_out, &mut local_roots)?;
 
@@ -238,12 +247,6 @@ impl Flutter<'_> {
                 .join(".dart_tool")
                 .join("package_config_subset"),
         )?;
-
-        let assets = self.copy_pubspec_yaml(
-            &self.root_dir.join("pubspec.yaml"),
-            &flutter_out_root.join("pubspec.yaml"),
-        )?;
-        copy_to(self.root_dir.join("pubspec.lock"), &flutter_out_root, true)?;
 
         self.set_flutter_root()?;
         self.remove_rustc_from_env()?;
