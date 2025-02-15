@@ -119,6 +119,7 @@ impl<T: EventChannelHandler> MethodCallHandler for EventChannelInternal<T> {
                 self.handler
                     .borrow_mut()
                     .register_event_sink(sink, call.args);
+                self.engine_to_sink.insert(engine, sink_id);
                 reply.send_ok(Value::Null);
             }
             "cancel" => {
