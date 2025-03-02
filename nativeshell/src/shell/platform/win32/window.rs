@@ -285,7 +285,7 @@ impl PlatformWindow {
             if parent.modal_child.get() == Some(self.hwnd()) {
                 unsafe {
                     EnableWindow(parent.hwnd(), true);
-                    parent.modal_child.get().take();
+                    parent.modal_child.replace(None);
                     SetForegroundWindow(parent.hwnd());
                 }
             }
