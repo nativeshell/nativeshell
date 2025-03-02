@@ -627,22 +627,25 @@ impl PlatformWindow {
                     if contents != nil {
                         // This makes assumptions about FlutterView internals :-/
                         let class: id = msg_send![contents, className];
-                        if !class.isEqualToString("IOSurface") {
-                            panic!("Expected IOSurface content");
-                        }
-                        let scale = NSWindow::backingScaleFactor(*s.platform_window);
-                        let content_size = NSView::frame(*s.flutter_view.borrow().clone());
+                        if class.isEqualToString("IOSurface") {
+                            let scale = NSWindow::backingScaleFactor(*s.platform_window);
+                            let content_size = NSView::frame(*s.flutter_view.borrow().clone());
 
-                        let expected_width = scale * content_size.size.width;
-                        let expected_height = scale * content_size.size.height;
-                        // IOSurface width/height
-                        let actual_width: NSInteger = msg_send![contents, width];
-                        let actual_height: NSInteger = msg_send![contents, height];
+                            let expected_width = scale * content_size.size.width;
+                            let expected_height = scale * content_size.size.height;
+                            // IOSurface width/height
+                            let actual_width: NSInteger = msg_send![contents, width];
+                            let actual_height: NSInteger = msg_send![contents, height];
 
-                        // only show if size matches, otherwise we caught the view during resizing
-                        if actual_width == expected_width as NSInteger
-                            && actual_height == expected_height as NSInteger
-                        {
+                            // only show if size matches, otherwise we caught the view during resizing
+                            if actual_width == expected_width as NSInteger
+                                && actual_height == expected_height as NSInteger
+                            {
+                                show = true;
+                            }
+                        } else {
+                            let class_string = from_nsstring(class);
+                            log::warn!("Unexpected contents class: {}", class_string);
                             show = true;
                         }
                     }
