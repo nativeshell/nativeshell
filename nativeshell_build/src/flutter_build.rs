@@ -237,7 +237,7 @@ impl Flutter<'_> {
             &self.root_dir.join("pubspec.yaml"),
             &flutter_out_root.join("pubspec.yaml"),
         )?;
-        copy_to(self.root_dir.join("pubspec.lock"), &flutter_out_root, false)?;
+        copy_to(self.find_pubspec_lock()?, &flutter_out_root, false)?;
 
         self.update_package_config_paths(package_config, package_config_out, &mut local_roots)?;
 
