@@ -705,11 +705,19 @@ impl Flutter<'_> {
         if self.options.local_engine.is_some() {
             return Ok(());
         }
-        let engine_version = self
+        let mut engine_version = self
             .options
             .find_flutter_bin()?
-            .join("internal")
-            .join("engine.version");
+            .join("cache")
+            .join("engine.stamp");
+
+        if !engine_version.exists() {
+            engine_version = self
+                .options
+                .find_flutter_bin()?
+                .join("internal")
+                .join("engine.version");
+        }
 
         let engine_version = fs::read_to_string(&engine_version)
             .wrap_error(FileOperation::Read, || engine_version)?;
