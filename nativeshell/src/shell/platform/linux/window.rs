@@ -106,6 +106,9 @@ impl PlatformWindow {
 
     pub fn on_first_frame(&self) {
         self.window.set_opacity(1.0);
+        if let Some(delegate) = self.delegate.upgrade() {
+            delegate.visibility_changed(self.window.is_visible());
+        }
     }
 
     pub fn engine_launched(&self) {
@@ -381,6 +384,9 @@ impl PlatformWindow {
     pub fn show(&self) -> PlatformResult<()> {
         if self.ready_to_show.get() {
             self.window.show();
+            if let Some(delegate) = self.delegate.upgrade() {
+                delegate.visibility_changed(true);
+            }
             Ok(())
         } else {
             self.show_when_ready.set(true);
