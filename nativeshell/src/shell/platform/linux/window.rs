@@ -105,6 +105,7 @@ impl PlatformWindow {
     }
 
     pub fn on_first_frame(&self) {
+        log::trace!("on_first_frame");
         self.window.set_opacity(1.0);
     }
 
@@ -327,10 +328,10 @@ impl PlatformWindow {
         res
     }
 
-    fn get_gl_area(&self) -> Option<Widget> {
+    fn get_root_widget(&self) -> Option<Widget> {
         let mut res: Option<Widget> = None;
         self.view.borrow().forall(|w| {
-            if w.type_().name() == "FlGLArea" {
+            if w.type_().name() == "GtkEventBox" {
                 res = Some(w.clone());
             }
         });
@@ -340,7 +341,7 @@ impl PlatformWindow {
     fn on_draw(&self) {
         if self.pending_first_frame.get()
             && self.ready_to_show.get()
-            && self.get_gl_area().is_some()
+            && self.get_root_widget().is_some()
         {
             self.pending_first_frame.replace(false);
             let weak = self.weak_self.borrow().clone();
@@ -410,6 +411,7 @@ impl PlatformWindow {
     }
 
     pub fn ready_to_show(&self) -> PlatformResult<()> {
+        log::trace!("ready_to_show");
         self.ready_to_show.set(true);
         if self.show_when_ready.get() {
             self.window.show(); // otherwise complains about size allocation in show_all
