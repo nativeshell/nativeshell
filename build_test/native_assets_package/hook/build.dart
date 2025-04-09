@@ -5,19 +5,18 @@ import 'package:native_assets_cli/native_assets_cli.dart';
 const packageName = 'native_assets_package';
 
 void main(List<String> args) async {
-  await build(args, (config, output) async {
-    final packageName = config.packageName;
+  await build(args, (input, builder) async {
+    final packageName = input.packageName;
     final cbuilder = CBuilder.library(
       name: packageName,
       assetName: '${packageName}_bindings_generated.dart',
       sources: [
         'src/$packageName.c',
       ],
-      dartBuildFiles: ['hook/build.dart'],
     );
     await cbuilder.run(
-      buildConfig: config,
-      buildOutput: output,
+      input: input,
+      output: builder,
       logger: Logger('')
         ..level = Level.ALL
         ..onRecord.listen((record) => print(record.message)),
