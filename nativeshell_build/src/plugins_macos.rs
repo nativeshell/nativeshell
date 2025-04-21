@@ -284,7 +284,9 @@ end\n";
                     let line =
                         line.wrap_error(FileOperation::Read, || swift_header_path.clone())?;
                     if let Some(line) = line.strip_prefix("SWIFT_CLASS(\"") {
-                        if let Some(line) = line.strip_suffix("\")") {
+                        // Find trailing quote
+                        if let Some(offset) = line.find("\"") {
+                            let line = &line[..offset];
                             // the of suffix of mangled name should match plugin class
                             if line.ends_with(&plugin_class) {
                                 res.insert(plugin_class.clone(), line.into());
