@@ -1,5 +1,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:logging/logging.dart';
 import 'dart:io';
 
 import 'api_constants.dart';
@@ -13,6 +14,8 @@ import 'util.dart';
 import 'window_method_channel.dart';
 import 'window_widget.dart';
 import 'window.dart';
+
+final _log = Logger('nativeshell');
 
 // Do not use directly. Access windows through Window.of(context) or through
 // WindowState.window.
@@ -44,18 +47,29 @@ class WindowManager {
     KeyInterceptor.instance;
     final dispatcher = WindowMethodDispatcher.instance;
 
+    _log.fine('Initializing WindowManager');
+
+    _log.finer('Checking API version');
     await _checkApiVersion(dispatcher);
 
+    _log.finer('Initializing KeyboardMapManager');
     await KeyboardMapManager.instance.init();
+
+    _log.finer('Initializing ScreenManager');
     await ScreenManager.instance.init();
+
+    _log.finer('Initializing StatusItemManager');
     await StatusItemManager.instance.init();
 
+    _log.finer('Initializing WindowManager Window');
     final result = await dispatcher.invokeMethod(
         channel: Channels.windowManager,
         method: Methods.windowManagerInitWindow,
         targetWindowHandle: WindowHandle.invalid);
 
     _currentWindow = WindowHandle(result['currentWindow'] as int);
+    _log.finer('Current window handle: $_currentWindow');
+
     final allWindows = result['allWindows'] as List;
     final initData = result['initData'];
     final parentWindow = result['parentWindow'] as int?;
